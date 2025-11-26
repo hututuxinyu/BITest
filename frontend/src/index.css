@@ -5,11 +5,249 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: #f5f7fa;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.dtc-header {
+  background: #001529 !important;
+  color: #ffffff !important;
+  padding: 0 32px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px !important;
+  z-index: 1000;
+  border-bottom: 1px solid #002140;
+}
+
+.dtc-header-left {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.dtc-header-center {
+  font-size: 16px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.dtc-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffff;
+}
+
+.project-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 工具栏区域：高度60px，宽度100%，内边距20px，背景色灰色 */
+.project-toolbar {
+  background: #f0f0f0;
+  height: 60px;
+  width: 100%;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.project-toolbar .project-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-toolbar .project-search {
+  margin-left: auto;
+  min-width: 260px;
+}
+
+/* 工程列表区域：高度自适应，宽度100%，内边距20px */
+.project-table-card {
+  padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.project-table-card .ant-card-body {
+  padding: 0;
+}
+
+.project-table {
+  padding: 0;
+}
+
+/* 列表表头：高度50px，背景色灰色 */
+.project-table .ant-table {
+  background: transparent;
+}
+
+.project-table .ant-table-thead > tr > th {
+  background: #e8e8e8 !important;
+  font-weight: 600;
+  height: 50px;
+  padding: 12px 16px;
+  color: #1f1f1f;
+}
+
+/* 工程列表项：高度80px */
+.project-table .ant-table-tbody > tr > td {
+  transition: background 0.2s ease;
+  height: 80px;
+  padding: 12px 16px;
+  vertical-align: middle;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* 奇数行：白色背景#ffffff */
+.project-table .ant-table-tbody > tr:nth-child(odd) > td {
+  background: #ffffff;
+}
+
+/* 偶数行：浅灰色背景#f5f5f5 */
+.project-table .ant-table-tbody > tr:nth-child(even) > td {
+  background: #f5f5f5;
+}
+
+/* 行悬停：浅灰色背景 */
+.project-table .ant-table-tbody > tr:hover > td {
+  background: #e0e0e0 !important;
+}
+
+/* 行选中：浅灰色背景 */
+.project-table .ant-table-tbody > tr.ant-table-row-selected > td {
+  background: #d0d0d0 !important;
+}
+
+/* 空状态区域：居中显示，背景色灰色 */
+.project-empty {
+  background: #f5f5f5;
+  border-radius: 16px;
+  padding: 48px 32px;
+  text-align: center;
+  color: #666666;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e0e0e0;
+}
+
+.project-empty .anticon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  color: #999999;
+}
+
+.project-empty > div {
+  font-size: 16px;
+  margin: 12px 0;
+  color: #666666;
+}
+
+.project-empty .ant-btn {
+  margin-top: 16px;
+}
+
+/* 分页区域：背景色灰色 */
+.project-table .ant-pagination {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 4px;
+  margin-top: 16px;
+  border: 1px solid #e0e0e0;
+}
+
+/* 表格边框样式 */
+.project-table .ant-table {
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.project-table .ant-table-thead > tr > th {
+  border-bottom: 1px solid #c0c0c0;
+}
+
+/* 报表编辑界面顶部导航栏：高度60px */
+.editor-top-bar {
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin: 0 0 16px;
+  padding: 0 24px;
+  height: 60px;
+  min-height: 60px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.editor-top-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-top-section strong {
+  font-size: 16px;
+}
+
+.editor-context-strip {
+  background: #f5f5f5;
+  border: 1px dashed #d0d0d0;
+  border-radius: 10px;
+  padding: 16px 24px;
+  margin-bottom: 16px;
+}
+
+.component-panel-card {
+  background: #ffffff !important;
+}
+
+.component-panel-card .ant-card-head {
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.editor-layout-wrapper {
+  margin-top: 0;
+}
+
+.property-panel-card .ant-card-head {
+  background: #f8fafc;
+}
+
+.editor-language-select {
+  min-width: 120px;
+}
+
+/* 确保报表编辑界面画布区域高度正确 */
+.editor-layout-wrapper {
+  margin-top: 0;
 }
 
 

@@ -11,6 +11,7 @@ import {
   CodeOutlined,
   TranslationOutlined,
   BranchesOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 
 const { Header, Content, Sider } = Layout;
@@ -35,6 +36,7 @@ const leftMenuConfig: LeftMenuItem[] = [
   { key: '/schema', label: 'Schema生成', icon: <CodeOutlined /> },
   { key: '/i18n', label: '国际化配置', icon: <TranslationOutlined /> },
   { key: '/codehub', label: 'Codehub集成', icon: <BranchesOutlined /> },
+  { key: '/scenario/report-create', label: '场景演示', icon: <ExperimentOutlined /> },
 ];
 
 /**
@@ -50,6 +52,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
     const matched = leftMenuConfig.find((item) => location.pathname.startsWith(item.key));
     return matched?.key ?? leftMenuConfig[0].key;
   }, [location.pathname]);
+
+  const currentMenu = useMemo(
+    () => leftMenuConfig.find((item) => location.pathname.startsWith(item.key)),
+    [location.pathname]
+  );
+  const pageTitle = currentMenu?.label ?? '设计态系统';
 
   const leftMenuItems: MenuProps['items'] = useMemo(
     () => leftMenuConfig.map((item) => ({ key: item.key, label: item.label, icon: item.icon })),
@@ -86,34 +94,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* 顶部导航栏 */}
-      <Header
-        style={{
-          background: '#111c3a',
-          padding: '0 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          height: 60,
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-          color: '#f8fafc',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 18, fontWeight: 500 }}>BI系统 - 设计态</div>
-        <Space>
+      <Header className="dtc-header">
+        <div className="dtc-header-left">BI系统 - 设计态</div>
+        <div className="dtc-header-center">{pageTitle}</div>
+        <div className="dtc-header-right">
           <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
             <Space style={{ cursor: 'pointer' }}>
-              <Avatar style={{ backgroundColor: '#2563eb' }}>
+              <Avatar style={{ backgroundColor: '#666666', color: '#fff' }}>
                 {user.username?.[0]?.toUpperCase() || 'U'}
               </Avatar>
-              <span style={{ color: '#f1f5f9' }}>{user.username || user.userId}</span>
+              <span>{user.username || user.userId}</span>
             </Space>
           </Dropdown>
-        </Space>
+        </div>
       </Header>
 
       <Layout
@@ -127,8 +120,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
           collapsedWidth={72}
           theme="dark"
           style={{
-            background: '#0f172a',
-            borderRight: '1px solid rgba(255,255,255,0.08)',
+            background: '#001529',
+            borderRight: '1px solid #002140',
             paddingTop: 16,
           }}
           collapsed={menuCollapsed}
@@ -139,7 +132,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
             selectedKeys={[selectedMenuKey]}
             items={leftMenuItems}
             onClick={handleLeftMenuClick}
-            style={{ borderRight: 0, background: 'transparent', color: '#e2e8f0' }}
+            style={{ borderRight: 0, background: 'transparent' }}
             inlineCollapsed={menuCollapsed}
             theme="dark"
           />

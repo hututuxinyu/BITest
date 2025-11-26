@@ -1,10 +1,22 @@
-import type { ApiResponse, PageResult, Project, User, CreateProjectRequest, UpdateProjectRequest } from '../types';
+import type {
+  ApiResponse,
+  PageResult,
+  Project,
+  User,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  ReportSummary,
+  CreateReportRequest,
+} from '../types';
 import {
   getMockProjectList,
   createMockProject,
   updateMockProject,
   deleteMockProject,
   enterMockProject,
+  getMockReportList,
+  createMockReportForProject,
+  getMockReportDetail,
 } from './mockData';
 
 // 使用模拟数据，不依赖后端API
@@ -92,6 +104,48 @@ export const projectApi = {
   enterProject: async (userId: string, projectId: string): Promise<ApiResponse<Project>> => {
     if (USE_MOCK_DATA) {
       const data = await enterMockProject(userId, projectId);
+      return { success: true, data };
+    }
+    throw new Error('真实API未实现');
+  },
+};
+
+/**
+ * 报表API
+ */
+export const reportApi = {
+  /**
+   * 获取工程下的报表列表
+   */
+  getProjectReports: async (projectId: string): Promise<ApiResponse<ReportSummary[]>> => {
+    if (USE_MOCK_DATA) {
+      const data = await getMockReportList(projectId);
+      return { success: true, data };
+    }
+    throw new Error('真实API未实现');
+  },
+
+  /**
+   * 创建报表
+   */
+  createReport: async (
+    userId: string,
+    projectId: string,
+    request: CreateReportRequest
+  ): Promise<ApiResponse<ReportSummary>> => {
+    if (USE_MOCK_DATA) {
+      const data = await createMockReportForProject(userId, projectId, request);
+      return { success: true, message: '创建报表成功', data };
+    }
+    throw new Error('真实API未实现');
+  },
+
+  /**
+   * 获取报表详情
+   */
+  getReportDetail: async (projectId: string, reportId: string): Promise<ApiResponse<ReportSummary>> => {
+    if (USE_MOCK_DATA) {
+      const data = await getMockReportDetail(projectId, reportId);
       return { success: true, data };
     }
     throw new Error('真实API未实现');

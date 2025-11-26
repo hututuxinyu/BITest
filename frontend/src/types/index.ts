@@ -44,6 +44,37 @@ export interface PageResult<T> {
 }
 
 /**
+ * 报表状态类型
+ */
+export type ReportStatus = 'draft' | 'published' | 'archived';
+
+/**
+ * 报表概要信息
+ */
+export interface ReportSummary {
+  reportId: string;
+  projectId: string;
+  reportName: string;
+  description?: string;
+  status: ReportStatus;
+  template?: string;
+  tags?: string[];
+  createdTime: string;
+  updateTime: string;
+  createdBy: string;
+  lastEditedBy: string;
+}
+
+/**
+ * 创建报表请求
+ */
+export interface CreateReportRequest {
+  reportName: string;
+  description?: string;
+  template?: string;
+}
+
+/**
  * 创建工程请求类型
  */
 export interface CreateProjectRequest {

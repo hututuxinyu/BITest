@@ -1,0 +1,5 @@
+.cursor/
+.idea/
+frontend/.idea/
+backend/.idea/
+frontend/node_modules/

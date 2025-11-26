@@ -1,4 +1,4 @@
-import type { Project, PageResult } from '../types';
+import type { Project, PageResult, ReportSummary, CreateReportRequest } from '../types';
 
 /**
  * 模拟数据服务
@@ -38,6 +38,53 @@ let mockProjects: Project[] = [
     lastReportUpdateTime: '2024-01-15 10:30:00',
   },
 ];
+
+// 模拟报表数据
+const mockProjectReports: Record<string, ReportSummary[]> = {
+  'project-001': [
+    {
+      reportId: 'report-001',
+      projectId: 'project-001',
+      reportName: '销售额趋势分析',
+      description: '监控核心品类的销售额同比与环比走势',
+      status: 'draft',
+      template: '多轴折线图',
+      tags: ['销售', '趋势'],
+      createdTime: '2024-01-12 09:00:00',
+      updateTime: '2024-01-20 12:40:00',
+      createdBy: 'admin',
+      lastEditedBy: 'admin',
+    },
+    {
+      reportId: 'report-002',
+      projectId: 'project-001',
+      reportName: '渠道绩效对比',
+      description: '对比线上线下渠道的成交额、客单价与转化',
+      status: 'published',
+      template: '对比大屏',
+      tags: ['渠道', '对比'],
+      createdTime: '2024-01-10 17:30:00',
+      updateTime: '2024-01-18 15:10:00',
+      createdBy: 'alisa',
+      lastEditedBy: 'alisa',
+    },
+  ],
+  'project-002': [
+    {
+      reportId: 'report-101',
+      projectId: 'project-002',
+      reportName: '财务健康监控',
+      description: '实时监控现金流、毛利率与费用率',
+      status: 'published',
+      template: '指标驾驶舱',
+      tags: ['财务'],
+      createdTime: '2024-01-08 10:00:00',
+      updateTime: '2024-01-18 11:05:00',
+      createdBy: 'frank',
+      lastEditedBy: 'frank',
+    },
+  ],
+};
 
 /**
  * 模拟API延迟
@@ -138,6 +185,69 @@ export const createMockProject = async (
 
   mockProjects.push(newProject);
   return newProject;
+};
+
+/**
+ * 获取工程内的报表列表（模拟）
+ */
+export const getMockReportList = async (projectId: string): Promise<ReportSummary[]> => {
+  await delay(300);
+  return mockProjectReports[projectId]?.slice() ?? [];
+};
+
+/**
+ * 创建新报表（模拟）
+ */
+export const createMockReportForProject = async (
+  userId: string,
+  projectId: string,
+  payload: CreateReportRequest
+): Promise<ReportSummary> => {
+  await delay(300);
+  const timestamp = new Date().toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).replace(/\//g, '-');
+  const newReport: ReportSummary = {
+    reportId: `report-${Date.now()}`,
+    projectId,
+    reportName: payload.reportName,
+    description: payload.description,
+    status: 'draft',
+    template: payload.template,
+    tags: payload.template ? [payload.template] : undefined,
+    createdTime: timestamp,
+    updateTime: timestamp,
+    createdBy: userId,
+    lastEditedBy: userId,
+  };
+  if (!mockProjectReports[projectId]) {
+    mockProjectReports[projectId] = [];
+  }
+  mockProjectReports[projectId].unshift(newReport);
+  const project = mockProjects.find((item) => item.projectId === projectId);
+  if (project) {
+    project.reportCount = mockProjectReports[projectId].length;
+    project.lastReportUpdateTime = newReport.updateTime;
+    project.updateTime = newReport.updateTime;
+  }
+  return newReport;
+};
+
+/**
+ * 获取报表详情（模拟）
+ */
+export const getMockReportDetail = async (projectId: string, reportId: string): Promise<ReportSummary> => {
+  await delay(200);
+  const report = mockProjectReports[projectId]?.find((item) => item.reportId === reportId);
+  if (!report) {
+    throw new Error('报表不存在');
+  }
+  return report;
 };
 
 /**

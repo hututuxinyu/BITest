@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import {
   Card,
   Empty,
@@ -18,6 +18,7 @@ import {
   Tabs,
   Select,
   Collapse,
+  Breadcrumb,
 } from 'antd';
 import {
   AppstoreOutlined,
@@ -26,10 +27,19 @@ import {
   PieChartOutlined,
   DotChartOutlined,
   HighlightOutlined,
+  ArrowLeftOutlined,
+  DashboardOutlined,
+  FundOutlined,
 } from '@ant-design/icons';
-import type { ComponentDefinition, ComponentSummary } from '../types';
+import type { ComponentDefinition, ComponentSummary, Project, ReportSummary } from '../types';
 import { componentApi } from '../services/componentApi';
 import ChartRenderer from '../components/ChartRenderer';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { projectApi, reportApi } from '../services/api';
+import EnhancedCanvas, { EnhancedCanvasItem } from '../components/EnhancedCanvas';
+import CanvasToolbar from '../components/CanvasToolbar';
+import { HistoryManager } from '../utils/historyManager';
+import { calculateBoundingBox, distributeHorizontally, distributeVertically, Bounds } from '../utils/canvasUtils';
 
 interface CanvasItem {
   id: string;
@@ -38,10 +48,17 @@ interface CanvasItem {
   loading: boolean;
   error?: string;
   propsValues?: Record<string, any>;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+  zIndex?: number;
 }
 
-const PANEL_HEIGHT = 'calc(100vh - 200px)';
-const thumbnailIconStyle: React.CSSProperties = { fontSize: 44, color: '#3b76f6' };
+// 画布区域高度：100vh - 顶部导航栏60px - 编辑器顶部栏60px - 间距32px
+const PANEL_HEIGHT = 'calc(100vh - 152px)';
+const COMPONENT_PANEL_WIDTH = 250;
+const PROPERTY_COLLAPSED_WIDTH = 64;
+const PROPERTY_PANEL_WIDTH = 350;
+const thumbnailIconStyle: React.CSSProperties = { fontSize: 32, color: '#3b76f6' };
 const removedComponentNames = new Set(['标签容器', '图片', '日期选择器组件']);
 const additionalComponents: ComponentSummary[] = [
   {
@@ -144,14 +161,32 @@ const additionalComponents: ComponentSummary[] = [
   },
 ];
 
-const CanvasEditor: React.FC = () => {
+interface CanvasEditorProps {
+  user?: { userId: string; username?: string };
+}
+
+const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
+  const { projectId, reportId } = useParams<{ projectId?: string; reportId?: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = (location.state as { project?: Project; report?: ReportSummary }) || {};
+  const [projectContext, setProjectContext] = useState<Project | undefined>(locationState.project);
+  const [reportContext, setReportContext] = useState<ReportSummary | undefined>(locationState.report);
   const [components, setComponents] = useState<ComponentSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
-  const [selectedItemId, setSelectedItemId] = useState<string>();
+  const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [componentTab, setComponentTab] = useState<'basic' | 'custom'>('basic');
   const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(true);
+  const [showGrid, setShowGrid] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const historyManagerRef = useRef<HistoryManager<EnhancedCanvasItem[]>>(new HistoryManager(50));
+  const effectiveUserId = user?.userId || 'user-001';
+  const effectiveUsername = user?.username || user?.userId || 'admin';
+  const canvasTitle = reportContext?.reportName || '未命名报表';
+  const [reportTitle, setReportTitle] = useState(canvasTitle);
+  const [language, setLanguage] = useState<'zh-CN' | 'en-US'>('zh-CN');
   const groupedComponents = useMemo(() => {
     const groups: Record<'chart' | 'form' | 'layout' | 'other', ComponentSummary[]> = {
       chart: [],
@@ -165,6 +200,36 @@ const CanvasEditor: React.FC = () => {
     });
     return groups;
   }, [components]);
+
+  useEffect(() => {
+    if (projectId && !projectContext) {
+      projectApi
+        .enterProject(effectiveUserId, projectId)
+        .then((response) => {
+          if (response.success) {
+            setProjectContext(response.data);
+          } else {
+            message.error(response.message || '工程信息加载失败');
+          }
+        })
+        .catch(() => message.error('工程信息加载失败'));
+    }
+  }, [effectiveUserId, projectContext, projectId]);
+
+  useEffect(() => {
+    if (projectId && reportId && !reportContext) {
+      reportApi
+        .getReportDetail(projectId, reportId)
+        .then((response) => {
+          if (response.success) {
+            setReportContext(response.data);
+          } else {
+            message.error(response.message || '报表信息加载失败');
+          }
+        })
+        .catch(() => message.error('报表信息加载失败'));
+    }
+  }, [projectId, reportContext, reportId]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -192,6 +257,42 @@ const CanvasEditor: React.FC = () => {
     e.dataTransfer.effectAllowed = 'copy';
   };
 
+  // 转换为EnhancedCanvasItem
+  const convertToEnhancedItems = useCallback((items: CanvasItem[]): EnhancedCanvasItem[] => {
+    return items.map((item, index) => ({
+      id: item.id,
+      component: item.component,
+      definition: item.definition,
+      loading: item.loading,
+      error: item.error,
+      propsValues: item.propsValues,
+      position: item.position || { x: 50, y: 50 + index * 100 },
+      size: item.size || { width: 400, height: 300 },
+      zIndex: item.zIndex || index + 1,
+    }));
+  }, []);
+
+  // 从EnhancedCanvasItem转换回CanvasItem
+  const convertFromEnhancedItems = useCallback((items: EnhancedCanvasItem[]): CanvasItem[] => {
+    return items.map((item) => ({
+      id: item.id,
+      component: item.component,
+      definition: item.definition,
+      loading: item.loading,
+      error: item.error,
+      propsValues: item.propsValues,
+      position: item.position,
+      size: item.size,
+      zIndex: item.zIndex,
+    }));
+  }, []);
+
+  const [enhancedItems, setEnhancedItems] = useState<EnhancedCanvasItem[]>([]);
+
+  useEffect(() => {
+    setEnhancedItems(convertToEnhancedItems(canvasItems));
+  }, [canvasItems, convertToEnhancedItems]);
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const data = e.dataTransfer.getData('component');
@@ -199,13 +300,21 @@ const CanvasEditor: React.FC = () => {
       return;
     }
     const component = JSON.parse(data) as ComponentSummary;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const x = (e.clientX - rect.left) / zoom - 50;
+    const y = (e.clientY - rect.top) / zoom - 50;
+
     const newItem: CanvasItem = {
       id: `${component.componentId}-${Date.now()}`,
       component,
       loading: true,
+      position: { x: Math.max(0, x), y: Math.max(0, y) },
+      size: { width: 400, height: 300 },
+      zIndex: canvasItems.length + 1,
     };
-    setCanvasItems((prev) => [...prev, newItem]);
-    setSelectedItemId(newItem.id);
+    const updatedItems = [...canvasItems, newItem];
+    setCanvasItems(updatedItems);
+    setSelectedItemIds([newItem.id]);
     message.success(`已将 ${component.componentName} 添加到画布`);
     componentApi
       .getDefinition(component.componentId)
@@ -223,6 +332,7 @@ const CanvasEditor: React.FC = () => {
               : item
           )
         );
+        historyManagerRef.current.push(convertToEnhancedItems([...canvasItems, newItem]));
       })
       .catch(() => {
         setCanvasItems((prev) =>
@@ -245,12 +355,12 @@ const CanvasEditor: React.FC = () => {
   };
 
   const handlePropChange = (field: string, value: any) => {
-    if (!selectedItemId) {
+    if (selectedItemIds.length === 0) {
       return;
     }
     setCanvasItems((prev) =>
       prev.map((item) =>
-        item.id === selectedItemId
+        selectedItemIds.includes(item.id)
           ? {
               ...item,
               propsValues: { ...(item.propsValues || {}), [field]: value },
@@ -260,7 +370,266 @@ const CanvasEditor: React.FC = () => {
     );
   };
 
-  const selectedItem = canvasItems.find((item) => item.id === selectedItemId);
+  const selectedItem = canvasItems.find((item) => selectedItemIds.includes(item.id));
+
+  // 画布增强功能处理函数
+  const handleItemsChange = useCallback(
+    (items: EnhancedCanvasItem[]) => {
+      setEnhancedItems(items);
+      setCanvasItems(convertFromEnhancedItems(items));
+    },
+    [convertFromEnhancedItems]
+  );
+
+  const handleSelectionChange = useCallback((ids: string[]) => {
+    setSelectedItemIds(ids);
+  }, []);
+
+  const handleItemSelect = useCallback((id: string) => {
+    setSelectedItemIds([id]);
+  }, []);
+
+  // 对齐功能
+  const handleAlignLeft = useCallback(() => {
+    if (selectedItemIds.length < 2) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const minX = Math.min(...selectedItems.map((item) => item.position.x));
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id) ? { ...item, position: { ...item.position, x: minX } } : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleAlignCenter = useCallback(() => {
+    if (selectedItemIds.length < 2) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const bounds = calculateBoundingBox(
+      selectedItems.map((item) => ({
+        x: item.position.x,
+        y: item.position.y,
+        width: item.size.width,
+        height: item.size.height,
+      }))
+    );
+    if (bounds) {
+      const centerX = bounds.x + bounds.width / 2;
+      const updatedItems = enhancedItems.map((item) =>
+        selectedItemIds.includes(item.id)
+          ? { ...item, position: { ...item.position, x: centerX - item.size.width / 2 } }
+          : item
+      );
+      handleItemsChange(updatedItems);
+      historyManagerRef.current.push(updatedItems);
+    }
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleAlignRight = useCallback(() => {
+    if (selectedItemIds.length < 2) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const maxX = Math.max(...selectedItems.map((item) => item.position.x + item.size.width));
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id)
+        ? { ...item, position: { ...item.position, x: maxX - item.size.width } }
+        : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleAlignTop = useCallback(() => {
+    if (selectedItemIds.length < 2) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const minY = Math.min(...selectedItems.map((item) => item.position.y));
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id) ? { ...item, position: { ...item.position, y: minY } } : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleAlignMiddle = useCallback(() => {
+    if (selectedItemIds.length < 2) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const bounds = calculateBoundingBox(
+      selectedItems.map((item) => ({
+        x: item.position.x,
+        y: item.position.y,
+        width: item.size.width,
+        height: item.size.height,
+      }))
+    );
+    if (bounds) {
+      const centerY = bounds.y + bounds.height / 2;
+      const updatedItems = enhancedItems.map((item) =>
+        selectedItemIds.includes(item.id)
+          ? { ...item, position: { ...item.position, y: centerY - item.size.height / 2 } }
+          : item
+      );
+      handleItemsChange(updatedItems);
+      historyManagerRef.current.push(updatedItems);
+    }
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleAlignBottom = useCallback(() => {
+    if (selectedItemIds.length < 2) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const maxY = Math.max(...selectedItems.map((item) => item.position.y + item.size.height));
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id)
+        ? { ...item, position: { ...item.position, y: maxY - item.size.height } }
+        : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  // 分布功能
+  const handleDistributeHorizontally = useCallback(() => {
+    if (selectedItemIds.length < 3) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const bounds: Bounds[] = selectedItems.map((item) => ({
+      x: item.position.x,
+      y: item.position.y,
+      width: item.size.width,
+      height: item.size.height,
+    }));
+    const distributed = distributeHorizontally(bounds);
+    const itemMap = new Map(selectedItems.map((item, index) => [item.id, index]));
+    const updatedItems = enhancedItems.map((item) => {
+      const index = itemMap.get(item.id);
+      if (index !== undefined) {
+        return { ...item, position: { ...item.position, x: distributed[index].x } };
+      }
+      return item;
+    });
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleDistributeVertically = useCallback(() => {
+    if (selectedItemIds.length < 3) {
+      return;
+    }
+    const selectedItems = enhancedItems.filter((item) => selectedItemIds.includes(item.id));
+    const bounds: Bounds[] = selectedItems.map((item) => ({
+      x: item.position.x,
+      y: item.position.y,
+      width: item.size.width,
+      height: item.size.height,
+    }));
+    const distributed = distributeVertically(bounds);
+    const itemMap = new Map(selectedItems.map((item, index) => [item.id, index]));
+    const updatedItems = enhancedItems.map((item) => {
+      const index = itemMap.get(item.id);
+      if (index !== undefined) {
+        return { ...item, position: { ...item.position, y: distributed[index].y } };
+      }
+      return item;
+    });
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  // 层级管理
+  const handleBringToFront = useCallback(() => {
+    if (selectedItemIds.length === 0) {
+      return;
+    }
+    const maxZIndex = Math.max(...enhancedItems.map((item) => item.zIndex));
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id) ? { ...item, zIndex: maxZIndex + 1 } : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleSendToBack = useCallback(() => {
+    if (selectedItemIds.length === 0) {
+      return;
+    }
+    const minZIndex = Math.min(...enhancedItems.map((item) => item.zIndex));
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id) ? { ...item, zIndex: minZIndex - 1 } : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleBringForward = useCallback(() => {
+    if (selectedItemIds.length === 0) {
+      return;
+    }
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id) ? { ...item, zIndex: item.zIndex + 1 } : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  const handleSendBackward = useCallback(() => {
+    if (selectedItemIds.length === 0) {
+      return;
+    }
+    const updatedItems = enhancedItems.map((item) =>
+      selectedItemIds.includes(item.id) ? { ...item, zIndex: Math.max(1, item.zIndex - 1) } : item
+    );
+    handleItemsChange(updatedItems);
+    historyManagerRef.current.push(updatedItems);
+  }, [selectedItemIds, enhancedItems, handleItemsChange]);
+
+  // 撤销/重做
+  const handleUndo = useCallback(() => {
+    const state = historyManagerRef.current.undo();
+    if (state) {
+      handleItemsChange(state);
+      setSelectedItemIds([]);
+    }
+  }, [handleItemsChange]);
+
+  const handleRedo = useCallback(() => {
+    const state = historyManagerRef.current.redo();
+    if (state) {
+      handleItemsChange(state);
+      setSelectedItemIds([]);
+    }
+  }, [handleItemsChange]);
+  useEffect(() => {
+    setReportTitle(canvasTitle);
+  }, [canvasTitle]);
+  const handleBackToProject = () => {
+    if (projectContext) {
+      navigate(`/projects/${projectContext.projectId}/workspace`, { state: { project: projectContext } });
+    } else {
+      navigate('/projects');
+    }
+  };
+
+  const breadcrumbItems = [
+    { title: '工程管理', onClick: () => navigate('/projects') },
+    projectContext
+      ? {
+          title: projectContext.projectName,
+          onClick: () =>
+            navigate(`/projects/${projectContext.projectId}/workspace`, { state: { project: projectContext } }),
+        }
+      : { title: '工程详情' },
+    { title: canvasTitle },
+  ];
 
   return (
     <div
@@ -269,9 +638,63 @@ const CanvasEditor: React.FC = () => {
         marginLeft: -24,
         marginRight: -24,
         marginBottom: -24,
+        padding: 24,
       }}
     >
+      <div className="editor-top-bar">
+        <div className="editor-top-section">
+          <Avatar style={{ backgroundColor: '#666666', color: '#fff' }}>{effectiveUsername[0]?.toUpperCase()}</Avatar>
+          <div>
+            <div style={{ fontSize: 12, color: '#475569' }}>当前用户</div>
+            <strong>{effectiveUsername}</strong>
+          </div>
+        </div>
+        <Space size="large" wrap align="center">
+          <Button icon={<ArrowLeftOutlined />} onClick={handleBackToProject}>
+            返回工程
+          </Button>
+          <Breadcrumb items={breadcrumbItems} />
+        </Space>
+        <Space size="middle" wrap align="center">
+          <Input
+            value={reportTitle}
+            onChange={(e) => setReportTitle(e.target.value)}
+            placeholder="请输入报表名称"
+            style={{ width: 220 }}
+          />
+          <Select
+            className="editor-language-select"
+            value={language}
+            onChange={(value: 'zh-CN' | 'en-US') => setLanguage(value)}
+            options={[
+              { label: '中文', value: 'zh-CN' },
+              { label: 'English', value: 'en-US' },
+            ]}
+          />
+          <Button type="primary">保存报表</Button>
+          <Button>预览运行态</Button>
+          <Button type="dashed">发布报表</Button>
+        </Space>
+      </div>
+      {(projectContext || reportContext) && (
+        <div className="editor-context-strip">
+          <Space wrap size="middle">
+            {projectContext && (
+              <Tag color={projectContext.projectType === 'private' ? 'gold' : 'green'}>
+                {projectContext.projectType === 'private' ? '个人工程' : '公共工程'}
+              </Tag>
+            )}
+            {reportContext && (
+              <Tag color={reportContext.status === 'published' ? 'green' : 'gold'}>
+                {reportContext.status === 'published' ? '已发布' : '草稿'}
+              </Tag>
+            )}
+            <span>当前报表：{canvasTitle}</span>
+          </Space>
+        </div>
+      )}
       <Layout
+        className="editor-layout-wrapper"
         style={{
           minHeight: PANEL_HEIGHT,
           background: 'transparent',
@@ -279,8 +702,9 @@ const CanvasEditor: React.FC = () => {
           alignItems: 'stretch',
         }}
       >
-        <Layout.Sider width={340} theme="light" style={{ background: 'transparent', height: PANEL_HEIGHT }}>
+        <Layout.Sider width={COMPONENT_PANEL_WIDTH} theme="light" style={{ background: 'transparent', height: PANEL_HEIGHT }}>
           <Card
+            className="component-panel-card"
             title="组件管理"
             bordered={false}
             bodyStyle={{ padding: 0, height: PANEL_HEIGHT }}
@@ -319,7 +743,7 @@ const CanvasEditor: React.FC = () => {
                               label: `图表 (${groupedComponents.chart.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.chart, loading, handleDragStart)}
+                                  {renderComponentGrid(groupedComponents.chart, loading, handleDragStart, 'chart')}
                                 </div>
                               ),
                             },
@@ -328,7 +752,7 @@ const CanvasEditor: React.FC = () => {
                               label: `表单 (${groupedComponents.form.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.form, loading, handleDragStart)}
+                                  {renderComponentGrid(groupedComponents.form, loading, handleDragStart, 'form')}
                                 </div>
                               ),
                             },
@@ -337,7 +761,7 @@ const CanvasEditor: React.FC = () => {
                               label: `布局 (${groupedComponents.layout.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.layout, loading, handleDragStart)}
+                                  {renderComponentGrid(groupedComponents.layout, loading, handleDragStart, 'layout')}
                                 </div>
                               ),
                             },
@@ -346,7 +770,7 @@ const CanvasEditor: React.FC = () => {
                               label: `其他 (${groupedComponents.other.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.other, loading, handleDragStart)}
+                                  {renderComponentGrid(groupedComponents.other, loading, handleDragStart, 'other')}
                                 </div>
                               ),
                             },
@@ -372,75 +796,106 @@ const CanvasEditor: React.FC = () => {
         <Layout style={{ background: 'transparent', gap: 16, alignItems: 'stretch' }}>
           <Layout.Content>
             <Card
-              title="画布区域"
               bodyStyle={{
                 height: PANEL_HEIGHT,
-                background: '#f6fbff',
-                border: '1px dashed #91d5ff',
+                background: '#fff',
+                border: '1px dashed #d0d0d0',
                 display: 'flex',
                 flexDirection: 'column',
+                padding: 0,
               }}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
-              <div style={{ flex: 1, overflow: 'auto' }}>
-                {canvasItems.length === 0 ? (
-                  <Empty description="拖拽左侧组件到画布区域，开始构建布局" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+              <CanvasToolbar
+                zoom={zoom}
+                onZoomIn={() => setZoom((z) => Math.min(3, z + 0.1))}
+                onZoomOut={() => setZoom((z) => Math.max(0.1, z - 0.1))}
+                onZoomFit={() => {
+                  setZoom(1);
+                  message.info('画布已适应窗口');
+                }}
+                showGrid={showGrid}
+                onToggleGrid={() => setShowGrid((g) => !g)}
+                canUndo={historyManagerRef.current.canUndo()}
+                canRedo={historyManagerRef.current.canRedo()}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                selectedCount={selectedItemIds.length}
+                onAlignLeft={handleAlignLeft}
+                onAlignCenter={handleAlignCenter}
+                onAlignRight={handleAlignRight}
+                onAlignTop={handleAlignTop}
+                onAlignMiddle={handleAlignMiddle}
+                onAlignBottom={handleAlignBottom}
+                onDistributeHorizontally={handleDistributeHorizontally}
+                onDistributeVertically={handleDistributeVertically}
+                onBringToFront={handleBringToFront}
+                onSendToBack={handleSendToBack}
+                onBringForward={handleBringForward}
+                onSendBackward={handleSendBackward}
+              />
+              <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+                {enhancedItems.length === 0 ? (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  >
+                    <Empty description="拖拽左侧组件到画布区域，开始构建布局" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  </div>
                 ) : (
-                  <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                    {canvasItems.map((item, index) => {
-                      const isSelected = selectedItemId === item.id;
+                  <EnhancedCanvas
+                    items={enhancedItems}
+                    selectedIds={selectedItemIds}
+                    onItemsChange={handleItemsChange}
+                    onSelectionChange={handleSelectionChange}
+                    onItemSelect={handleItemSelect}
+                    renderItem={(item) => {
+                      const canvasItem = canvasItems.find((ci) => ci.id === item.id);
+                      if (!canvasItem) {
+                        return null;
+                      }
                       const effectiveDefinition =
-                        item.definition && item.propsValues
-                          ? { ...item.definition, defaultProps: { ...item.definition.defaultProps, ...item.propsValues } }
-                          : item.definition;
+                        canvasItem.definition && canvasItem.propsValues
+                          ? {
+                              ...canvasItem.definition,
+                              defaultProps: { ...canvasItem.definition.defaultProps, ...canvasItem.propsValues },
+                            }
+                          : canvasItem.definition;
                       return (
-                        <Card
-                          key={item.id}
-                          size="small"
-                          onClick={() => setSelectedItemId(item.id)}
+                        <div
                           style={{
-                            borderColor: isSelected ? '#1890ff' : undefined,
-                            cursor: 'pointer',
+                            width: '100%',
+                            height: '100%',
+                            overflow: 'hidden',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
-                          title={
-                            <Space>
-                              <Avatar size="small" src={item.component.icon} />
-                              <span>{item.component.componentName}</span>
-                              <Tag color="blue">实例 {index + 1}</Tag>
-                            </Space>
-                          }
-                          extra={
-                            <Space>
-                              <Button
-                                danger
-                                type="link"
-                                onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
-                                  event.stopPropagation();
-                                  setCanvasItems((prev) => prev.filter((canvas) => canvas.id !== item.id));
-                                  if (selectedItemId === item.id) {
-                                    setSelectedItemId(undefined);
-                                  }
-                                }}
-                              >
-                                移除
-                              </Button>
-                            </Space>
-                          }
                         >
-                          <div style={{ border: '1px solid #f0f0f0', borderRadius: 4, overflow: 'hidden', background: '#fff' }}>
-                            {renderCanvasContent(item, effectiveDefinition)}
-                          </div>
-                        </Card>
+                          {renderCanvasContent(canvasItem, effectiveDefinition)}
+                        </div>
                       );
-                    })}
-                  </Space>
+                    }}
+                    canvasWidth={1920}
+                    canvasHeight={1080}
+                    gridSize={10}
+                    showGrid={showGrid}
+                    showAlignmentLines={true}
+                    zoom={zoom}
+                    onZoomChange={setZoom}
+                    historyManager={historyManagerRef.current}
+                  />
                 )}
               </div>
             </Card>
           </Layout.Content>
           <Layout.Sider
-            width={propertyPanelCollapsed ? 64 : 360}
+            width={propertyPanelCollapsed ? PROPERTY_COLLAPSED_WIDTH : PROPERTY_PANEL_WIDTH}
             theme="light"
             style={{
               background: '#fff',
@@ -463,6 +918,7 @@ const CanvasEditor: React.FC = () => {
               />
             ) : (
               <Card
+                className="property-panel-card"
                 title="属性编辑"
                 bordered={false}
                 style={{ height: '100%' }}
@@ -474,7 +930,11 @@ const CanvasEditor: React.FC = () => {
                 }
               >
                 <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 64px)`, overflow: 'auto' }}>
-                  <PropertyPanel item={selectedItem} onPropChange={handlePropChange} />
+                  <PropertyPanel
+                    item={selectedItem}
+                    onPropChange={handlePropChange}
+                    selectedCount={selectedItemIds.length}
+                  />
                 </div>
               </Card>
             )}
@@ -490,7 +950,8 @@ export default CanvasEditor;
 function renderComponentGrid(
   items: ComponentSummary[],
   loading: boolean,
-  handleDragStart: (e: React.DragEvent, component: ComponentSummary) => void
+  handleDragStart: (e: React.DragEvent, component: ComponentSummary) => void,
+  category?: 'chart' | 'form' | 'layout' | 'other'
 ) {
   if (items.length === 0) {
     if (loading) {
@@ -498,12 +959,14 @@ function renderComponentGrid(
     }
     return <Empty description="暂无组件" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
   }
+  // 图表分类使用2列，其他分类使用3列
+  const columnCount = category === 'chart' ? 2 : 3;
   return (
     <List
       loading={loading}
       dataSource={items}
       style={{ paddingRight: 4 }}
-      grid={{ gutter: 12, column: 3 }}
+      grid={{ gutter: 12, column: columnCount }}
       renderItem={(item) => (
         <List.Item key={item.componentId}>
           <div
@@ -511,35 +974,55 @@ function renderComponentGrid(
             onDragStart={(e) => handleDragStart(e, item)}
             style={{
               border: '1px solid #e4e7ec',
-              borderRadius: 10,
+              borderRadius: 8,
               background: '#fff',
               cursor: 'grab',
               overflow: 'hidden',
               boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
+              aspectRatio: '1',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             <div
               style={{
                 background: '#f5f7fb',
-                height: 100,
+                flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 borderBottom: '1px solid #eef1f6',
+                minHeight: 0,
               }}
             >
               {renderThumbnailContent(item)}
             </div>
-            <Space
-              align="center"
+            <div
               style={{
-                padding: '10px 12px',
-                justifyContent: 'space-between',
+                padding: '6px 8px',
                 width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
               }}
             >
-              <span style={{ fontWeight: 600 }}>{item.componentName}</span>
-            </Space>
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  color: '#333',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  width: '100%',
+                  textAlign: 'center',
+                }}
+                title={item.componentName}
+              >
+                {item.componentName}
+              </span>
+            </div>
           </div>
         </List.Item>
       )}
@@ -548,27 +1031,105 @@ function renderComponentGrid(
 }
 
 function renderThumbnailContent(component: ComponentSummary) {
+  const lowerName = component.componentName.toLowerCase();
+  const lowerAlias = (component.alias || '').toLowerCase();
+  
+  // 条形图
+  if (lowerName.includes('条形') || lowerAlias.includes('barchart')) {
+    return <BarChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 柱状图
+  if (lowerName.includes('柱') || lowerName.includes('bar')) {
+    return <BarChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 折线图
+  if (lowerName.includes('折') || lowerName.includes('line')) {
+    return <LineChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 面积图
+  if (lowerName.includes('面积') || lowerAlias.includes('areachart')) {
+    return <FundOutlined style={thumbnailIconStyle} />;
+  }
+  // 饼图
+  if (lowerName.includes('饼') || lowerName.includes('pie')) {
+    return <PieChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 环形图
+  if (lowerName.includes('环形') || lowerAlias.includes('donutchart')) {
+    return <PieChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 仪表盘
+  if (lowerName.includes('仪表') || lowerAlias.includes('dashboard')) {
+    return <DashboardOutlined style={thumbnailIconStyle} />;
+  }
+  // 象形图
+  if (lowerName.includes('象形') || lowerAlias.includes('pictorialchart')) {
+    return <AppstoreOutlined style={thumbnailIconStyle} />;
+  }
+  // 柱线图
+  if (lowerName.includes('柱线') || lowerAlias.includes('barlinechart')) {
+    return <BarChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 散点图
+  if (lowerName.includes('散') || lowerName.includes('dot') || lowerName.includes('点') || lowerName.includes('bubble') || lowerAlias.includes('scatterchart')) {
+    return <DotChartOutlined style={thumbnailIconStyle} />;
+  }
+  
+  // 其他组件如果有预览图或图标，则显示图片
   const previewSrc = component.previewUrl?.trim() || component.icon?.trim();
   if (previewSrc) {
-    return <img src={previewSrc} alt={component.componentName} style={{ width: '70%', height: '70%', objectFit: 'contain' }} />;
+    return <img src={previewSrc} alt={component.componentName} style={{ width: '60%', height: '60%', objectFit: 'contain' }} />;
   }
+  
+  // 否则使用占位符图标
   return getPlaceholderIcon(component);
 }
 
 function getPlaceholderIcon(component: ComponentSummary) {
   const lowerName = component.componentName.toLowerCase();
+  const lowerAlias = (component.alias || '').toLowerCase();
+  
+  // 条形图
+  if (lowerName.includes('条形') || lowerAlias.includes('barchart')) {
+    return <BarChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 柱状图
   if (lowerName.includes('柱') || lowerName.includes('bar')) {
     return <BarChartOutlined style={thumbnailIconStyle} />;
   }
+  // 折线图
   if (lowerName.includes('折') || lowerName.includes('line')) {
     return <LineChartOutlined style={thumbnailIconStyle} />;
   }
+  // 面积图
+  if (lowerName.includes('面积') || lowerAlias.includes('areachart')) {
+    return <FundOutlined style={thumbnailIconStyle} />;
+  }
+  // 饼图
   if (lowerName.includes('饼') || lowerName.includes('pie')) {
     return <PieChartOutlined style={thumbnailIconStyle} />;
   }
-  if (lowerName.includes('散') || lowerName.includes('dot') || lowerName.includes('点') || lowerName.includes('bubble')) {
+  // 环形图
+  if (lowerName.includes('环形') || lowerAlias.includes('donutchart')) {
+    return <PieChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 仪表盘
+  if (lowerName.includes('仪表') || lowerAlias.includes('dashboard')) {
+    return <DashboardOutlined style={thumbnailIconStyle} />;
+  }
+  // 象形图
+  if (lowerName.includes('象形') || lowerAlias.includes('pictorialchart')) {
+    return <AppstoreOutlined style={thumbnailIconStyle} />;
+  }
+  // 柱线图
+  if (lowerName.includes('柱线') || lowerAlias.includes('barlinechart')) {
+    return <BarChartOutlined style={thumbnailIconStyle} />;
+  }
+  // 散点图
+  if (lowerName.includes('散') || lowerName.includes('dot') || lowerName.includes('点') || lowerName.includes('bubble') || lowerAlias.includes('scatterchart')) {
     return <DotChartOutlined style={thumbnailIconStyle} />;
   }
+  // 默认图表图标
   if (component.type === 'chart') {
     return <BarChartOutlined style={thumbnailIconStyle} />;
   }
@@ -621,9 +1182,16 @@ function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition 
 interface PropertyPanelProps {
   item?: CanvasItem;
   onPropChange: (field: string, value: any) => void;
+  selectedCount?: number;
 }
 
-const PropertyPanel: React.FC<PropertyPanelProps> = ({ item, onPropChange }) => {
+const PropertyPanel: React.FC<PropertyPanelProps> = ({ item, onPropChange, selectedCount = 0 }) => {
+  if (selectedCount === 0) {
+    return <Empty description="请选择画布中的组件实例" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
+  }
+  if (selectedCount > 1) {
+    return <Empty description={`已选择 ${selectedCount} 个组件，请选择单个组件进行属性编辑`} image={Empty.PRESENTED_IMAGE_SIMPLE} />;
+  }
   if (!item) {
     return <Empty description="请选择画布中的组件实例" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
   }
@@ -662,4 +1230,5 @@ function renderFormField(
   }
   return <Input value={value} onChange={(e) => onChange(e.target.value)} />;
 }
+
 

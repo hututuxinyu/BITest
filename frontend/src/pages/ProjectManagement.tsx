@@ -11,6 +11,7 @@ import {
   Tag,
   Card,
 } from 'antd';
+import { useNavigate } from 'react-router-dom';
 import {
   PlusOutlined,
   FolderOutlined,
@@ -34,6 +35,7 @@ interface ProjectManagementProps {
  * 符合AR设计文档的界面布局要求
  */
 const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
@@ -95,10 +97,6 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
     }
   };
 
-  const handleEdit = (_project: Project) => {
-    // 编辑功能已集成在操作列中，这里保留用于后续扩展
-  };
-
   const handleUpdate = async (values: UpdateProjectRequest) => {
     if (!editingProject) {
       return;
@@ -121,10 +119,6 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
     } catch (error: any) {
       message.error(error.message || '更新失败');
     }
-  };
-
-  const handleDelete = async (_projectId: string) => {
-    // 删除功能已集成在批量删除中，这里保留用于后续扩展
   };
 
   const handleBatchDelete = () => {
@@ -190,10 +184,10 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
       width: 200,
       render: (text: string, record: Project) => (
         <Space>
-          <FolderOutlined style={{ color: '#1890ff' }} />
+          <FolderOutlined style={{ color: '#666666' }} />
           <a
             onClick={() => {
-              message.info('进入工程功能待实现（需要报表编辑界面）');
+              navigate(`/projects/${record.projectId}/workspace`, { state: { project: record } });
             }}
           >
             {text}
@@ -211,7 +205,7 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
       key: 'projectType',
       width: 120,
       render: (type: string) => (
-        <Tag color={type === 'private' ? 'blue' : 'green'}>
+        <Tag color={type === 'private' ? 'gold' : 'green'}>
           {type === 'private' ? '私有工程' : '公共工程'}
         </Tag>
       ),
@@ -251,6 +245,12 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
         <Space>
           <Button
             type="link"
+            onClick={() => navigate(`/projects/${record.projectId}/workspace`, { state: { project: record } })}
+          >
+            进入工程
+          </Button>
+          <Button
+            type="link"
             icon={<ImportOutlined />}
             onClick={() => {
               setEditingProject(record);
@@ -287,39 +287,32 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
     },
   ];
 
+  const renderEmptyState = () => (
+    <div className="project-empty">
+      <FolderOutlined style={{ fontSize: 64 }} />
+      <div style={{ margin: '12px 0' }}>您还没有工程，点击下方按钮创建您的第一个工程</div>
+      <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>
+        创建工程
+      </Button>
+    </div>
+  );
+
   return (
-    <div>
-      <h2 style={{ marginBottom: 24 }}>
-        <FolderOutlined style={{ marginRight: 8 }} />
-        工程管理
-      </h2>
-        <Card style={{ marginBottom: 16 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-          <Space>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => setCreateModalVisible(true)}
-            >
-              创建工程
-            </Button>
-            <Button
-              danger
-              disabled={selectedRowKeys.length === 0}
-              onClick={handleBatchDelete}
-            >
-              删除工程
-            </Button>
-            <Button icon={<ReloadOutlined />} onClick={loadProjects}>
-              刷新
-            </Button>
-          </Space>
+    <div className="project-page">
+      {/* 工具栏区域：高度60px，宽度100%，内边距20px，背景色#fff4e1 */}
+      <div className="project-toolbar">
+        <div className="project-actions">
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>
+            创建工程
+          </Button>
+          <Button danger disabled={selectedRowKeys.length === 0} onClick={handleBatchDelete}>
+            删除工程
+          </Button>
+          <Button icon={<ReloadOutlined />} onClick={loadProjects}>
+            刷新
+          </Button>
+        </div>
+        <div className="project-search">
           <Input.Search
             placeholder="搜索工程名称"
             style={{ width: 300 }}
@@ -329,28 +322,32 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
             }}
             allowClear
           />
-          </div>
-        </Card>
-        <Card>
-          <Table
-            rowSelection={rowSelection}
-            columns={columns}
-            dataSource={projects}
-            loading={loading}
-            rowKey="projectId"
-            pagination={{
-              current: pageNum,
-              pageSize: pageSize,
-              total: total,
-              showSizeChanger: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (page, size) => {
-                setPageNum(page);
-                setPageSize(size);
+        </div>
+      </div>
+      {/* 工程列表区域：高度自适应，宽度100%，内边距20px */}
+      <Card className="project-table-card" bordered={false}>
+        <Table
+          className="project-table"
+          rowSelection={rowSelection}
+          columns={columns}
+          dataSource={projects}
+          loading={loading}
+          rowKey="projectId"
+          pagination={{
+            current: pageNum,
+            pageSize: pageSize,
+            total: total,
+            showSizeChanger: true,
+            showTotal: (total) => `共 ${total} 条`,
+            onChange: (page, size) => {
+              setPageNum(page);
+              setPageSize(size);
             },
           }}
+          locale={{ emptyText: renderEmptyState() }}
+          size="middle"
         />
-        </Card>
+      </Card>
 
         {/* 创建工程对话框 */}
         <Modal
