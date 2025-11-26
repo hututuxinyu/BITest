@@ -567,7 +567,6 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
           </Form>
         </Modal>
       </div>
-    </div>
   );
 };
 

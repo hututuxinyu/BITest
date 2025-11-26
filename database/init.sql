@@ -42,3 +42,4 @@ INSERT INTO "user" (user_id, username, email, password_hash, status)
 VALUES ('user-001', 'admin', 'admin@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iwK8pJ5aC', 'active')
 ON CONFLICT (user_id) DO NOTHING;
 
+

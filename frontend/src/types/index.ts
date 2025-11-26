@@ -61,3 +61,105 @@ export interface UpdateProjectRequest {
   projectType?: string;
 }
 
+/**
+ * 组件分类
+ */
+export interface ComponentCategory {
+  categoryId: string;
+  categoryName: string;
+  parentId?: string;
+  orderNo: number;
+  icon?: string;
+}
+
+/**
+ * 组件标签
+ */
+export interface ComponentTag {
+  tagId: string;
+  tagName: string;
+  description?: string;
+}
+
+/**
+ * 组件摘要信息
+ */
+export interface ComponentSummary {
+  componentId: string;
+  componentName: string;
+  alias?: string;
+  version: string;
+  type: string;
+  icon: string;
+  previewUrl: string;
+  description?: string;
+  categories: string[];
+  tags: string[];
+  author: string;
+  releaseTime: string;
+}
+
+/**
+ * 组件属性Schema
+ */
+export interface ComponentPropSchema {
+  field: string;
+  label: string;
+  type: string;
+  default?: any;
+  required?: boolean;
+  options?: Array<{ label: string; value: any }>;
+  description?: string;
+}
+
+/**
+ * 组件数据Schema
+ */
+export interface ComponentDataSchema {
+  field: string;
+  label: string;
+  type: string;
+  required?: boolean;
+  description?: string;
+}
+
+/**
+ * 组件事件定义
+ */
+export interface ComponentEventSchema {
+  event: string;
+  label: string;
+  description?: string;
+  params?: Array<{
+    name: string;
+    type: string;
+    description?: string;
+  }>;
+}
+
+/**
+ * 组件定义
+ */
+export interface ComponentDefinition {
+  componentId: string;
+  version: string;
+  propsSchema: ComponentPropSchema[];
+  defaultProps: Record<string, any>;
+  dataSchema: ComponentDataSchema[];
+  defaultData: any;
+  eventSchema: ComponentEventSchema[];
+  defaultEvents: Record<string, any>;
+  supportFeatures: Record<string, any>;
+}
+
+/**
+ * 组件过滤条件
+ */
+export interface ComponentFilter {
+  keyword?: string;
+  categoryId?: string;
+  tags?: string[];
+  type?: string;
+}
+
+

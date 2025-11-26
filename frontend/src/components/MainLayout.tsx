@@ -1,90 +1,60 @@
-import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Space, Button, message } from 'antd';
+import React, { useMemo } from 'react';
+import { Layout, Avatar, Dropdown, Space, message, Menu } from 'antd';
+import type { MenuProps } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   FolderOutlined,
   AppstoreOutlined,
   BlockOutlined,
-  EditOutlined,
-  SettingOutlined,
   DatabaseOutlined,
   InteractionOutlined,
-  FileTextOutlined,
-  GlobalOutlined,
-  GitlabOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
+  CodeOutlined,
+  TranslationOutlined,
+  BranchesOutlined,
 } from '@ant-design/icons';
-import type { MenuProps } from 'antd';
-import { useNavigate, useLocation } from 'react-router-dom';
 
-const { Header, Sider, Content } = Layout;
+const { Header, Content, Sider } = Layout;
 
 interface MainLayoutProps {
   children: React.ReactNode;
   user: { userId: string; username?: string };
 }
 
+interface LeftMenuItem {
+  key: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+const leftMenuConfig: LeftMenuItem[] = [
+  { key: '/projects', label: '工程管理', icon: <FolderOutlined /> },
+  { key: '/templates', label: '模板管理', icon: <AppstoreOutlined /> },
+  { key: '/canvas', label: '组件库', icon: <BlockOutlined /> },
+  { key: '/datasource', label: '数据源配置', icon: <DatabaseOutlined /> },
+  { key: '/interaction', label: '交互配置', icon: <InteractionOutlined /> },
+  { key: '/schema', label: 'Schema生成', icon: <CodeOutlined /> },
+  { key: '/i18n', label: '国际化配置', icon: <TranslationOutlined /> },
+  { key: '/codehub', label: 'Codehub集成', icon: <BranchesOutlined /> },
+];
+
 /**
  * 主布局组件
- * 包含顶部导航栏、左侧菜单和主内容区
+ * 包含顶部导航栏和主内容区
  */
 const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
+  const menuCollapsed = true;
 
-  // 菜单项配置
-  const menuItems: MenuProps['items'] = [
-    {
-      key: '/projects',
-      icon: <FolderOutlined />,
-      label: '工程管理',
-    },
-    {
-      key: '/templates',
-      icon: <AppstoreOutlined />,
-      label: '模板管理',
-    },
-    {
-      key: '/components',
-      icon: <BlockOutlined />,
-      label: '组件库管理',
-    },
-    {
-      key: '/canvas',
-      icon: <EditOutlined />,
-      label: '画布编辑',
-    },
-    {
-      key: '/datasource',
-      icon: <DatabaseOutlined />,
-      label: '数据源配置',
-    },
-    {
-      key: '/interaction',
-      icon: <InteractionOutlined />,
-      label: '交互配置',
-    },
-    {
-      key: '/schema',
-      icon: <FileTextOutlined />,
-      label: 'Schema生成',
-    },
-    {
-      key: '/i18n',
-      icon: <GlobalOutlined />,
-      label: '国际化配置',
-    },
-    {
-      key: '/codehub',
-      icon: <GitlabOutlined />,
-      label: 'Codehub集成',
-    },
-  ];
+  const selectedMenuKey = useMemo(() => {
+    const matched = leftMenuConfig.find((item) => location.pathname.startsWith(item.key));
+    return matched?.key ?? leftMenuConfig[0].key;
+  }, [location.pathname]);
 
-  const handleMenuClick = ({ key }: { key: string }) => {
-    navigate(key);
-  };
+  const leftMenuItems: MenuProps['items'] = useMemo(
+    () => leftMenuConfig.map((item) => ({ key: item.key, label: item.label, icon: item.icon })),
+    []
+  );
 
   const userMenuItems: MenuProps['items'] = [
     {
@@ -107,12 +77,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
     }
   };
 
+  const handleLeftMenuClick: MenuProps['onClick'] = ({ key }) => {
+    if (typeof key === 'string' && key !== location.pathname) {
+      navigate(key);
+    }
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       {/* 顶部导航栏 */}
       <Header
         style={{
-          background: '#e1f5ff',
+          background: '#111c3a',
           padding: '0 24px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -123,64 +99,53 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
           left: 0,
           right: 0,
           zIndex: 1000,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+          color: '#f8fafc',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: 16, width: 64, height: 64 }}
-          />
-          <div style={{ fontSize: 18, fontWeight: 500 }}>BI系统 - 设计态</div>
-        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 18, fontWeight: 500 }}>BI系统 - 设计态</div>
         <Space>
           <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
             <Space style={{ cursor: 'pointer' }}>
-              <Avatar style={{ backgroundColor: '#1890ff' }}>
+              <Avatar style={{ backgroundColor: '#2563eb' }}>
                 {user.username?.[0]?.toUpperCase() || 'U'}
               </Avatar>
-              <span>{user.username || user.userId}</span>
+              <span style={{ color: '#f1f5f9' }}>{user.username || user.userId}</span>
             </Space>
           </Dropdown>
         </Space>
       </Header>
 
-      <Layout style={{ marginTop: 60 }}>
-        {/* 左侧菜单 */}
+      <Layout
+        style={{
+          marginTop: 60,
+          minHeight: 'calc(100vh - 60px)',
+        }}
+      >
         <Sider
-          collapsible
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
-          width={250}
+          width={216}
+          collapsedWidth={72}
+          theme="dark"
           style={{
-            overflow: 'auto',
-            height: 'calc(100vh - 60px)',
-            position: 'fixed',
-            left: 0,
-            top: 60,
-            bottom: 0,
-            background: '#fff4e1',
+            background: '#0f172a',
+            borderRight: '1px solid rgba(255,255,255,0.08)',
+            paddingTop: 16,
           }}
+          collapsed={menuCollapsed}
+          trigger={null}
         >
           <Menu
             mode="inline"
-            selectedKeys={[location.pathname]}
-            items={menuItems}
-            onClick={handleMenuClick}
-            style={{ height: '100%', borderRight: 0, background: '#fff4e1' }}
+            selectedKeys={[selectedMenuKey]}
+            items={leftMenuItems}
+            onClick={handleLeftMenuClick}
+            style={{ borderRight: 0, background: 'transparent', color: '#e2e8f0' }}
+            inlineCollapsed={menuCollapsed}
+            theme="dark"
           />
         </Sider>
-
         {/* 主内容区 */}
-        <Layout
-          style={{
-            marginLeft: collapsed ? 80 : 250,
-            transition: 'margin-left 0.2s',
-            minHeight: 'calc(100vh - 60px)',
-          }}
-        >
+        <Layout style={{ background: '#f5f7fa' }}>
           <Content
             style={{
               margin: '20px',

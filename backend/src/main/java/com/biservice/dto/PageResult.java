@@ -38,3 +38,4 @@ public class PageResult<T> {
     private Integer totalPages;
 }
 
+
