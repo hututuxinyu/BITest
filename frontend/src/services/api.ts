@@ -1,39 +1,30 @@
-import axios from 'axios';
 import type { ApiResponse, PageResult, Project, User, CreateProjectRequest, UpdateProjectRequest } from '../types';
+import {
+  getMockProjectList,
+  createMockProject,
+  updateMockProject,
+  deleteMockProject,
+  enterMockProject,
+} from './mockData';
 
-const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000,
-});
+// 使用模拟数据，不依赖后端API
+const USE_MOCK_DATA = true;
 
 /**
- * 用户API
+ * 用户API（暂时不使用）
  */
 export const userApi = {
-  /**
-   * 用户登录
-   */
-  login: async (username: string, password: string): Promise<ApiResponse<User>> => {
-    const response = await api.post<ApiResponse<User>>('/user/login', {
-      username,
-      password,
-    });
-    return response.data;
+  login: async (username: string, _password: string): Promise<ApiResponse<User>> => {
+    return { success: true, data: { userId: 'user-001', username, status: 'active' } };
   },
-
-  /**
-   * 获取当前用户信息
-   */
   getCurrentUser: async (userId: string): Promise<ApiResponse<User>> => {
-    const response = await api.get<ApiResponse<User>>('/user/current', {
-      params: { userId },
-    });
-    return response.data;
+    return { success: true, data: { userId, username: 'admin', status: 'active' } };
   },
 };
 
 /**
  * 工程API
+ * 使用模拟数据，不依赖后端
  */
 export const projectApi = {
   /**
@@ -47,17 +38,12 @@ export const projectApi = {
     sortField?: string,
     sortOrder?: string
   ): Promise<ApiResponse<PageResult<Project>>> => {
-    const response = await api.get<ApiResponse<PageResult<Project>>>('/projects', {
-      params: {
-        userId,
-        pageNum,
-        pageSize,
-        keyword,
-        sortField,
-        sortOrder,
-      },
-    });
-    return response.data;
+    if (USE_MOCK_DATA) {
+      const data = await getMockProjectList(userId, pageNum, pageSize, keyword, sortField, sortOrder);
+      return { success: true, data };
+    }
+    // 真实API调用（暂时不使用）
+    throw new Error('真实API未实现');
   },
 
   /**
@@ -67,10 +53,11 @@ export const projectApi = {
     userId: string,
     request: CreateProjectRequest
   ): Promise<ApiResponse<Project>> => {
-    const response = await api.post<ApiResponse<Project>>('/projects', request, {
-      params: { userId },
-    });
-    return response.data;
+    if (USE_MOCK_DATA) {
+      const data = await createMockProject(userId, request);
+      return { success: true, message: '创建成功', data };
+    }
+    throw new Error('真实API未实现');
   },
 
   /**
@@ -81,30 +68,33 @@ export const projectApi = {
     projectId: string,
     request: UpdateProjectRequest
   ): Promise<ApiResponse<Project>> => {
-    const response = await api.put<ApiResponse<Project>>(`/projects/${projectId}`, request, {
-      params: { userId },
-    });
-    return response.data;
+    if (USE_MOCK_DATA) {
+      const data = await updateMockProject(userId, projectId, request);
+      return { success: true, message: '更新成功', data };
+    }
+    throw new Error('真实API未实现');
   },
 
   /**
    * 删除工程
    */
   deleteProject: async (userId: string, projectId: string): Promise<ApiResponse<void>> => {
-    const response = await api.delete<ApiResponse<void>>(`/projects/${projectId}`, {
-      params: { userId },
-    });
-    return response.data;
+    if (USE_MOCK_DATA) {
+      await deleteMockProject(userId, projectId);
+      return { success: true, message: '删除成功', data: undefined };
+    }
+    throw new Error('真实API未实现');
   },
 
   /**
    * 进入工程
    */
   enterProject: async (userId: string, projectId: string): Promise<ApiResponse<Project>> => {
-    const response = await api.post<ApiResponse<Project>>(`/projects/${projectId}/enter`, null, {
-      params: { userId },
-    });
-    return response.data;
+    if (USE_MOCK_DATA) {
+      const data = await enterMockProject(userId, projectId);
+      return { success: true, data };
+    }
+    throw new Error('真实API未实现');
   },
 };
 
