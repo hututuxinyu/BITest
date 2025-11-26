@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Layout,
   Table,
   Button,
   Modal,
@@ -10,6 +9,7 @@ import {
   message,
   Space,
   Tag,
+  Card,
 } from 'antd';
 import {
   PlusOutlined,
@@ -22,7 +22,6 @@ import {
 import { projectApi } from '../services/api';
 import type { Project, CreateProjectRequest, UpdateProjectRequest } from '../types';
 
-const { Header, Content } = Layout;
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -289,36 +288,19 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
   ];
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header
-        style={{
-          background: '#e1f5ff',
-          padding: '0 24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          height: 60,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 500 }}>工程管理</h1>
-        </div>
-        <Space>
-          <span>{user.username || user.userId}</span>
-        </Space>
-      </Header>
-      <Content style={{ padding: 20, background: '#fafafa' }}>
-        <div
-          style={{
-            marginBottom: 16,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            background: '#fff4e1',
-            padding: '12px 20px',
-            borderRadius: 4,
-          }}
-        >
+    <div>
+      <h2 style={{ marginBottom: 24 }}>
+        <FolderOutlined style={{ marginRight: 8 }} />
+        工程管理
+      </h2>
+        <Card style={{ marginBottom: 16 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
           <Space>
             <Button
               type="primary"
@@ -347,8 +329,9 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
             }}
             allowClear
           />
-        </div>
-        <div style={{ background: '#fff', padding: 16, borderRadius: 4 }}>
+          </div>
+        </Card>
+        <Card>
           <Table
             rowSelection={rowSelection}
             columns={columns}
@@ -364,10 +347,10 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
               onChange: (page, size) => {
                 setPageNum(page);
                 setPageSize(size);
-              },
-            }}
-          />
-        </div>
+            },
+          }}
+        />
+        </Card>
 
         {/* 创建工程对话框 */}
         <Modal
@@ -583,8 +566,8 @@ const ProjectManagement: React.FC<ProjectManagementProps> = ({ user }) => {
             </Form.Item>
           </Form>
         </Modal>
-      </Content>
-    </Layout>
+      </div>
+    </div>
   );
 };
 
