@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { Menu, message } from 'antd';
 import { DeleteOutlined, CopyOutlined } from '@ant-design/icons';
-import type { ComponentSummary, ComponentDefinition } from '../types';
+import type { ComponentSummary, ComponentDefinition, DatasourceConfig } from '../types';
 import { HistoryManager } from '../utils/historyManager';
 import {
   Position,
@@ -27,6 +27,7 @@ export interface EnhancedCanvasItem {
   position: Position;
   size: Size;
   zIndex: number;
+  datasourceConfig?: DatasourceConfig;
 }
 
 export interface EnhancedCanvasProps {
@@ -74,7 +75,7 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 });
   const [isResizing, setIsResizing] = useState(false);
-  const [resizeStart, setResizeStart] = useState<{ itemId: string; startPos: Position; startSize: Size } | null>(null);
+  const [resizeStart, setResizeStart] = useState<{ itemId: string; startPos: Position; startSize: Size; startItemPos: Position; handle: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState<{ offset: Position; itemPositions: Map<string, Position> } | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -260,18 +261,45 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
             const deltaX = newX - resizeStart.startPos.x;
             const deltaY = newY - resizeStart.startPos.y;
 
-            let newWidth = Math.max(50, resizeStart.startSize.width + deltaX);
-            let newHeight = Math.max(50, resizeStart.startSize.height + deltaY);
+            let newWidth = resizeStart.startSize.width;
+            let newHeight = resizeStart.startSize.height;
+            let newPosX = resizeStart.startItemPos.x;
+            let newPosY = resizeStart.startItemPos.y;
+
+            const handle = resizeStart.handle;
+
+            // 根据不同的锚点计算新的位置和大小
+            if (handle.includes('e')) {
+              // 右边缘
+              newWidth = Math.max(50, resizeStart.startSize.width + deltaX);
+            }
+            if (handle.includes('w')) {
+              // 左边缘
+              newWidth = Math.max(50, resizeStart.startSize.width - deltaX);
+              newPosX = resizeStart.startItemPos.x + (resizeStart.startSize.width - newWidth);
+            }
+            if (handle.includes('s')) {
+              // 下边缘
+              newHeight = Math.max(50, resizeStart.startSize.height + deltaY);
+            }
+            if (handle.includes('n')) {
+              // 上边缘
+              newHeight = Math.max(50, resizeStart.startSize.height - deltaY);
+              newPosY = resizeStart.startItemPos.y + (resizeStart.startSize.height - newHeight);
+            }
 
             if (showGrid) {
               newWidth = snapToGrid(newWidth, gridSize);
               newHeight = snapToGrid(newHeight, gridSize);
+              newPosX = snapToGrid(newPosX, gridSize);
+              newPosY = snapToGrid(newPosY, gridSize);
             }
 
             const updatedItems = items.map((i) =>
               i.id === resizeStart.itemId
                 ? {
                     ...i,
+                    position: { x: newPosX, y: newPosY },
                     size: { width: newWidth, height: newHeight },
                   }
                 : i
@@ -361,8 +389,10 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
       }
 
       // 检查是否点击在调整大小的手柄上
-      const isResizeHandle = (e.target as HTMLElement).classList.contains('resize-handle');
+      const target = e.target as HTMLElement;
+      const isResizeHandle = target.classList.contains('resize-handle');
       if (isResizeHandle) {
+        const handle = target.getAttribute('data-handle') || 'se';
         setIsResizing(true);
         setResizeStart({
           itemId,
@@ -371,6 +401,8 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
             y: (e.clientY - rect.top) / effectiveZoom - panOffset.y,
           },
           startSize: { ...item.size },
+          startItemPos: { ...item.position },
+          handle,
         });
         return;
       }
@@ -673,21 +705,38 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
               {renderItem(item)}
               {isSelected && (
                 <>
-                  {/* 调整大小手柄 */}
-                  <div
-                    className="resize-handle"
-                    style={{
-                      position: 'absolute',
-                      right: -4,
-                      bottom: -4,
-                      width: 8,
-                      height: 8,
-                      background: '#1890ff',
-                      border: '1px solid #fff',
-                      cursor: 'nwse-resize',
-                      borderRadius: '50%',
-                    }}
-                  />
+                  {/* 8个调整大小手柄 */}
+                  {[
+                    { pos: 'nw', cursor: 'nwse-resize', left: -4, top: -4 },
+                    { pos: 'n', cursor: 'ns-resize', left: '50%', top: -4, transform: 'translateX(-50%)' },
+                    { pos: 'ne', cursor: 'nesw-resize', right: -4, top: -4 },
+                    { pos: 'e', cursor: 'ew-resize', right: -4, top: '50%', transform: 'translateY(-50%)' },
+                    { pos: 'se', cursor: 'nwse-resize', right: -4, bottom: -4 },
+                    { pos: 's', cursor: 'ns-resize', left: '50%', bottom: -4, transform: 'translateX(-50%)' },
+                    { pos: 'sw', cursor: 'nesw-resize', left: -4, bottom: -4 },
+                    { pos: 'w', cursor: 'ew-resize', left: -4, top: '50%', transform: 'translateY(-50%)' },
+                  ].map((handle) => (
+                    <div
+                      key={handle.pos}
+                      className="resize-handle"
+                      data-handle={handle.pos}
+                      style={{
+                        position: 'absolute',
+                        ...(handle.left !== undefined && { left: handle.left }),
+                        ...(handle.right !== undefined && { right: handle.right }),
+                        ...(handle.top !== undefined && { top: handle.top }),
+                        ...(handle.bottom !== undefined && { bottom: handle.bottom }),
+                        ...(handle.transform && { transform: handle.transform }),
+                        width: 8,
+                        height: 8,
+                        background: '#1890ff',
+                        border: '1px solid #fff',
+                        cursor: handle.cursor,
+                        borderRadius: '50%',
+                        zIndex: 1000,
+                      }}
+                    />
+                  ))}
                   {/* 尺寸信息 */}
                   <div
                     style={{

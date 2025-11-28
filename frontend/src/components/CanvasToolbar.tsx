@@ -15,6 +15,7 @@ import {
   VerticalAlignBottomOutlined,
   ColumnWidthOutlined,
   MenuOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 
 export interface CanvasToolbarProps {
@@ -31,6 +32,8 @@ export interface CanvasToolbarProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  // 清空画布
+  onClearCanvas?: () => void;
   // 对齐相关
   selectedCount: number;
   onAlignLeft: () => void;
@@ -60,6 +63,7 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   canRedo,
   onUndo,
   onRedo,
+  onClearCanvas,
   selectedCount,
   onAlignLeft,
   onAlignCenter,
@@ -128,6 +132,15 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
             <Button icon={<RedoOutlined />} onClick={onRedo} disabled={!canRedo} size="small" />
           </Tooltip>
         </Space.Compact>
+
+        {onClearCanvas && (
+          <>
+            <Divider type="vertical" />
+            <Tooltip title="清空画布">
+              <Button icon={<DeleteOutlined />} onClick={onClearCanvas} size="small" danger />
+            </Tooltip>
+          </>
+        )}
 
         {hasSelection && (
           <>

@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -39,47 +40,31 @@ public class ProjectService {
      * @param sortOrder 排序方向
      * @return 分页结果
      */
-    public PageResult<ProjectVO> getProjectList(String userId, Integer pageNum, 
+    public PageResult<ProjectVO> getProjectList(String userId, Integer pageNum,
             Integer pageSize, String keyword, String sortField, String sortOrder) {
-        if (pageNum == null || pageNum < 1) {
-            pageNum = 1;
-        }
-        if (pageSize == null || pageSize < 1) {
-            pageSize = 10;
-        }
-        
+        int safePageNum = (pageNum == null || pageNum < 1) ? 1 : pageNum;
+        int safePageSize = (pageSize == null || pageSize < 1) ? 10 : pageSize;
         Sort sort = buildSort(sortField, sortOrder);
-        Pageable pageable = PageRequest.of(pageNum - 1, pageSize, sort);
-        
+        Pageable pageable = PageRequest.of(safePageNum - 1, safePageSize, sort);
+
         Page<Project> projectPage;
         if (StringUtils.hasText(keyword)) {
-            List<Project> projects = projectRepository.findByUserIdAndProjectNameLike(
-                userId, keyword, "active");
-            long total = projects.size();
-            int start = (pageNum - 1) * pageSize;
-            int end = Math.min(start + pageSize, projects.size());
-            List<Project> pageProjects = projects.subList(start, end);
-            projectPage = new org.springframework.data.domain.PageImpl<>(
-                pageProjects, pageable, total);
+            projectPage = projectRepository
+                .findByUserIdAndStatusAndProjectNameContainingIgnoreCase(
+                    userId, "active", keyword.trim(), pageable);
         } else {
-            List<Project> projects = projectRepository.findByUserIdAndStatus(userId, "active");
-            long total = projects.size();
-            int start = (pageNum - 1) * pageSize;
-            int end = Math.min(start + pageSize, projects.size());
-            List<Project> pageProjects = projects.subList(start, end);
-            projectPage = new org.springframework.data.domain.PageImpl<>(
-                pageProjects, pageable, total);
+            projectPage = projectRepository.findByUserIdAndStatus(userId, "active", pageable);
         }
-        
+
         PageResult<ProjectVO> result = new PageResult<>();
         result.setList(projectPage.getContent().stream()
             .map(this::convertToVO)
             .collect(Collectors.toList()));
         result.setTotal(projectPage.getTotalElements());
-        result.setPageNum(pageNum);
-        result.setPageSize(pageSize);
+        result.setPageNum(safePageNum);
+        result.setPageSize(safePageSize);
         result.setTotalPages(projectPage.getTotalPages());
-        
+
         return result;
     }
 
@@ -223,17 +208,26 @@ public class ProjectService {
      * @param sortOrder 排序方向
      * @return 排序对象
      */
+    private static final Map<String, String> SORT_FIELD_MAPPING = Map.of(
+        "createTime", "createTime",
+        "projectName", "projectName",
+        "updateTime", "updateTime",
+        "reportCount", "reportCount",
+        "lastReportUpdateTime", "lastReportUpdateTime"
+    );
+
     private Sort buildSort(String sortField, String sortOrder) {
-        if (!StringUtils.hasText(sortField)) {
-            sortField = "createTime";
+        String resolvedSortField = resolveSortField(sortField);
+        Sort.Direction direction = "ASC".equalsIgnoreCase(sortOrder)
+            ? Sort.Direction.ASC : Sort.Direction.DESC;
+        return Sort.by(direction, resolvedSortField);
+    }
+
+    private String resolveSortField(String sortField) {
+        if (StringUtils.hasText(sortField) && SORT_FIELD_MAPPING.containsKey(sortField)) {
+            return SORT_FIELD_MAPPING.get(sortField);
         }
-        if (!StringUtils.hasText(sortOrder)) {
-            sortOrder = "DESC";
-        }
-        
-        Sort.Direction direction = "ASC".equalsIgnoreCase(sortOrder) ? 
-            Sort.Direction.ASC : Sort.Direction.DESC;
-        return Sort.by(direction, sortField);
+        return "createTime";
     }
 
     /**

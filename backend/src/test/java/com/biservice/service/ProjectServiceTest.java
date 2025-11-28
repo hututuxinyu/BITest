@@ -9,6 +9,10 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,8 +139,10 @@ public class ProjectServiceTest {
     public void testGetProjectList_Success() {
         List<Project> projects = new ArrayList<>();
         projects.add(testProject);
+        Page<Project> page = new PageImpl<>(projects, PageRequest.of(0, 10), 1);
 
-        when(projectRepository.findByUserIdAndStatus(userId, "active")).thenReturn(projects);
+        when(projectRepository.findByUserIdAndStatus(eq(userId), eq("active"), any(Pageable.class)))
+            .thenReturn(page);
 
         PageResult<ProjectVO> result = projectService.getProjectList(
             userId, 1, 10, null, null, null);
@@ -144,6 +150,27 @@ public class ProjectServiceTest {
         assertNotNull(result);
         assertEquals(1, result.getList().size());
         assertEquals(1L, result.getTotal().longValue());
+        verify(projectRepository, times(1))
+            .findByUserIdAndStatus(eq(userId), eq("active"), any(Pageable.class));
+    }
+
+    @Test
+    public void testGetProjectList_WithKeyword() {
+        List<Project> projects = new ArrayList<>();
+        projects.add(testProject);
+        Page<Project> page = new PageImpl<>(projects, PageRequest.of(0, 10), 1);
+
+        when(projectRepository.findByUserIdAndStatusAndProjectNameContainingIgnoreCase(
+            eq(userId), eq("active"), eq("测试"), any(Pageable.class))).thenReturn(page);
+
+        PageResult<ProjectVO> result = projectService.getProjectList(
+            userId, 1, 10, "测试", "projectName", "ASC");
+
+        assertNotNull(result);
+        assertEquals(1, result.getList().size());
+        verify(projectRepository, times(1))
+            .findByUserIdAndStatusAndProjectNameContainingIgnoreCase(
+                eq(userId), eq("active"), eq("测试"), any(Pageable.class));
     }
 }
 

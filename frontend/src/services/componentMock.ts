@@ -312,6 +312,315 @@ export const mockComponentDefinitions: Record<string, ComponentDefinition> = {
       dataBinding: true,
     },
   },
+  'custom-bar-chart': {
+    componentId: 'custom-bar-chart',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'title', label: '标题', type: 'string', default: '条形图', description: '显示在图表顶部的标题' },
+      { field: 'showLegend', label: '显示图例', type: 'boolean', default: true },
+      {
+        field: 'stack',
+        label: '堆叠模式',
+        type: 'enum',
+        default: 'none',
+        options: [
+          { label: '无', value: 'none' },
+          { label: '普通堆叠', value: 'normal' },
+          { label: '百分比堆叠', value: 'percent' },
+        ],
+      },
+    ],
+    defaultProps: {
+      title: '条形图',
+      showLegend: true,
+      stack: 'none',
+    },
+    dataSchema: [
+      { field: 'category', label: '分类', type: 'string', required: true },
+      { field: 'value', label: '指标值', type: 'number', required: true },
+      { field: 'series', label: '系列', type: 'string', required: false },
+    ],
+    defaultData: [
+      { category: '分类A', value: 120, series: '系列1' },
+      { category: '分类B', value: 200, series: '系列1' },
+      { category: '分类C', value: 150, series: '系列1' },
+      { category: '分类A', value: 80, series: '系列2' },
+      { category: '分类B', value: 150, series: '系列2' },
+      { category: '分类C', value: 100, series: '系列2' },
+    ],
+    eventSchema: [
+      {
+        event: 'click',
+        label: '点击',
+        params: [
+          { name: 'category', type: 'string', description: '当前分类' },
+          { name: 'value', type: 'number', description: '指标值' },
+          { name: 'series', type: 'string', description: '系列名称' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      click: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
+  'custom-area-chart': {
+    componentId: 'custom-area-chart',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'title', label: '标题', type: 'string', default: '面积图', description: '显示在图表顶部的标题' },
+      { field: 'smooth', label: '平滑曲线', type: 'boolean', default: true },
+      { field: 'showLegend', label: '显示图例', type: 'boolean', default: true },
+    ],
+    defaultProps: {
+      title: '面积图',
+      smooth: true,
+      showLegend: true,
+    },
+    dataSchema: [
+      { field: 'category', label: '分类', type: 'string', required: true },
+      { field: 'value', label: '指标值', type: 'number', required: true },
+      { field: 'series', label: '系列', type: 'string', required: false },
+    ],
+    defaultData: [
+      { category: '一月', value: 120, series: '系列1' },
+      { category: '二月', value: 132, series: '系列1' },
+      { category: '三月', value: 101, series: '系列1' },
+      { category: '四月', value: 134, series: '系列1' },
+      { category: '一月', value: 90, series: '系列2' },
+      { category: '二月', value: 110, series: '系列2' },
+      { category: '三月', value: 95, series: '系列2' },
+      { category: '四月', value: 120, series: '系列2' },
+    ],
+    eventSchema: [
+      {
+        event: 'click',
+        label: '点击',
+        params: [
+          { name: 'category', type: 'string', description: '当前分类' },
+          { name: 'value', type: 'number', description: '指标值' },
+          { name: 'series', type: 'string', description: '系列名称' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      click: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
+  'custom-dashboard': {
+    componentId: 'custom-dashboard',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'title', label: '标题', type: 'string', default: '仪表盘', description: '显示在图表顶部的标题' },
+      { field: 'min', label: '最小值', type: 'number', default: 0 },
+      { field: 'max', label: '最大值', type: 'number', default: 100 },
+    ],
+    defaultProps: {
+      title: '仪表盘',
+      min: 0,
+      max: 100,
+    },
+    dataSchema: [
+      { field: 'value', label: '数值', type: 'number', required: true },
+    ],
+    defaultData: [
+      { value: 75 },
+    ],
+    eventSchema: [
+      {
+        event: 'click',
+        label: '点击',
+        params: [
+          { name: 'value', type: 'number', description: '当前数值' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      click: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
+  'custom-donut-chart': {
+    componentId: 'custom-donut-chart',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'title', label: '标题', type: 'string', default: '环形图', description: '显示在图表顶部的标题' },
+      { field: 'innerRadius', label: '内半径', type: 'number', default: 50, description: '内半径百分比' },
+      { field: 'showLegend', label: '显示图例', type: 'boolean', default: true },
+    ],
+    defaultProps: {
+      title: '环形图',
+      innerRadius: 50,
+      showLegend: true,
+    },
+    dataSchema: [
+      { field: 'name', label: '名称', type: 'string', required: true },
+      { field: 'value', label: '数值', type: 'number', required: true },
+    ],
+    defaultData: [
+      { name: '分类 A', value: 35 },
+      { name: '分类 B', value: 28 },
+      { name: '分类 C', value: 22 },
+      { name: '分类 D', value: 15 },
+    ],
+    eventSchema: [
+      {
+        event: 'click',
+        label: '点击',
+        params: [
+          { name: 'name', type: 'string', description: '扇区名称' },
+          { name: 'value', type: 'number', description: '扇区数值' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      click: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
+  'custom-pictorial-chart': {
+    componentId: 'custom-pictorial-chart',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'title', label: '标题', type: 'string', default: '象形图', description: '显示在图表顶部的标题' },
+      { field: 'symbol', label: '图形符号', type: 'string', default: 'rect', description: '图形类型' },
+    ],
+    defaultProps: {
+      title: '象形图',
+      symbol: 'rect',
+    },
+    dataSchema: [
+      { field: 'name', label: '名称', type: 'string', required: true },
+      { field: 'value', label: '数值', type: 'number', required: true },
+    ],
+    defaultData: [
+      { name: '类别1', value: 100 },
+      { name: '类别2', value: 80 },
+      { name: '类别3', value: 60 },
+      { name: '类别4', value: 40 },
+    ],
+    eventSchema: [
+      {
+        event: 'click',
+        label: '点击',
+        params: [
+          { name: 'name', type: 'string', description: '类别名称' },
+          { name: 'value', type: 'number', description: '数值' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      click: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
+  'custom-scatter-chart': {
+    componentId: 'custom-scatter-chart',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'title', label: '标题', type: 'string', default: '散点图', description: '显示在图表顶部的标题' },
+      { field: 'showLegend', label: '显示图例', type: 'boolean', default: true },
+    ],
+    defaultProps: {
+      title: '散点图',
+      showLegend: true,
+    },
+    dataSchema: [
+      { field: 'x', label: 'X轴值', type: 'number', required: true },
+      { field: 'y', label: 'Y轴值', type: 'number', required: true },
+      { field: 'series', label: '系列', type: 'string', required: false },
+    ],
+    defaultData: [
+      { x: 10, y: 20, series: '系列1' },
+      { x: 15, y: 30, series: '系列1' },
+      { x: 20, y: 25, series: '系列1' },
+      { x: 25, y: 40, series: '系列1' },
+      { x: 30, y: 35, series: '系列1' },
+      { x: 12, y: 15, series: '系列2' },
+      { x: 18, y: 22, series: '系列2' },
+      { x: 22, y: 28, series: '系列2' },
+      { x: 28, y: 32, series: '系列2' },
+      { x: 35, y: 38, series: '系列2' },
+    ],
+    eventSchema: [
+      {
+        event: 'click',
+        label: '点击',
+        params: [
+          { name: 'x', type: 'number', description: 'X轴值' },
+          { name: 'y', type: 'number', description: 'Y轴值' },
+          { name: 'series', type: 'string', description: '系列名称' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      click: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
+  'custom-bar-line-chart': {
+    componentId: 'custom-bar-line-chart',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'title', label: '标题', type: 'string', default: '柱线图', description: '显示在图表顶部的标题' },
+      { field: 'showLegend', label: '显示图例', type: 'boolean', default: true },
+    ],
+    defaultProps: {
+      title: '柱线图',
+      showLegend: true,
+    },
+    dataSchema: [
+      { field: 'category', label: '分类', type: 'string', required: true },
+      { field: 'value', label: '指标值', type: 'number', required: true },
+      { field: 'series', label: '系列', type: 'string', required: true },
+      { field: 'type', label: '类型', type: 'string', required: false, description: 'bar或line' },
+    ],
+    defaultData: [
+      { category: '一月', value: 120, series: '柱状', type: 'bar' },
+      { category: '二月', value: 200, series: '柱状', type: 'bar' },
+      { category: '三月', value: 150, series: '柱状', type: 'bar' },
+      { category: '一月', value: 90, series: '折线', type: 'line' },
+      { category: '二月', value: 110, series: '折线', type: 'line' },
+      { category: '三月', value: 95, series: '折线', type: 'line' },
+    ],
+    eventSchema: [
+      {
+        event: 'click',
+        label: '点击',
+        params: [
+          { name: 'category', type: 'string', description: '当前分类' },
+          { name: 'value', type: 'number', description: '指标值' },
+          { name: 'series', type: 'string', description: '系列名称' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      click: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
 };
 
 /**

@@ -18,7 +18,8 @@ import {
   Tabs,
   Select,
   Collapse,
-  Breadcrumb,
+  Modal,
+  Tooltip,
 } from 'antd';
 import {
   AppstoreOutlined,
@@ -26,12 +27,15 @@ import {
   LineChartOutlined,
   PieChartOutlined,
   DotChartOutlined,
-  HighlightOutlined,
-  ArrowLeftOutlined,
+  CaretLeftOutlined,
+  CaretRightOutlined,
   DashboardOutlined,
   FundOutlined,
+  SaveOutlined,
+  EyeOutlined,
+  SendOutlined,
 } from '@ant-design/icons';
-import type { ComponentDefinition, ComponentSummary, Project, ReportSummary } from '../types';
+import type { ComponentDefinition, ComponentSummary, DatasourceConfig, Project, ReportSummary } from '../types';
 import { componentApi } from '../services/componentApi';
 import ChartRenderer from '../components/ChartRenderer';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -40,6 +44,8 @@ import EnhancedCanvas, { EnhancedCanvasItem } from '../components/EnhancedCanvas
 import CanvasToolbar from '../components/CanvasToolbar';
 import { HistoryManager } from '../utils/historyManager';
 import { calculateBoundingBox, distributeHorizontally, distributeVertically, Bounds } from '../utils/canvasUtils';
+import DatasourceConfigPanel from '../components/DatasourceConfigPanel';
+import InteractionConfigPanel from '../components/InteractionConfigPanel';
 
 interface CanvasItem {
   id: string;
@@ -51,14 +57,20 @@ interface CanvasItem {
   position?: { x: number; y: number };
   size?: { width: number; height: number };
   zIndex?: number;
+  datasourceConfig?: DatasourceConfig;
 }
 
-// 画布区域高度：100vh - 顶部导航栏60px - 编辑器顶部栏60px - 间距32px
-const PANEL_HEIGHT = 'calc(100vh - 152px)';
+// 画布区域高度：100vh - 顶部导航栏60px
+const PANEL_HEIGHT = 'calc(100vh - 60px)';
 const COMPONENT_PANEL_WIDTH = 250;
-const PROPERTY_COLLAPSED_WIDTH = 64;
-const PROPERTY_PANEL_WIDTH = 350;
-const thumbnailIconStyle: React.CSSProperties = { fontSize: 32, color: '#3b76f6' };
+const COMPONENT_COLLAPSED_WIDTH = 8;
+const PROPERTY_COLLAPSED_WIDTH = 8;
+const PROPERTY_PANEL_WIDTH = 230;
+const RULER_SIZE = 24;
+const RULER_INTERVAL = 100;
+const PROPERTY_LABEL_WIDTH = 72;
+const FORM_ITEM_SPACING = 12;
+const thumbnailIconStyle: React.CSSProperties = { fontSize: 32, color: '#3b76f6', transform: 'none' };
 const removedComponentNames = new Set(['标签容器', '图片', '日期选择器组件']);
 const additionalComponents: ComponentSummary[] = [
   {
@@ -178,9 +190,19 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [componentTab, setComponentTab] = useState<'basic' | 'custom'>('basic');
-  const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(true);
-  const [showGrid, setShowGrid] = useState(false);
+  const [componentPanelCollapsed, setComponentPanelCollapsed] = useState(false);
+  const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(false);
+  const [configTab, setConfigTab] = useState<'property' | 'datasource' | 'interaction'>('property');
+  const [showGrid, setShowGrid] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const horizontalMarks = useMemo(
+    () => Array.from({ length: Math.floor(1920 / RULER_INTERVAL) + 1 }, (_, index) => index * RULER_INTERVAL),
+    []
+  );
+  const verticalMarks = useMemo(
+    () => Array.from({ length: Math.floor(1080 / RULER_INTERVAL) + 1 }, (_, index) => index * RULER_INTERVAL),
+    []
+  );
   const historyManagerRef = useRef<HistoryManager<EnhancedCanvasItem[]>>(new HistoryManager(50));
   const effectiveUserId = user?.userId || 'user-001';
   const effectiveUsername = user?.username || user?.userId || 'admin';
@@ -188,11 +210,12 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const [reportTitle, setReportTitle] = useState(canvasTitle);
   const [language, setLanguage] = useState<'zh-CN' | 'en-US'>('zh-CN');
   const groupedComponents = useMemo(() => {
-    const groups: Record<'chart' | 'form' | 'layout' | 'other', ComponentSummary[]> = {
-      chart: [],
-      form: [],
-      layout: [],
-      other: [],
+    const groups: Record<'basicChart' | 'threeDChart' | 'multimedia' | 'container' | 'control', ComponentSummary[]> = {
+      basicChart: [],
+      threeDChart: [],
+      multimedia: [],
+      container: [],
+      control: [],
     };
     components.forEach((component) => {
       const category = categorizeComponent(component);
@@ -269,6 +292,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       position: item.position || { x: 50, y: 50 + index * 100 },
       size: item.size || { width: 400, height: 300 },
       zIndex: item.zIndex || index + 1,
+    datasourceConfig: item.datasourceConfig,
     }));
   }, []);
 
@@ -284,6 +308,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       position: item.position,
       size: item.size,
       zIndex: item.zIndex,
+    datasourceConfig: item.datasourceConfig,
     }));
   }, []);
 
@@ -369,6 +394,25 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       )
     );
   };
+
+const handleDatasourceConfigChange = useCallback(
+  (config: DatasourceConfig) => {
+    if (selectedItemIds.length === 0) {
+      return;
+    }
+    setCanvasItems((prev) =>
+      prev.map((item) =>
+        selectedItemIds.includes(item.id)
+          ? {
+              ...item,
+              datasourceConfig: config,
+            }
+          : item
+      )
+    );
+  },
+  [selectedItemIds]
+);
 
   const selectedItem = canvasItems.find((item) => selectedItemIds.includes(item.id));
 
@@ -608,6 +652,22 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       setSelectedItemIds([]);
     }
   }, [handleItemsChange]);
+
+  const handleClearCanvas = useCallback(() => {
+    Modal.confirm({
+      title: '确认清空画布',
+      content: '清空画布将删除所有组件，此操作不可撤销，是否继续？',
+      okText: '确认清空',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: () => {
+        handleItemsChange([]);
+        setSelectedItemIds([]);
+        historyManagerRef.current.clear();
+        message.success('画布已清空');
+      },
+    });
+  }, [handleItemsChange]);
   useEffect(() => {
     setReportTitle(canvasTitle);
   }, [canvasTitle]);
@@ -618,18 +678,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       navigate('/projects');
     }
   };
-
-  const breadcrumbItems = [
-    { title: '工程管理', onClick: () => navigate('/projects') },
-    projectContext
-      ? {
-          title: projectContext.projectName,
-          onClick: () =>
-            navigate(`/projects/${projectContext.projectId}/workspace`, { state: { project: projectContext } }),
-        }
-      : { title: '工程详情' },
-    { title: canvasTitle },
-  ];
 
   return (
     <div
@@ -642,39 +690,66 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       }}
     >
       <div className="editor-top-bar">
+        {/* 左侧：用户信息和返回按钮 */}
         <div className="editor-top-section">
-          <Avatar style={{ backgroundColor: '#666666', color: '#fff' }}>{effectiveUsername[0]?.toUpperCase()}</Avatar>
-          <div>
-            <div style={{ fontSize: 12, color: '#475569' }}>当前用户</div>
-            <strong>{effectiveUsername}</strong>
-          </div>
+          <Space size="middle">
+            <Avatar style={{ backgroundColor: '#666666', color: '#fff' }}>{effectiveUsername[0]?.toUpperCase()}</Avatar>
+            <div>
+              <div style={{ fontSize: 12, color: '#475569' }}>当前用户</div>
+              <strong>{effectiveUsername}</strong>
+            </div>
+            <Button icon={<CaretLeftOutlined />} onClick={handleBackToProject} size="small">
+              返回工程管理
+            </Button>
+          </Space>
         </div>
-        <Space size="large" wrap align="center">
-          <Button icon={<ArrowLeftOutlined />} onClick={handleBackToProject}>
-            返回工程
-          </Button>
-          <Breadcrumb items={breadcrumbItems} />
-        </Space>
-        <Space size="middle" wrap align="center">
+        {/* 中间：报表名称（可编辑） */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <Input
             value={reportTitle}
             onChange={(e) => setReportTitle(e.target.value)}
             placeholder="请输入报表名称"
-            style={{ width: 220 }}
+            style={{ width: 300, textAlign: 'center' }}
+            bordered={false}
           />
-          <Select
-            className="editor-language-select"
-            value={language}
-            onChange={(value: 'zh-CN' | 'en-US') => setLanguage(value)}
-            options={[
-              { label: '中文', value: 'zh-CN' },
-              { label: 'English', value: 'en-US' },
-            ]}
-          />
-          <Button type="primary">保存报表</Button>
-          <Button>预览运行态</Button>
-          <Button type="dashed">发布报表</Button>
-        </Space>
+        </div>
+        {/* 右侧：操作按钮组和语言切换 */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 220 }}>
+          <Space size="middle" wrap align="center">
+            <Tooltip title="保存">
+              <Button
+                type="primary"
+                shape="circle"
+                icon={<SaveOutlined />}
+                aria-label="保存"
+              />
+            </Tooltip>
+            <Tooltip title="预览">
+              <Button
+                shape="circle"
+                icon={<EyeOutlined />}
+                aria-label="预览"
+              />
+            </Tooltip>
+            <Tooltip title="发布">
+              <Button
+                type="dashed"
+                shape="circle"
+                icon={<SendOutlined style={{ transform: 'rotate(315deg)' }} />}
+                aria-label="发布"
+              />
+            </Tooltip>
+            <Select
+              className="editor-language-select"
+              value={language}
+              onChange={(value: 'zh-CN' | 'en-US') => setLanguage(value)}
+              options={[
+                { label: '中文', value: 'zh-CN' },
+                { label: 'English', value: 'en-US' },
+              ]}
+            />
+          </Space>
+        </div>
       </div>
       {(projectContext || reportContext) && (
         <div className="editor-context-strip">
@@ -702,14 +777,31 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
           alignItems: 'stretch',
         }}
       >
-        <Layout.Sider width={COMPONENT_PANEL_WIDTH} theme="light" style={{ background: 'transparent', height: PANEL_HEIGHT }}>
-          <Card
-            className="component-panel-card"
-            title="组件管理"
-            bordered={false}
-            bodyStyle={{ padding: 0, height: PANEL_HEIGHT }}
-            style={{ borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}
+        <div style={{ position: 'relative', height: PANEL_HEIGHT }}>
+          <Layout.Sider
+            width={componentPanelCollapsed ? COMPONENT_COLLAPSED_WIDTH : COMPONENT_PANEL_WIDTH}
+            theme="light"
+            style={{
+              background: 'transparent',
+              height: PANEL_HEIGHT,
+              transition: 'width 0.2s ease',
+            }}
           >
+            {componentPanelCollapsed ? (
+              <Card
+                className="component-panel-card"
+                bordered={false}
+                bodyStyle={{ padding: 0, height: PANEL_HEIGHT }}
+                style={{ borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}
+              />
+            ) : (
+              <Card
+                className="component-panel-card"
+                title="组件管理"
+                bordered={false}
+                bodyStyle={{ padding: 0, height: PANEL_HEIGHT }}
+                style={{ borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}
+              >
             <Tabs
               size="small"
               activeKey={componentTab}
@@ -733,44 +825,53 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                       <Input.Search placeholder="搜索组件" allowClear onSearch={setKeyword} style={{ borderRadius: 6 }} />
                       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                         <Collapse
-                          defaultActiveKey={['chart']}
+                          defaultActiveKey={['basicChart']}
                           bordered={false}
                           ghost
                           style={{ flex: 1, overflow: 'auto', background: 'transparent' }}
                           items={[
                             {
-                              key: 'chart',
-                              label: `图表 (${groupedComponents.chart.length})`,
+                              key: 'basicChart',
+                              label: `基础图表 (${groupedComponents.basicChart.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.chart, loading, handleDragStart, 'chart')}
+                                  {renderComponentGrid(groupedComponents.basicChart, loading, handleDragStart, 'chart')}
                                 </div>
                               ),
                             },
                             {
-                              key: 'form',
-                              label: `表单 (${groupedComponents.form.length})`,
+                              key: 'threeDChart',
+                              label: `三维图表 (${groupedComponents.threeDChart.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.form, loading, handleDragStart, 'form')}
+                                  {renderComponentGrid(groupedComponents.threeDChart, loading, handleDragStart, 'chart')}
                                 </div>
                               ),
                             },
                             {
-                              key: 'layout',
-                              label: `布局 (${groupedComponents.layout.length})`,
+                              key: 'multimedia',
+                              label: `多媒体 (${groupedComponents.multimedia.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.layout, loading, handleDragStart, 'layout')}
+                                  {renderComponentGrid(groupedComponents.multimedia, loading, handleDragStart, 'other')}
                                 </div>
                               ),
                             },
                             {
-                              key: 'other',
-                              label: `其他 (${groupedComponents.other.length})`,
+                              key: 'container',
+                              label: `容器组件 (${groupedComponents.container.length})`,
                               children: (
                                 <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.other, loading, handleDragStart, 'other')}
+                                  {renderComponentGrid(groupedComponents.container, loading, handleDragStart, 'layout')}
+                                </div>
+                              ),
+                            },
+                            {
+                              key: 'control',
+                              label: `控制类组件 (${groupedComponents.control.length})`,
+                              children: (
+                                <div style={{ padding: '8px 0' }}>
+                                  {renderComponentGrid(groupedComponents.control, loading, handleDragStart, 'form')}
                                 </div>
                               ),
                             },
@@ -791,8 +892,32 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                 },
               ]}
             />
-          </Card>
-        </Layout.Sider>
+            </Card>
+          )}
+          </Layout.Sider>
+          <Button
+            type="text"
+            icon={componentPanelCollapsed ? <CaretRightOutlined /> : <CaretLeftOutlined />}
+            onClick={() => setComponentPanelCollapsed(!componentPanelCollapsed)}
+            style={{
+              position: 'absolute',
+              right: -16,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              zIndex: 10,
+              width: 32,
+              height: 32,
+              borderRadius: '50%',
+              background: '#fff',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid #e8e8e8',
+            }}
+            title={componentPanelCollapsed ? '展开组件库' : '收起组件库'}
+          />
+        </div>
         <Layout style={{ background: 'transparent', gap: 16, alignItems: 'stretch' }}>
           <Layout.Content>
             <Card
@@ -834,111 +959,276 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                 onSendToBack={handleSendToBack}
                 onBringForward={handleBringForward}
                 onSendBackward={handleSendBackward}
+                onClearCanvas={handleClearCanvas}
               />
-              <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-                {enhancedItems.length === 0 ? (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                    }}
-                  >
-                    <Empty description="拖拽左侧组件到画布区域，开始构建布局" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  </div>
-                ) : (
-                  <EnhancedCanvas
-                    items={enhancedItems}
-                    selectedIds={selectedItemIds}
-                    onItemsChange={handleItemsChange}
-                    onSelectionChange={handleSelectionChange}
-                    onItemSelect={handleItemSelect}
-                    renderItem={(item) => {
-                      const canvasItem = canvasItems.find((ci) => ci.id === item.id);
-                      if (!canvasItem) {
-                        return null;
+          <div
+            style={{
+              flex: 1,
+              position: 'relative',
+              paddingLeft: RULER_SIZE,
+              paddingTop: RULER_SIZE,
+              background: '#f8f9fb',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: RULER_SIZE,
+                right: 0,
+                height: RULER_SIZE,
+                backgroundColor: '#fdfdfd',
+                borderBottom: '1px solid #e1e6ef',
+                backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px)',
+                backgroundSize: `${10 * zoom}px 100%`,
+                pointerEvents: 'none',
+                fontSize: 10,
+                color: '#7b8294',
+                lineHeight: `${RULER_SIZE}px`,
+                zIndex: 5,
+              }}
+            >
+              {horizontalMarks.map((value) => (
+                <span
+                  key={`h-mark-${value}`}
+                  style={{
+                    position: 'absolute',
+                    left: value * zoom,
+                    transform: 'translateX(-50%)',
+                  }}
+                >
+                  {value}
+                </span>
+              ))}
+            </div>
+            <div
+              style={{
+                position: 'absolute',
+                top: RULER_SIZE,
+                left: 0,
+                bottom: 0,
+                width: RULER_SIZE,
+                backgroundColor: '#fdfdfd',
+                borderRight: '1px solid #e1e6ef',
+                backgroundImage: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)',
+                backgroundSize: `100% ${10 * zoom}px`,
+                pointerEvents: 'none',
+                fontSize: 10,
+                color: '#7b8294',
+                zIndex: 5,
+              }}
+            >
+              {verticalMarks.map((value) => (
+                <span
+                  key={`v-mark-${value}`}
+                  style={{
+                    position: 'absolute',
+                    top: value * zoom,
+                    transform: 'translate(-50%, -50%) rotate(-90deg)',
+                    transformOrigin: 'center',
+                    width: RULER_SIZE,
+                    textAlign: 'center',
+                  }}
+                >
+                  {value}
+                </span>
+              ))}
+            </div>
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: RULER_SIZE,
+                height: RULER_SIZE,
+                background: '#eef1f6',
+                borderRight: '1px solid #e1e6ef',
+                borderBottom: '1px solid #e1e6ef',
+                zIndex: 6,
+              }}
+            />
+            <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+              {enhancedItems.length === 0 ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                >
+                  <Empty description="拖拽左侧组件到画布区域，开始构建布局" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                </div>
+              ) : (
+                <EnhancedCanvas
+                  items={enhancedItems}
+                  selectedIds={selectedItemIds}
+                  onItemsChange={handleItemsChange}
+                  onSelectionChange={handleSelectionChange}
+                  onItemSelect={handleItemSelect}
+                  renderItem={(item) => {
+                    const canvasItem = canvasItems.find((ci) => ci.id === item.id);
+                    if (!canvasItem) {
+                      return null;
+                    }
+                    const effectiveDefinition = (() => {
+                      if (!canvasItem.definition) {
+                        return canvasItem.definition;
                       }
-                      const effectiveDefinition =
-                        canvasItem.definition && canvasItem.propsValues
-                          ? {
-                              ...canvasItem.definition,
-                              defaultProps: { ...canvasItem.definition.defaultProps, ...canvasItem.propsValues },
-                            }
-                          : canvasItem.definition;
-                      return (
-                        <div
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            overflow: 'hidden',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          {renderCanvasContent(canvasItem, effectiveDefinition)}
-                        </div>
-                      );
-                    }}
-                    canvasWidth={1920}
-                    canvasHeight={1080}
-                    gridSize={10}
-                    showGrid={showGrid}
-                    showAlignmentLines={true}
-                    zoom={zoom}
-                    onZoomChange={setZoom}
-                    historyManager={historyManagerRef.current}
-                  />
-                )}
+                      let mergedDefinition: ComponentDefinition = canvasItem.definition;
+                      if (canvasItem.propsValues) {
+                        mergedDefinition = {
+                          ...mergedDefinition,
+                          defaultProps: { ...mergedDefinition.defaultProps, ...canvasItem.propsValues },
+                        };
+                      }
+                      if (
+                        canvasItem.datasourceConfig?.bindingType === 'static' &&
+                        canvasItem.datasourceConfig.staticConfig
+                      ) {
+                        mergedDefinition = {
+                          ...mergedDefinition,
+                          defaultData: canvasItem.datasourceConfig.staticConfig.data,
+                        };
+                      }
+                      return mergedDefinition;
+                    })();
+                    return (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        {renderCanvasContent(canvasItem, effectiveDefinition)}
+                      </div>
+                    );
+                  }}
+                  canvasWidth={1920}
+                  canvasHeight={1080}
+                  gridSize={10}
+                  showGrid={showGrid}
+                  showAlignmentLines={true}
+                  zoom={zoom}
+                  onZoomChange={setZoom}
+                  historyManager={historyManagerRef.current}
+                />
+              )}
+            </div>
               </div>
             </Card>
           </Layout.Content>
-          <Layout.Sider
-            width={propertyPanelCollapsed ? PROPERTY_COLLAPSED_WIDTH : PROPERTY_PANEL_WIDTH}
-            theme="light"
-            style={{
-              background: '#fff',
-              padding: propertyPanelCollapsed ? '16px 8px' : 16,
-              borderRadius: 8,
-              height: PANEL_HEIGHT,
-              transition: 'width 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: propertyPanelCollapsed ? 'center' : 'stretch',
-            }}
-          >
-            {propertyPanelCollapsed ? (
-              <Button
-                type="text"
-                icon={<HighlightOutlined style={{ fontSize: 20 }} />}
-                onClick={() => setPropertyPanelCollapsed(false)}
-                style={{ color: '#2b7dfa' }}
-                title="编辑属性"
-              />
-            ) : (
-              <Card
-                className="property-panel-card"
-                title="属性编辑"
-                bordered={false}
-                style={{ height: '100%' }}
-                bodyStyle={{ padding: 0, height: '100%' }}
-                extra={
-                  <Button type="text" size="small" onClick={() => setPropertyPanelCollapsed(true)}>
-                    收起
-                  </Button>
-                }
-              >
-                <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 64px)`, overflow: 'auto' }}>
-                  <PropertyPanel
-                    item={selectedItem}
-                    onPropChange={handlePropChange}
-                    selectedCount={selectedItemIds.length}
-                  />
-                </div>
+          <div style={{ position: 'relative', height: PANEL_HEIGHT }}>
+            <Layout.Sider
+              width={propertyPanelCollapsed ? PROPERTY_COLLAPSED_WIDTH : PROPERTY_PANEL_WIDTH}
+              theme="light"
+              style={{
+                background: '#fff',
+                padding: propertyPanelCollapsed ? '16px 8px' : 16,
+                borderRadius: 8,
+                height: PANEL_HEIGHT,
+                transition: 'width 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: propertyPanelCollapsed ? 'center' : 'stretch',
+              }}
+            >
+              {propertyPanelCollapsed ? (
+                <Card
+                  className="property-panel-card"
+                  bordered={false}
+                  style={{ height: '100%' }}
+                  bodyStyle={{ padding: 0, height: '100%' }}
+                />
+              ) : (
+                <Card
+                  className="property-panel-card"
+                  bordered={false}
+                  style={{ height: '100%' }}
+                  bodyStyle={{ padding: 0, height: '100%' }}
+                >
+                <Tabs
+                  activeKey={configTab}
+                  onChange={(key) => setConfigTab(key as 'property' | 'datasource' | 'interaction')}
+                  size="small"
+                  tabBarGutter={16}
+                  items={[
+                    {
+                      key: 'property',
+                      label: '属性',
+                      children: (
+                        <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 108px)`, overflow: 'auto' }}>
+                          <PropertyPanel
+                            item={selectedItem}
+                            onPropChange={handlePropChange}
+                            selectedCount={selectedItemIds.length}
+                          />
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'datasource',
+                      label: '数据源',
+                      children: (
+                        <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 108px)`, overflow: 'auto' }}>
+                          <DatasourceConfigPanel
+                            componentId={selectedItem?.id}
+                            componentDefinition={selectedItem?.definition}
+                            onConfigChange={(config) => {
+                              handleDatasourceConfigChange(config);
+                              message.success('数据源配置已更新');
+                            }}
+                          />
+                        </div>
+                      ),
+                    },
+                    {
+                      key: 'interaction',
+                      label: '交互',
+                      children: (
+                        <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 108px)`, overflow: 'auto' }}>
+                          <InteractionConfigPanel
+                            componentId={selectedItem?.id}
+                            onConfigChange={() => {
+                              message.success('交互配置已更新');
+                            }}
+                          />
+                        </div>
+                      ),
+                    },
+                  ]}
+                />
               </Card>
             )}
-          </Layout.Sider>
+            </Layout.Sider>
+            <Button
+              type="text"
+              icon={propertyPanelCollapsed ? <CaretLeftOutlined /> : <CaretRightOutlined />}
+              onClick={() => setPropertyPanelCollapsed(!propertyPanelCollapsed)}
+              style={{
+                position: 'absolute',
+                left: -16,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 10,
+                width: 32,
+                height: 32,
+                borderRadius: '50%',
+                background: '#fff',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #e8e8e8',
+              }}
+              title={propertyPanelCollapsed ? '展开属性面板' : '收起属性面板'}
+            />
+          </div>
         </Layout>
       </Layout>
     </div>
@@ -974,12 +1264,12 @@ function renderComponentGrid(
             onDragStart={(e) => handleDragStart(e, item)}
             style={{
               border: '1px solid #e4e7ec',
-              borderRadius: 8,
+              borderRadius: 10,
               background: '#fff',
               cursor: 'grab',
               overflow: 'hidden',
               boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
-              aspectRatio: '1',
+              aspectRatio: '0.85',
               display: 'flex',
               flexDirection: 'column',
             }}
@@ -995,28 +1285,30 @@ function renderComponentGrid(
                 minHeight: 0,
               }}
             >
-              {renderThumbnailContent(item)}
+              <div style={{ transform: 'none' }}>
+                {renderThumbnailContent(item)}
+              </div>
             </div>
             <div
               style={{
-                padding: '6px 8px',
+                padding: '8px 6px',
                 width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                minHeight: 0,
                 flexShrink: 0,
               }}
             >
               <span
                 style={{
+                  fontWeight: 600,
                   fontSize: 11,
-                  fontWeight: 500,
-                  color: '#333',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  width: '100%',
                   textAlign: 'center',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.3,
+                  display: 'block',
+                  width: '100%',
                 }}
                 title={item.componentName}
               >
@@ -1032,53 +1324,48 @@ function renderComponentGrid(
 
 function renderThumbnailContent(component: ComponentSummary) {
   const lowerName = component.componentName.toLowerCase();
-  const lowerAlias = (component.alias || '').toLowerCase();
   
-  // 条形图
-  if (lowerName.includes('条形') || lowerAlias.includes('barchart')) {
+  // 条形图 - 使用水平方向的柱状图图标（优先判断）
+  if (lowerName.includes('条形')) {
+    return <BarChartOutlined style={{ ...thumbnailIconStyle, transform: 'rotate(90deg)' }} />;
+  }
+  // 柱线图 - 组合图表（优先判断）
+  if (lowerName.includes('柱线') || lowerName.includes('bar-line') || lowerName.includes('barline')) {
     return <BarChartOutlined style={thumbnailIconStyle} />;
   }
   // 柱状图
   if (lowerName.includes('柱') || lowerName.includes('bar')) {
     return <BarChartOutlined style={thumbnailIconStyle} />;
   }
+  // 面积图 - 使用折线图图标（面积图是填充的折线图）
+  if (lowerName.includes('面积') || lowerName.includes('area')) {
+    return <LineChartOutlined style={thumbnailIconStyle} />;
+  }
   // 折线图
   if (lowerName.includes('折') || lowerName.includes('line')) {
     return <LineChartOutlined style={thumbnailIconStyle} />;
   }
-  // 面积图
-  if (lowerName.includes('面积') || lowerAlias.includes('areachart')) {
-    return <FundOutlined style={thumbnailIconStyle} />;
+  // 仪表盘
+  if (lowerName.includes('仪表') || lowerName.includes('dashboard') || lowerName.includes('gauge')) {
+    return <DashboardOutlined style={thumbnailIconStyle} />;
+  }
+  // 环形图 - 使用饼图图标（环形图本质上是中空的饼图）
+  if (lowerName.includes('环形') || lowerName.includes('donut')) {
+    return <PieChartOutlined style={thumbnailIconStyle} />;
   }
   // 饼图
   if (lowerName.includes('饼') || lowerName.includes('pie')) {
     return <PieChartOutlined style={thumbnailIconStyle} />;
   }
-  // 环形图
-  if (lowerName.includes('环形') || lowerAlias.includes('donutchart')) {
-    return <PieChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 仪表盘
-  if (lowerName.includes('仪表') || lowerAlias.includes('dashboard')) {
-    return <DashboardOutlined style={thumbnailIconStyle} />;
-  }
-  // 象形图
-  if (lowerName.includes('象形') || lowerAlias.includes('pictorialchart')) {
-    return <AppstoreOutlined style={thumbnailIconStyle} />;
-  }
-  // 柱线图
-  if (lowerName.includes('柱线') || lowerAlias.includes('barlinechart')) {
-    return <BarChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 散点图
-  if (lowerName.includes('散') || lowerName.includes('dot') || lowerName.includes('点') || lowerName.includes('bubble') || lowerAlias.includes('scatterchart')) {
-    return <DotChartOutlined style={thumbnailIconStyle} />;
+  // 象形图 - 使用柱状图图标
+  if (lowerName.includes('象形') || lowerName.includes('pictorial')) {
+    return <FundOutlined style={thumbnailIconStyle} />;
   }
   
   // 其他组件如果有预览图或图标，则显示图片
   const previewSrc = component.previewUrl?.trim() || component.icon?.trim();
   if (previewSrc) {
-    return <img src={previewSrc} alt={component.componentName} style={{ width: '60%', height: '60%', objectFit: 'contain' }} />;
+    return <img src={previewSrc} alt={component.componentName} style={{ width: '70%', height: '70%', objectFit: 'contain' }} />;
   }
   
   // 否则使用占位符图标
@@ -1087,70 +1374,81 @@ function renderThumbnailContent(component: ComponentSummary) {
 
 function getPlaceholderIcon(component: ComponentSummary) {
   const lowerName = component.componentName.toLowerCase();
-  const lowerAlias = (component.alias || '').toLowerCase();
-  
-  // 条形图
-  if (lowerName.includes('条形') || lowerAlias.includes('barchart')) {
+  // 条形图 - 使用水平方向的柱状图图标（优先判断）
+  if (lowerName.includes('条形')) {
+    return <BarChartOutlined style={{ ...thumbnailIconStyle, transform: 'rotate(90deg)' }} />;
+  }
+  // 柱线图 - 组合图表（优先判断）
+  if (lowerName.includes('柱线') || lowerName.includes('bar-line') || lowerName.includes('barline')) {
     return <BarChartOutlined style={thumbnailIconStyle} />;
   }
   // 柱状图
   if (lowerName.includes('柱') || lowerName.includes('bar')) {
     return <BarChartOutlined style={thumbnailIconStyle} />;
   }
+  // 面积图
+  if (lowerName.includes('面积') || lowerName.includes('area')) {
+    return <LineChartOutlined style={thumbnailIconStyle} />;
+  }
   // 折线图
   if (lowerName.includes('折') || lowerName.includes('line')) {
     return <LineChartOutlined style={thumbnailIconStyle} />;
   }
-  // 面积图
-  if (lowerName.includes('面积') || lowerAlias.includes('areachart')) {
-    return <FundOutlined style={thumbnailIconStyle} />;
+  // 仪表盘
+  if (lowerName.includes('仪表') || lowerName.includes('dashboard') || lowerName.includes('gauge')) {
+    return <DashboardOutlined style={thumbnailIconStyle} />;
+  }
+  // 环形图
+  if (lowerName.includes('环形') || lowerName.includes('donut')) {
+    return <PieChartOutlined style={thumbnailIconStyle} />;
   }
   // 饼图
   if (lowerName.includes('饼') || lowerName.includes('pie')) {
     return <PieChartOutlined style={thumbnailIconStyle} />;
   }
-  // 环形图
-  if (lowerName.includes('环形') || lowerAlias.includes('donutchart')) {
-    return <PieChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 仪表盘
-  if (lowerName.includes('仪表') || lowerAlias.includes('dashboard')) {
-    return <DashboardOutlined style={thumbnailIconStyle} />;
-  }
   // 象形图
-  if (lowerName.includes('象形') || lowerAlias.includes('pictorialchart')) {
-    return <AppstoreOutlined style={thumbnailIconStyle} />;
-  }
-  // 柱线图
-  if (lowerName.includes('柱线') || lowerAlias.includes('barlinechart')) {
-    return <BarChartOutlined style={thumbnailIconStyle} />;
+  if (lowerName.includes('象形') || lowerName.includes('pictorial')) {
+    return <FundOutlined style={thumbnailIconStyle} />;
   }
   // 散点图
-  if (lowerName.includes('散') || lowerName.includes('dot') || lowerName.includes('点') || lowerName.includes('bubble') || lowerAlias.includes('scatterchart')) {
+  if (lowerName.includes('散') || lowerName.includes('dot') || lowerName.includes('点') || lowerName.includes('bubble') || lowerName.includes('scatter')) {
     return <DotChartOutlined style={thumbnailIconStyle} />;
   }
-  // 默认图表图标
   if (component.type === 'chart') {
     return <BarChartOutlined style={thumbnailIconStyle} />;
   }
   return <AppstoreOutlined style={thumbnailIconStyle} />;
 }
 
-function categorizeComponent(component: ComponentSummary): 'chart' | 'form' | 'layout' | 'other' {
+function categorizeComponent(component: ComponentSummary): 'basicChart' | 'threeDChart' | 'multimedia' | 'container' | 'control' {
   const name = `${component.componentName}${component.alias || ''}`.toLowerCase();
-  const chartKeywords = ['图', 'chart', '仪表', 'dashboard', '指标', 'heatmap'];
+  
+  // 三维图表：包含3D、三维等关键词
+  const threeDKeywords = ['3d', '三维', '3D'];
+  if (threeDKeywords.some((kw) => name.includes(kw))) {
+    return 'threeDChart';
+  }
+  
+  // 基础图表：普通图表类型
+  const chartKeywords = ['图', 'chart', '仪表', 'dashboard', '指标', 'heatmap', '柱', '折线', '饼', '条形', '面积', '散点', '环形', '象形', '柱线'];
   if (component.type === 'chart' || chartKeywords.some((kw) => component.componentName.includes(kw) || name.includes(kw))) {
-    return 'chart';
+    return 'basicChart';
   }
-  const formKeywords = ['表单', '输入', 'input', 'select', '选择', '下拉', '按钮', 'button', '上传', 'upload', '日期', 'date', '时间', 'time', '开关', 'switch'];
-  if (formKeywords.some((kw) => name.includes(kw))) {
-    return 'form';
+  
+  // 多媒体：图片、视频、文本等
+  const multimediaKeywords = ['图片', 'image', '视频', 'video', '文本', 'text', '音频', 'audio', '媒体', 'media'];
+  if (multimediaKeywords.some((kw) => name.includes(kw))) {
+    return 'multimedia';
   }
-  const layoutKeywords = ['容器', '布局', 'layout', 'grid', '栅格', 'flex', '卡片', 'panel', 'section'];
-  if (layoutKeywords.some((kw) => name.includes(kw))) {
-    return 'layout';
+  
+  // 容器组件：容器、布局、分组、选项卡等
+  const containerKeywords = ['容器', 'container', '布局', 'layout', 'grid', '栅格', 'flex', '卡片', 'card', 'panel', 'section', '分组', 'group', '选项卡', 'tab'];
+  if (containerKeywords.some((kw) => name.includes(kw))) {
+    return 'container';
   }
-  return 'other';
+  
+  // 控制类组件：按钮、筛选框、输入框等
+  return 'control';
 }
 
 function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition | null) {
@@ -1168,7 +1466,14 @@ function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition 
     );
   }
   if (definition && item.component.type === 'chart') {
-    return <ChartRenderer componentId={item.component.componentId} definition={definition} />;
+    return (
+      <ChartRenderer
+        componentId={item.component.componentId}
+        definition={definition}
+        height="100%"
+        width="100%"
+      />
+    );
   }
   return (
     <img
@@ -1202,14 +1507,92 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({ item, onPropChange, selec
     return <Empty description="该组件暂无可配置属性" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
   }
   const values = item.propsValues || {};
+
   return (
-    <Form layout="vertical">
-      {item.definition.propsSchema.map((schema) => (
-        <Form.Item key={schema.field} label={schema.label} tooltip={schema.description}>
-          {renderFormField(schema.type, values[schema.field] ?? schema.default, schema.options, (value) => onPropChange(schema.field, value))}
-        </Form.Item>
-      ))}
-    </Form>
+    <>
+      <Form layout="vertical" size="small">
+        {item.definition.propsSchema.map((schema) => (
+          <Form.Item key={schema.field} style={{ marginBottom: FORM_ITEM_SPACING }} tooltip={schema.description}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ flex: `0 0 ${PROPERTY_LABEL_WIDTH}px`, color: '#111827', fontSize: 13, fontWeight: 500 }}>
+                {schema.label}
+              </div>
+              <div style={{ flex: 1 }}>
+                {renderFormField(
+                  schema.type,
+                  values[schema.field] ?? schema.default,
+                  schema.options,
+                  (value) => onPropChange(schema.field, value)
+                )}
+              </div>
+            </div>
+          </Form.Item>
+        ))}
+      </Form>
+      <Collapse
+        bordered={false}
+        ghost
+        style={{ background: 'transparent', marginTop: 8 }}
+        defaultActiveKey={['size-position']}
+        expandIcon={({ isActive }) => (
+          <CaretLeftOutlined
+            style={{
+              fontSize: 12,
+              color: '#6b7280',
+              transform: isActive ? 'rotate(-90deg)' : 'rotate(0deg)',
+              transition: 'transform 0.2s ease',
+            }}
+          />
+        )}
+        expandIconPosition="end"
+        items={[
+          {
+            key: 'size-position',
+            label: (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  fontSize: 12,
+                  color: '#1f2937',
+                }}
+              >
+                <div style={{ fontSize: 13, fontWeight: 500, marginLeft: -16 }}>大小与位置</div>
+              </div>
+            ),
+            children: (
+              <div style={{ paddingTop: FORM_ITEM_SPACING }}>
+                <Form layout="vertical" size="small">
+                  {[
+                    { label: '宽度', field: 'width', fallback: item.size?.width || 0 },
+                    { label: '高度', field: 'height', fallback: item.size?.height || 0 },
+                    { label: 'X 坐标', field: 'x', fallback: item.position?.x || 0 },
+                    { label: 'Y 坐标', field: 'y', fallback: item.position?.y || 0 },
+                  ].map((control) => (
+                    <Form.Item key={control.field} style={{ marginBottom: FORM_ITEM_SPACING }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ flex: `0 0 ${PROPERTY_LABEL_WIDTH}px`, color: '#111827', fontSize: 13, fontWeight: 500 }}>
+                          {control.label}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <InputNumber
+                            size="small"
+                            style={{ width: '100%' }}
+                            value={Number(values[control.field]) || control.fallback || 0}
+                            onChange={(val) => onPropChange(control.field, val)}
+                          />
+                        </div>
+                      </div>
+                    </Form.Item>
+                  ))}
+                </Form>
+              </div>
+            ),
+          },
+        ]}
+      />
+    </>
   );
 };
 
@@ -1226,9 +1609,9 @@ function renderFormField(
     return <InputNumber style={{ width: '100%' }} value={value} onChange={(val) => onChange(val)} />;
   }
   if (type === 'enum' && options) {
-    return <Select value={value} onChange={onChange} options={options} />;
+    return <Select value={value} onChange={onChange} options={options} style={{ width: '100%' }} />;
   }
-  return <Input value={value} onChange={(e) => onChange(e.target.value)} />;
+  return <Input value={value} onChange={(e) => onChange(e.target.value)} style={{ width: '100%' }} />;
 }
 
 

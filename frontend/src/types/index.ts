@@ -193,4 +193,109 @@ export interface ComponentFilter {
   type?: string;
 }
 
+/**
+ * 数据源配置类型
+ */
+export type DatasourceSourceType = 'dataset' | 'static';
+export type DatasourceBindingType = 'dataset' | 'static';
+
+/**
+ * 数据集配置
+ */
+export interface DatasetConfig {
+  datasourceId: string;
+  query: string;
+  params?: Record<string, any>;
+}
+
+/**
+ * 静态数据配置
+ */
+export interface StaticConfig {
+  data: any[];
+}
+
+/**
+ * 数据源配置
+ */
+export interface DatasourceConfig {
+  sourceType: DatasourceSourceType;
+  bindingType: DatasourceBindingType;
+  datasetConfig?: DatasetConfig;
+  staticConfig?: StaticConfig;
+}
+
+/**
+ * 数据集信息
+ */
+export interface Dataset {
+  datasetId: string;
+  datasetName: string;
+  datasourceId: string;
+  datasourceName: string;
+  description?: string;
+  query?: string;
+}
+
+/**
+ * 交互事件类型
+ */
+export type InteractionEventType = 'click' | 'hover' | 'select' | 'input' | 'change';
+
+/**
+ * 交互动作类型
+ */
+export type InteractionActionType = 'drillDown' | 'associate' | 'jump' | 'filter' | 'popup' | 'dynamicEvent';
+
+/**
+ * 动态事件认证配置
+ */
+export interface DynamicEventAuth {
+  type: 'bearer' | 'apikey' | 'basic';
+  config: {
+    token?: string;
+    apiKey?: string;
+    apiKeyHeader?: string;
+    username?: string;
+    password?: string;
+  };
+}
+
+/**
+ * 参数映射配置
+ */
+export interface ParamMapping {
+  source: string;
+  target: string;
+}
+
+/**
+ * 动态事件配置
+ */
+export interface DynamicEventConfig {
+  apiUrl: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  headers?: Record<string, string>;
+  body?: any;
+  auth?: DynamicEventAuth;
+  paramMapping?: ParamMapping[];
+}
+
+/**
+ * 交互动作配置
+ */
+export interface InteractionAction {
+  type: InteractionActionType;
+  config: any;
+}
+
+/**
+ * 交互配置
+ */
+export interface InteractionConfig {
+  eventType: InteractionEventType;
+  actions: InteractionAction[];
+  dynamicEvent?: DynamicEventConfig;
+}
+
 

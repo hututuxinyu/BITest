@@ -1,6 +1,8 @@
 package com.biservice.repository;
 
 import com.biservice.entity.Project;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,6 +26,16 @@ public interface ProjectRepository extends JpaRepository<Project, String> {
      * @return 工程列表
      */
     List<Project> findByUserIdAndStatus(String userId, String status);
+
+    /**
+     * 根据用户ID查找所有活跃工程（分页）
+     *
+     * @param userId 用户ID
+     * @param status 状态
+     * @param pageable 分页参数
+     * @return 工程分页
+     */
+    Page<Project> findByUserIdAndStatus(String userId, String status, Pageable pageable);
 
     /**
      * 根据用户ID和工程名称查找工程
@@ -50,6 +62,18 @@ public interface ProjectRepository extends JpaRepository<Project, String> {
         @Param("userId") String userId,
         @Param("projectName") String projectName,
         @Param("status") String status);
+
+    /**
+     * 根据用户ID和工程名称模糊查询（分页）
+     *
+     * @param userId 用户ID
+     * @param projectName 工程名称
+     * @param status 状态
+     * @param pageable 分页参数
+     * @return 工程分页
+     */
+    Page<Project> findByUserIdAndStatusAndProjectNameContainingIgnoreCase(
+        String userId, String status, String projectName, Pageable pageable);
 }
 
 

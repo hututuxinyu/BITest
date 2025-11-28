@@ -20,7 +20,10 @@ import {
 } from './mockData';
 
 // 使用模拟数据，不依赖后端API
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
+
+// API 基础URL
+const API_BASE_URL = '/api';
 
 /**
  * 用户API（暂时不使用）
@@ -36,7 +39,6 @@ export const userApi = {
 
 /**
  * 工程API
- * 使用模拟数据，不依赖后端
  */
 export const projectApi = {
   /**
@@ -54,8 +56,24 @@ export const projectApi = {
       const data = await getMockProjectList(userId, pageNum, pageSize, keyword, sortField, sortOrder);
       return { success: true, data };
     }
-    // 真实API调用（暂时不使用）
-    throw new Error('真实API未实现');
+    // 真实API调用
+    const params = new URLSearchParams({
+      userId,
+      pageNum: pageNum.toString(),
+      pageSize: pageSize.toString(),
+    });
+    if (keyword) {
+      params.append('keyword', keyword);
+    }
+    if (sortField) {
+      params.append('sortField', sortField);
+    }
+    if (sortOrder) {
+      params.append('sortOrder', sortOrder);
+    }
+    const response = await fetch(`${API_BASE_URL}/projects?${params.toString()}`);
+    const result: ApiResponse<PageResult<Project>> = await response.json();
+    return result;
   },
 
   /**
@@ -69,7 +87,16 @@ export const projectApi = {
       const data = await createMockProject(userId, request);
       return { success: true, message: '创建成功', data };
     }
-    throw new Error('真实API未实现');
+    // 真实API调用
+    const response = await fetch(`${API_BASE_URL}/projects?userId=${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+    const result: ApiResponse<Project> = await response.json();
+    return result;
   },
 
   /**
@@ -84,7 +111,16 @@ export const projectApi = {
       const data = await updateMockProject(userId, projectId, request);
       return { success: true, message: '更新成功', data };
     }
-    throw new Error('真实API未实现');
+    // 真实API调用
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}?userId=${userId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+    const result: ApiResponse<Project> = await response.json();
+    return result;
   },
 
   /**
@@ -95,7 +131,12 @@ export const projectApi = {
       await deleteMockProject(userId, projectId);
       return { success: true, message: '删除成功', data: undefined };
     }
-    throw new Error('真实API未实现');
+    // 真实API调用
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}?userId=${userId}`, {
+      method: 'DELETE',
+    });
+    const result: ApiResponse<void> = await response.json();
+    return result;
   },
 
   /**
@@ -106,7 +147,12 @@ export const projectApi = {
       const data = await enterMockProject(userId, projectId);
       return { success: true, data };
     }
-    throw new Error('真实API未实现');
+    // 真实API调用
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/enter?userId=${userId}`, {
+      method: 'POST',
+    });
+    const result: ApiResponse<Project> = await response.json();
+    return result;
   },
 };
 
