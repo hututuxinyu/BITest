@@ -37,6 +37,26 @@ CREATE INDEX idx_project_create_time ON project(create_time);
 CREATE INDEX idx_project_project_name ON project(project_name);
 CREATE INDEX idx_project_status ON project(status);
 
+-- 报表表
+CREATE TABLE IF NOT EXISTS report (
+    report_id VARCHAR(64) PRIMARY KEY,
+    project_id VARCHAR(64) NOT NULL,
+    report_name VARCHAR(255) NOT NULL,
+    description TEXT,
+    status VARCHAR(20) DEFAULT 'draft',
+    template VARCHAR(255),
+    tags TEXT,
+    created_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(64),
+    last_edited_by VARCHAR(64),
+    CONSTRAINT fk_report_project FOREIGN KEY (project_id) REFERENCES project(project_id)
+);
+
+CREATE INDEX idx_report_project_id ON report(project_id);
+CREATE INDEX idx_report_update_time ON report(update_time);
+CREATE INDEX idx_report_status ON report(status);
+
 -- 插入测试用户（密码：admin123，实际使用时应该使用BCrypt加密）
 INSERT INTO "user" (user_id, username, email, password_hash, status) 
 VALUES ('user-001', 'admin', 'admin@example.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iwK8pJ5aC', 'active')

@@ -251,6 +251,43 @@ export const getMockReportDetail = async (projectId: string, reportId: string): 
 };
 
 /**
+ * 删除报表（模拟）
+ */
+export const deleteMockReport = async (
+  userId: string,
+  projectId: string,
+  reportId: string
+): Promise<void> => {
+  await delay(300);
+  
+  const reports = mockProjectReports[projectId];
+  if (!reports) {
+    throw new Error('工程不存在');
+  }
+  
+  const index = reports.findIndex((r) => r.reportId === reportId);
+  if (index === -1) {
+    throw new Error('报表不存在');
+  }
+  
+  reports.splice(index, 1);
+  
+  // 更新工程的报表数量
+  const project = mockProjects.find((p) => p.projectId === projectId);
+  if (project) {
+    project.reportCount = reports.length;
+    project.updateTime = new Date().toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).replace(/\//g, '-');
+  }
+};
+
+/**
  * 更新工程（模拟）
  */
 export const updateMockProject = async (

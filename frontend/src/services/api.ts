@@ -8,19 +8,6 @@ import type {
   ReportSummary,
   CreateReportRequest,
 } from '../types';
-import {
-  getMockProjectList,
-  createMockProject,
-  updateMockProject,
-  deleteMockProject,
-  enterMockProject,
-  getMockReportList,
-  createMockReportForProject,
-  getMockReportDetail,
-} from './mockData';
-
-// 使用模拟数据，不依赖后端API
-const USE_MOCK_DATA = false;
 
 // API 基础URL
 const API_BASE_URL = '/api';
@@ -52,11 +39,6 @@ export const projectApi = {
     sortField?: string,
     sortOrder?: string
   ): Promise<ApiResponse<PageResult<Project>>> => {
-    if (USE_MOCK_DATA) {
-      const data = await getMockProjectList(userId, pageNum, pageSize, keyword, sortField, sortOrder);
-      return { success: true, data };
-    }
-    // 真实API调用
     const params = new URLSearchParams({
       userId,
       pageNum: pageNum.toString(),
@@ -83,11 +65,6 @@ export const projectApi = {
     userId: string,
     request: CreateProjectRequest
   ): Promise<ApiResponse<Project>> => {
-    if (USE_MOCK_DATA) {
-      const data = await createMockProject(userId, request);
-      return { success: true, message: '创建成功', data };
-    }
-    // 真实API调用
     const response = await fetch(`${API_BASE_URL}/projects?userId=${userId}`, {
       method: 'POST',
       headers: {
@@ -107,11 +84,6 @@ export const projectApi = {
     projectId: string,
     request: UpdateProjectRequest
   ): Promise<ApiResponse<Project>> => {
-    if (USE_MOCK_DATA) {
-      const data = await updateMockProject(userId, projectId, request);
-      return { success: true, message: '更新成功', data };
-    }
-    // 真实API调用
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}?userId=${userId}`, {
       method: 'PUT',
       headers: {
@@ -127,11 +99,6 @@ export const projectApi = {
    * 删除工程
    */
   deleteProject: async (userId: string, projectId: string): Promise<ApiResponse<void>> => {
-    if (USE_MOCK_DATA) {
-      await deleteMockProject(userId, projectId);
-      return { success: true, message: '删除成功', data: undefined };
-    }
-    // 真实API调用
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}?userId=${userId}`, {
       method: 'DELETE',
     });
@@ -143,11 +110,6 @@ export const projectApi = {
    * 进入工程
    */
   enterProject: async (userId: string, projectId: string): Promise<ApiResponse<Project>> => {
-    if (USE_MOCK_DATA) {
-      const data = await enterMockProject(userId, projectId);
-      return { success: true, data };
-    }
-    // 真实API调用
     const response = await fetch(`${API_BASE_URL}/projects/${projectId}/enter?userId=${userId}`, {
       method: 'POST',
     });
@@ -164,11 +126,9 @@ export const reportApi = {
    * 获取工程下的报表列表
    */
   getProjectReports: async (projectId: string): Promise<ApiResponse<ReportSummary[]>> => {
-    if (USE_MOCK_DATA) {
-      const data = await getMockReportList(projectId);
-      return { success: true, data };
-    }
-    throw new Error('真实API未实现');
+    const response = await fetch(`${API_BASE_URL}/reports/project/${projectId}`);
+    const result: ApiResponse<ReportSummary[]> = await response.json();
+    return result;
   },
 
   /**
@@ -179,22 +139,39 @@ export const reportApi = {
     projectId: string,
     request: CreateReportRequest
   ): Promise<ApiResponse<ReportSummary>> => {
-    if (USE_MOCK_DATA) {
-      const data = await createMockReportForProject(userId, projectId, request);
-      return { success: true, message: '创建报表成功', data };
-    }
-    throw new Error('真实API未实现');
+    const response = await fetch(`${API_BASE_URL}/reports/project/${projectId}?userId=${userId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+    const result: ApiResponse<ReportSummary> = await response.json();
+    return result;
   },
 
   /**
    * 获取报表详情
    */
   getReportDetail: async (projectId: string, reportId: string): Promise<ApiResponse<ReportSummary>> => {
-    if (USE_MOCK_DATA) {
-      const data = await getMockReportDetail(projectId, reportId);
-      return { success: true, data };
-    }
-    throw new Error('真实API未实现');
+    const response = await fetch(`${API_BASE_URL}/reports/project/${projectId}/${reportId}`);
+    const result: ApiResponse<ReportSummary> = await response.json();
+    return result;
+  },
+
+  /**
+   * 删除报表
+   */
+  deleteReport: async (
+    userId: string,
+    projectId: string,
+    reportId: string
+  ): Promise<ApiResponse<void>> => {
+    const response = await fetch(`${API_BASE_URL}/reports/project/${projectId}/${reportId}?userId=${userId}`, {
+      method: 'DELETE',
+    });
+    const result: ApiResponse<void> = await response.json();
+    return result;
   },
 };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Breadcrumb,
@@ -15,7 +15,7 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { FolderOutlined, PlusOutlined, ArrowLeftOutlined, FileTextOutlined } from '@ant-design/icons';
+import { FolderOutlined, PlusOutlined, ArrowLeftOutlined, FileTextOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Project, ReportSummary, CreateReportRequest } from '../types';
 import { projectApi, reportApi } from '../services/api';
@@ -113,6 +113,49 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
     }
   };
 
+  const handleDeleteReport = useCallback(
+    (report: ReportSummary) => {
+      if (!projectId) {
+        return;
+      }
+      Modal.confirm({
+        title: '确认删除',
+        content: `确定要删除报表"${report.reportName}"吗？此操作不可恢复。`,
+        okText: '确认删除',
+        okType: 'danger',
+        cancelText: '取消',
+        onOk: async () => {
+          try {
+            const response = await reportApi.deleteReport(user.userId, projectId, report.reportId);
+            if (response.success) {
+              message.success('删除报表成功');
+              // 刷新报表列表
+              setReportLoading(true);
+              const reportsResponse = await reportApi.getProjectReports(projectId);
+              if (reportsResponse.success) {
+                setReports(reportsResponse.data);
+              }
+              // 刷新工程信息
+              if (project) {
+                const projectResponse = await projectApi.enterProject(user.userId, projectId);
+                if (projectResponse.success) {
+                  setProject(projectResponse.data);
+                }
+              }
+            } else {
+              message.error(response.message || '删除报表失败');
+            }
+          } catch (error) {
+            message.error('删除报表失败');
+          } finally {
+            setReportLoading(false);
+          }
+        },
+      });
+    },
+    [projectId, user.userId, project]
+  );
+
   const reportColumns: ColumnsType<ReportSummary> = useMemo(
     () => [
       {
@@ -162,8 +205,37 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
         dataIndex: 'lastEditedBy',
         width: 140,
       },
+      {
+        title: '操作',
+        key: 'action',
+        width: 150,
+        align: 'center',
+        render: (_: any, record: ReportSummary) => (
+          <Space split={<span style={{ color: '#d9d9d9' }}>|</span>}>
+            <Button
+              type="link"
+              icon={<EditOutlined />}
+              onClick={() =>
+                navigate(`/projects/${record.projectId}/reports/${record.reportId}/editor`, {
+                  state: { project, report: record },
+                })
+              }
+            >
+              编辑
+            </Button>
+            <Button
+              type="link"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDeleteReport(record)}
+            >
+              删除
+            </Button>
+          </Space>
+        ),
+      },
     ],
-    [navigate, project]
+    [navigate, project, handleDeleteReport]
   );
 
   if (!projectId) {

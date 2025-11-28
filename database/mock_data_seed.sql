@@ -82,3 +82,66 @@ SET
     last_report_update_time = EXCLUDED.last_report_update_time,
     status = EXCLUDED.status;
 
+-- 插入报表数据（基于frontend/src/services/mockData.ts中的mockProjectReports）
+INSERT INTO report (
+    report_id,
+    project_id,
+    report_name,
+    description,
+    status,
+    template,
+    tags,
+    created_time,
+    update_time,
+    created_by,
+    last_edited_by
+) VALUES
+    (
+        'report-001',
+        'project-001',
+        '销售额趋势分析',
+        '监控核心品类的销售额同比与环比走势',
+        'draft',
+        '多轴折线图',
+        '["销售", "趋势"]',
+        '2024-01-12 09:00:00'::TIMESTAMP,
+        '2024-01-20 12:40:00'::TIMESTAMP,
+        'user-001',
+        'user-001'
+    ),
+    (
+        'report-002',
+        'project-001',
+        '渠道绩效对比',
+        '对比线上线下渠道的成交额、客单价与转化',
+        'published',
+        '对比大屏',
+        '["渠道", "对比"]',
+        '2024-01-10 17:30:00'::TIMESTAMP,
+        '2024-01-18 15:10:00'::TIMESTAMP,
+        'user-001',
+        'user-001'
+    ),
+    (
+        'report-101',
+        'project-002',
+        '财务健康监控',
+        '实时监控现金流、毛利率与费用率',
+        'published',
+        '指标驾驶舱',
+        '["财务"]',
+        '2024-01-08 10:00:00'::TIMESTAMP,
+        '2024-01-18 11:05:00'::TIMESTAMP,
+        'user-001',
+        'user-001'
+    )
+ON CONFLICT (report_id) DO UPDATE
+SET
+    report_name = EXCLUDED.report_name,
+    description = EXCLUDED.description,
+    status = EXCLUDED.status,
+    template = EXCLUDED.template,
+    tags = EXCLUDED.tags,
+    update_time = EXCLUDED.update_time,
+    last_edited_by = EXCLUDED.last_edited_by;
+
