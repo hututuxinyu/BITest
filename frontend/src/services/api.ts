@@ -218,5 +218,38 @@ export const reportApi = {
     const result: ApiResponse<{ valid: boolean; errors: string[]; errorMessage: string }> = await response.json();
     return result;
   },
+
+  /**
+   * 发布报表
+   */
+  publishReport: async (
+    userId: string,
+    projectId: string,
+    reportId: string
+  ): Promise<ApiResponse<ReportSummary>> => {
+    const response = await fetch(
+      `${API_BASE_URL}/reports/project/${projectId}/${reportId}/publish?userId=${userId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+    const result: ApiResponse<ReportSummary> = await response.json();
+    return result;
+  },
+
+  /**
+   * 获取报表Schema
+   */
+  getReportSchema: async (
+    projectId: string,
+    reportId: string
+  ): Promise<ApiResponse<any>> => {
+    const response = await fetch(`${API_BASE_URL}/reports/project/${projectId}/${reportId}/schema`);
+    const result: ApiResponse<any> = await response.json();
+    return result;
+  },
 };
 

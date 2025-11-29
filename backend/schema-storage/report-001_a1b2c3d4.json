@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "reportId": "report-001",
+  "reportName": "月度销售报表",
+  "reportType": "report",
+  "metadata": {
+    "createTime": "2024-01-15T10:30:00Z",
+    "updateTime": "2024-01-20T14:20:00Z",
+    "creator": "user-001",
+    "description": "用于分析月度销售数据的BI报表"
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "backgroundColor": "#f5f5f5",
+    "grid": true,
+    "gridSize": 10
+  },
+  "components": [
+    {
+      "componentId": "comp-001",
+      "componentType": "barChart",
+      "componentName": "月度销售额柱状图",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 600,
+        "height": 400
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "月度销售额",
+        "xAxisField": "month",
+        "yAxisField": "amount",
+        "color": "#1890ff",
+        "showLegend": true,
+        "showTooltip": true
+      },
+      "datasourceConfig": {
+        "sourceType": "static",
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            {"month": "1月", "amount": 120},
+            {"month": "2月", "amount": 150},
+            {"month": "3月", "amount": 180},
+            {"month": "4月", "amount": 200}
+          ]
+        }
+      },
+      "interactions": []
+    }
+  ],
+  "datasources": [],
+  "interactions": [],
+  "i18n": {}
+}
+

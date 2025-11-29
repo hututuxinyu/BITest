@@ -84,6 +84,8 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
   }, [projectId]);
 
   const isPrivateProject = project?.projectType === 'private';
+  // 允许创建报表（权限验证由后端处理）
+  const canCreateReport = !!project;
 
   const handleCreateReport = async () => {
     if (!projectId) {
@@ -351,7 +353,7 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              disabled={!isPrivateProject}
+              disabled={!canCreateReport}
               onClick={() => setCreateModalVisible(true)}
             >
               新建报表
@@ -371,11 +373,6 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
             <Paragraph ellipsis={{ rows: 2, expandable: true, symbol: '展开' }}>{project?.description || '暂无描述'}</Paragraph>
           </Descriptions.Item>
         </Descriptions>
-        {!isPrivateProject && (
-          <Paragraph type="secondary" style={{ marginTop: 12 }}>
-            当前为公共工程，仅支持查看报表。如需新建报表，请选择个人工程。
-          </Paragraph>
-        )}
       </Card>
 
       <Card title="工程报表列表">

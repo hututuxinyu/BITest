@@ -91,22 +91,23 @@ VALUES
 ON CONFLICT (project_id) DO NOTHING;
 
 -- 4.3 插入测试报表
+-- 注意：schema_file路径使用相对路径，相对于schema.storage.path配置（默认为./schema-storage）
 INSERT INTO report (report_id, report_name, report_type, project_id, schema_file, version, status, creator_id, create_time, update_time) 
 VALUES 
     -- project-001 的报表
-    ('report-001', '月度销售报表', 'report', 'project-001', '/schema/reports/report-001.json', '1.0.0', 'published', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('report-002', '销售趋势分析', 'dashboard', 'project-001', '/schema/reports/report-002.json', '1.0.0', 'published', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('report-003', '区域销售对比', 'report', 'project-001', '/schema/reports/report-003.json', '1.0.0', 'draft', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('report-001', '月度销售报表', 'report', 'project-001', './schema-storage/report-001_a1b2c3d4.json', '1.0.0', 'published', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('report-002', '销售趋势分析', 'dashboard', 'project-001', './schema-storage/report-002_e5f6g7h8.json', '1.0.0', 'published', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('report-003', '区域销售对比', 'report', 'project-001', './schema-storage/report-003_i9j0k1l2.json', '1.0.0', 'draft', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     
     -- project-002 的报表
-    ('report-004', '财务报表汇总', 'report', 'project-002', '/schema/reports/report-004.json', '1.0.0', 'published', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-    ('report-005', '成本分析报表', 'report', 'project-002', '/schema/reports/report-005.json', '1.0.0', 'draft', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('report-004', '财务报表汇总', 'report', 'project-002', './schema-storage/report-004_m3n4o5p6.json', '1.0.0', 'published', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('report-005', '成本分析报表', 'report', 'project-002', './schema-storage/report-005_q7r8s9t0.json', '1.0.0', 'draft', 'user-001', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     
     -- project-003 的报表
-    ('report-006', '运营实时监控', 'dashboard', 'project-003', '/schema/reports/report-006.json', '1.0.0', 'published', 'user-002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+    ('report-006', '运营实时监控', 'dashboard', 'project-003', './schema-storage/report-006_u1v2w3x4.json', '1.0.0', 'published', 'user-002', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
     
     -- project-005 的报表
-    ('report-007', '库存统计报表', 'report', 'project-005', '/schema/reports/report-007.json', '1.0.0', 'published', 'user-003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ('report-007', '库存统计报表', 'report', 'project-005', './schema-storage/report-007_y5z6a7b8.json', '1.0.0', 'published', 'user-003', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT (report_id) DO NOTHING;
 
 -- ============================================

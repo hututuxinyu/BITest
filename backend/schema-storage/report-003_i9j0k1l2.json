@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "reportId": "report-003",
+  "reportName": "区域销售对比",
+  "reportType": "report",
+  "metadata": {
+    "createTime": "2024-01-15T10:30:00Z",
+    "updateTime": "2024-01-20T14:20:00Z",
+    "creator": "user-001",
+    "description": "不同区域销售数据对比分析报表"
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "backgroundColor": "#f5f5f5",
+    "grid": true,
+    "gridSize": 10
+  },
+  "components": [
+    {
+      "componentId": "comp-001",
+      "componentType": "barChart",
+      "componentName": "区域销售对比图",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 600,
+        "height": 400
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "区域销售对比",
+        "xAxisField": "region",
+        "yAxisField": "amount",
+        "color": "#52c41a",
+        "showLegend": true,
+        "showTooltip": true
+      },
+      "datasourceConfig": {
+        "sourceType": "static",
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            {"region": "华东", "amount": 300},
+            {"region": "华南", "amount": 250},
+            {"region": "华北", "amount": 280},
+            {"region": "西南", "amount": 200}
+          ]
+        }
+      },
+      "interactions": []
+    }
+  ],
+  "datasources": [],
+  "interactions": [],
+  "i18n": {}
+}
+

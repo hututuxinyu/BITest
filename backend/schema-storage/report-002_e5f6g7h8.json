@@ -1,0 +1,61 @@
+{
+  "version": "1.0.0",
+  "reportId": "report-002",
+  "reportName": "销售趋势分析",
+  "reportType": "dashboard",
+  "metadata": {
+    "createTime": "2024-01-15T10:30:00Z",
+    "updateTime": "2024-01-20T14:20:00Z",
+    "creator": "user-001",
+    "description": "销售趋势分析和可视化大屏"
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "backgroundColor": "#0a0e27",
+    "grid": false,
+    "gridSize": 10
+  },
+  "components": [
+    {
+      "componentId": "comp-001",
+      "componentType": "lineChart",
+      "componentName": "销售趋势折线图",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 800,
+        "height": 400
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "销售趋势",
+        "xAxisField": "date",
+        "yAxisField": "amount",
+        "smooth": true,
+        "showArea": true,
+        "color": "#00d4ff"
+      },
+      "datasourceConfig": {
+        "sourceType": "static",
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            {"date": "2024-01", "amount": 120},
+            {"date": "2024-02", "amount": 150},
+            {"date": "2024-03", "amount": 180}
+          ]
+        }
+      },
+      "interactions": []
+    }
+  ],
+  "datasources": [],
+  "interactions": [],
+  "i18n": {}
+}
+

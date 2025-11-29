@@ -1,0 +1,60 @@
+{
+  "version": "1.0.0",
+  "reportId": "report-005",
+  "reportName": "成本分析报表",
+  "reportType": "report",
+  "metadata": {
+    "createTime": "2024-01-15T10:30:00Z",
+    "updateTime": "2024-01-20T14:20:00Z",
+    "creator": "user-001",
+    "description": "企业成本分析和统计报表"
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "backgroundColor": "#f5f5f5",
+    "grid": true,
+    "gridSize": 10
+  },
+  "components": [
+    {
+      "componentId": "comp-001",
+      "componentType": "pieChart",
+      "componentName": "成本构成饼图",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 500,
+        "height": 400
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "成本构成分析",
+        "categoryField": "category",
+        "valueField": "amount",
+        "showLegend": true,
+        "showTooltip": true
+      },
+      "datasourceConfig": {
+        "sourceType": "static",
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            {"category": "人力成本", "amount": 3000},
+            {"category": "物料成本", "amount": 2000},
+            {"category": "其他成本", "amount": 1000}
+          ]
+        }
+      },
+      "interactions": []
+    }
+  ],
+  "datasources": [],
+  "interactions": [],
+  "i18n": {}
+}
+

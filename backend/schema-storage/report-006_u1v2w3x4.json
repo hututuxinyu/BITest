@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "reportId": "report-006",
+  "reportName": "运营实时监控",
+  "reportType": "dashboard",
+  "metadata": {
+    "createTime": "2024-01-15T10:30:00Z",
+    "updateTime": "2024-01-20T14:20:00Z",
+    "creator": "user-002",
+    "description": "实时运营数据监控和可视化大屏"
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "backgroundColor": "#0a0e27",
+    "grid": false,
+    "gridSize": 10
+  },
+  "components": [
+    {
+      "componentId": "comp-001",
+      "componentType": "gauge",
+      "componentName": "运营指标仪表盘",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 400,
+        "height": 300
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "运营健康度",
+        "value": 85,
+        "min": 0,
+        "max": 100,
+        "color": "#00d4ff"
+      },
+      "datasourceConfig": {
+        "sourceType": "static",
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [{"value": 85}]
+        }
+      },
+      "interactions": []
+    }
+  ],
+  "datasources": [],
+  "interactions": [],
+  "i18n": {}
+}
+

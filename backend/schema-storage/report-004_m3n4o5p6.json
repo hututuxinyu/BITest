@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "reportId": "report-004",
+  "reportName": "财务报表汇总",
+  "reportType": "report",
+  "metadata": {
+    "createTime": "2024-01-15T10:30:00Z",
+    "updateTime": "2024-01-20T14:20:00Z",
+    "creator": "user-001",
+    "description": "企业财务数据汇总和分析报表"
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "backgroundColor": "#f5f5f5",
+    "grid": true,
+    "gridSize": 10
+  },
+  "components": [
+    {
+      "componentId": "comp-001",
+      "componentType": "table",
+      "componentName": "财务数据表",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 1200,
+        "height": 500
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "财务报表汇总",
+        "columns": [
+          {"field": "item", "title": "项目", "width": 200},
+          {"field": "amount", "title": "金额", "width": 150},
+          {"field": "ratio", "title": "占比", "width": 100}
+        ],
+        "pagination": {
+          "pageSize": 20,
+          "showSizeChanger": true
+        }
+      },
+      "datasourceConfig": {
+        "sourceType": "static",
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            {"item": "营业收入", "amount": 10000, "ratio": "100%"},
+            {"item": "营业成本", "amount": 6000, "ratio": "60%"},
+            {"item": "净利润", "amount": 2000, "ratio": "20%"}
+          ]
+        }
+      },
+      "interactions": []
+    }
+  ],
+  "datasources": [],
+  "interactions": [],
+  "i18n": {}
+}
+

@@ -2,12 +2,6 @@ import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import {
   Card,
   Empty,
-  Input,
-  Tag,
-  List,
-  Avatar,
-  Space,
-  Button,
   message,
   Skeleton,
   Result,
@@ -19,26 +13,17 @@ import {
   Select,
   Collapse,
   Modal,
-  Tooltip,
+  Button,
+  Input,
 } from 'antd';
 import {
-  AppstoreOutlined,
-  BarChartOutlined,
-  LineChartOutlined,
-  PieChartOutlined,
-  DotChartOutlined,
   CaretLeftOutlined,
   CaretRightOutlined,
-  DashboardOutlined,
-  FundOutlined,
-  SaveOutlined,
-  EyeOutlined,
-  SendOutlined,
 } from '@ant-design/icons';
 import type { ComponentDefinition, ComponentSummary, DatasourceConfig, Project, ReportSummary } from '../types';
 import { componentApi } from '../services/componentApi';
 import ChartRenderer from '../components/ChartRenderer';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { projectApi, reportApi } from '../services/api';
 import EnhancedCanvas, { EnhancedCanvasItem } from '../components/EnhancedCanvas';
 import CanvasToolbar from '../components/CanvasToolbar';
@@ -46,6 +31,7 @@ import { HistoryManager } from '../utils/historyManager';
 import { calculateBoundingBox, distributeHorizontally, distributeVertically, Bounds } from '../utils/canvasUtils';
 import DatasourceConfigPanel from '../components/DatasourceConfigPanel';
 import InteractionConfigPanel from '../components/InteractionConfigPanel';
+import { useEditorContext } from '../contexts/EditorContext';
 
 interface CanvasItem {
   id: string;
@@ -60,10 +46,8 @@ interface CanvasItem {
   datasourceConfig?: DatasourceConfig;
 }
 
-// 画布区域高度：100vh - 顶部导航栏60px
-const PANEL_HEIGHT = 'calc(100vh - 60px)';
-const COMPONENT_PANEL_WIDTH = 250;
-const COMPONENT_COLLAPSED_WIDTH = 8;
+// 画布区域高度：100%
+const PANEL_HEIGHT = '100%';
 const PROPERTY_COLLAPSED_WIDTH = 8;
 const PROPERTY_PANEL_WIDTH = 230;
 const RULER_SIZE = 24;
@@ -179,18 +163,12 @@ interface CanvasEditorProps {
 
 const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const { projectId, reportId } = useParams<{ projectId?: string; reportId?: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const locationState = (location.state as { project?: Project; report?: ReportSummary }) || {};
   const [projectContext, setProjectContext] = useState<Project | undefined>(locationState.project);
   const [reportContext, setReportContext] = useState<ReportSummary | undefined>(locationState.report);
-  const [components, setComponents] = useState<ComponentSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [keyword, setKeyword] = useState('');
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
-  const [componentTab, setComponentTab] = useState<'basic' | 'custom'>('basic');
-  const [componentPanelCollapsed, setComponentPanelCollapsed] = useState(false);
   const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(false);
   const [configTab, setConfigTab] = useState<'property' | 'datasource' | 'interaction'>('property');
   const [showGrid, setShowGrid] = useState(true);
@@ -204,25 +182,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     []
   );
   const historyManagerRef = useRef<HistoryManager<EnhancedCanvasItem[]>>(new HistoryManager(50));
+  const schemaLoadedKeyRef = useRef<string>(''); // 标记已加载的Schema标识（projectId-reportId），避免重复加载
   const effectiveUserId = user?.userId || 'user-001';
-  const effectiveUsername = user?.username || user?.userId || 'admin';
-  const canvasTitle = reportContext?.reportName || '未命名报表';
-  const [reportTitle, setReportTitle] = useState(canvasTitle);
-  const [language, setLanguage] = useState<'zh-CN' | 'en-US'>('zh-CN');
-  const groupedComponents = useMemo(() => {
-    const groups: Record<'basicChart' | 'threeDChart' | 'multimedia' | 'container' | 'control', ComponentSummary[]> = {
-      basicChart: [],
-      threeDChart: [],
-      multimedia: [],
-      container: [],
-      control: [],
-    };
-    components.forEach((component) => {
-      const category = categorizeComponent(component);
-      groups[category].push(component);
-    });
-    return groups;
-  }, [components]);
+  const editorContext = useEditorContext();
 
   useEffect(() => {
     if (projectId && !projectContext) {
@@ -254,31 +216,24 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     }
   }, [projectId, reportContext, reportId]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const list = await componentApi.listComponents({
-          keyword: keyword || undefined,
-        });
-        const filtered = list.filter((item) => !removedComponentNames.has(item.componentName));
-        const existingIds = new Set(filtered.map((item) => item.componentId));
-        const merged = [
-          ...filtered,
-          ...additionalComponents.filter((item) => !existingIds.has(item.componentId)),
-        ];
-        setComponents(merged);
-      } finally {
-        setLoading(false);
-      }
+  // 将Schema中的componentType映射到componentId
+  const mapComponentTypeToId = useCallback((componentType: string): string => {
+    const typeMap: Record<string, string> = {
+      barChart: 'chart-bar',
+      lineChart: 'chart-line',
+      pieChart: 'chart-pie',
+      table: 'chart-table',
+      gauge: 'chart-gauge',
+      image: 'media-image',
+      video: 'media-video',
+      text: 'media-text',
+      button: 'control-button',
+      filter: 'control-filter',
+      input: 'control-input',
     };
-    fetchData();
-  }, [keyword]);
+    return typeMap[componentType] || componentType;
+  }, []);
 
-  const handleDragStart = (e: React.DragEvent, component: ComponentSummary) => {
-    e.dataTransfer.setData('component', JSON.stringify(component));
-    e.dataTransfer.effectAllowed = 'copy';
-  };
 
   // 转换为EnhancedCanvasItem
   const convertToEnhancedItems = useCallback((items: CanvasItem[]): EnhancedCanvasItem[] => {
@@ -311,6 +266,163 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     datasourceConfig: item.datasourceConfig,
     }));
   }, []);
+
+  // 解析Schema并加载到画布
+  const loadSchemaToCanvas = useCallback(async (schema: any) => {
+    if (!schema || !schema.components || !Array.isArray(schema.components)) {
+      return;
+    }
+
+    try {
+      // 获取所有组件列表，用于查找组件定义
+      const allComponents = await componentApi.listComponents({});
+      const componentMap = new Map(allComponents.map((c) => [c.componentId, c]));
+
+      // 解析Schema中的组件
+      const parsedItems: CanvasItem[] = [];
+      
+      for (const schemaComponent of schema.components) {
+        // 跳过不可见的组件
+        if (schemaComponent.visible === false) {
+          continue;
+        }
+
+        // 映射componentType到componentId
+        const componentId = mapComponentTypeToId(schemaComponent.componentType || '');
+        const component = componentMap.get(componentId);
+
+        if (!component) {
+          console.warn(`未找到组件: ${componentId} (componentType: ${schemaComponent.componentType})`);
+          continue;
+        }
+
+        // 创建CanvasItem
+        const canvasItem: CanvasItem = {
+          id: schemaComponent.componentId || `${componentId}-${Date.now()}`,
+          component,
+          loading: true,
+          position: schemaComponent.position || { x: 100, y: 100 },
+          size: schemaComponent.size || { width: 400, height: 300 },
+          zIndex: schemaComponent.zIndex || parsedItems.length + 1,
+          propsValues: schemaComponent.props || {},
+          datasourceConfig: schemaComponent.datasourceConfig || undefined,
+        };
+
+        parsedItems.push(canvasItem);
+
+        // 异步加载组件定义
+        componentApi
+          .getDefinition(componentId)
+          .then((def) => {
+            if (def) {
+              setCanvasItems((prev) =>
+                prev.map((item) =>
+                  item.id === canvasItem.id
+                    ? {
+                        ...item,
+                        definition: def,
+                        loading: false,
+                        propsValues: {
+                          ...def.defaultProps,
+                          ...schemaComponent.props,
+                        },
+                      }
+                    : item
+                )
+              );
+            } else {
+              setCanvasItems((prev) =>
+                prev.map((item) =>
+                  item.id === canvasItem.id
+                    ? {
+                        ...item,
+                        loading: false,
+                        error: '未找到组件定义',
+                      }
+                    : item
+                )
+              );
+            }
+          })
+          .catch(() => {
+            setCanvasItems((prev) =>
+              prev.map((item) =>
+                item.id === canvasItem.id
+                  ? {
+                      ...item,
+                      loading: false,
+                      error: '加载组件定义失败',
+                    }
+                  : item
+              )
+            );
+          });
+      }
+
+      // 设置初始画布项
+      setCanvasItems(parsedItems);
+      
+      // 更新历史记录
+      if (parsedItems.length > 0) {
+        const enhancedItems = convertToEnhancedItems(parsedItems);
+        historyManagerRef.current.push(enhancedItems);
+      }
+
+      message.success(`已加载 ${parsedItems.length} 个组件到画布`);
+    } catch (error: any) {
+      console.error('加载Schema失败:', error);
+      message.error('加载Schema失败: ' + (error.message || '未知错误'));
+    }
+  }, [mapComponentTypeToId, convertToEnhancedItems]);
+
+  // 当切换报表时，清空画布并重置加载标记
+  useEffect(() => {
+    const schemaKey = `${projectId}-${reportId}`;
+    
+    // 如果projectId或reportId变化，且与已加载的报表不同，则清空画布
+    if (projectId && reportId && schemaLoadedKeyRef.current && schemaLoadedKeyRef.current !== schemaKey) {
+      setCanvasItems([]);
+      setSelectedItemIds([]);
+      schemaLoadedKeyRef.current = ''; // 重置加载标记
+      historyManagerRef.current.clear(); // 清空历史记录
+    }
+  }, [projectId, reportId]);
+
+  // 自动加载Schema
+  useEffect(() => {
+    if (!projectId || !reportId || !reportContext) {
+      return;
+    }
+    
+    // 生成唯一标识，用于判断是否需要重新加载
+    const schemaKey = `${projectId}-${reportId}`;
+    
+    // 如果已经加载过这个报表的Schema，则不加载（避免重复加载）
+    if (schemaLoadedKeyRef.current === schemaKey) {
+      return;
+    }
+    
+    // 标记为正在加载/已加载
+    schemaLoadedKeyRef.current = schemaKey;
+    
+    reportApi
+      .getReportSchema(projectId, reportId)
+      .then((response) => {
+        if (response.success && response.data) {
+          loadSchemaToCanvas(response.data);
+          schemaLoadedKeyRef.current = schemaKey; // 标记为已加载
+        } else {
+          // Schema不存在或为空，不显示错误（可能是新报表）
+          console.log('报表Schema为空或不存在，将显示空白画布');
+          schemaLoadedKeyRef.current = schemaKey; // 即使为空也标记，避免重复请求
+        }
+      })
+      .catch((error) => {
+        // Schema加载失败，可能是新报表还没有Schema，不显示错误
+        console.log('加载Schema失败（可能是新报表）:', error);
+        schemaLoadedKeyRef.current = ''; // 加载失败，重置标记，允许重试
+      });
+  }, [projectId, reportId, reportContext, loadSchemaToCanvas]);
 
   const [enhancedItems, setEnhancedItems] = useState<EnhancedCanvasItem[]>([]);
 
@@ -432,6 +544,7 @@ const handleDatasourceConfigChange = useCallback(
   const handleItemSelect = useCallback((id: string) => {
     setSelectedItemIds([id]);
   }, []);
+
 
   // 对齐功能
   const handleAlignLeft = useCallback(() => {
@@ -668,267 +781,51 @@ const handleDatasourceConfigChange = useCallback(
       },
     });
   }, [handleItemsChange]);
+  
+  // 使用EditorContext同步状态
   useEffect(() => {
-    setReportTitle(canvasTitle);
-  }, [canvasTitle]);
-  const handleBackToProject = () => {
     if (projectContext) {
-      navigate(`/projects/${projectContext.projectId}/workspace`, { state: { project: projectContext } });
-    } else {
-      navigate('/projects');
+      editorContext.setProjectContext(projectContext);
     }
-  };
+  }, [projectContext, editorContext]);
+
+  useEffect(() => {
+    if (reportContext) {
+      editorContext.setReportContext(reportContext);
+      if (reportContext.reportName) {
+        editorContext.setReportTitle(reportContext.reportName);
+      }
+    }
+  }, [reportContext, editorContext]);
 
   return (
     <div
       style={{
-        marginTop: -24,
-        marginLeft: -24,
-        marginRight: -24,
-        marginBottom: -24,
-        padding: 24,
+        height: '100%',
+        overflow: 'hidden',
       }}
     >
-      <div className="editor-top-bar">
-        {/* 左侧：用户信息和返回按钮 */}
-        <div className="editor-top-section">
-          <Space size="middle">
-            <Avatar style={{ backgroundColor: '#666666', color: '#fff' }}>{effectiveUsername[0]?.toUpperCase()}</Avatar>
-            <div>
-              <div style={{ fontSize: 12, color: '#475569' }}>当前用户</div>
-              <strong>{effectiveUsername}</strong>
-            </div>
-            <Button icon={<CaretLeftOutlined />} onClick={handleBackToProject} size="small">
-              返回工程管理
-            </Button>
-          </Space>
-        </div>
-        {/* 中间：报表名称（可编辑） */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Input
-            value={reportTitle}
-            onChange={(e) => setReportTitle(e.target.value)}
-            placeholder="请输入报表名称"
-            style={{ width: 300, textAlign: 'center' }}
-            bordered={false}
-          />
-        </div>
-        {/* 右侧：操作按钮组和语言切换 */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', minWidth: 220 }}>
-          <Space size="middle" wrap align="center">
-            <Tooltip title="保存">
-              <Button
-                type="primary"
-                shape="circle"
-                icon={<SaveOutlined />}
-                aria-label="保存"
-              />
-            </Tooltip>
-            <Tooltip title="预览">
-              <Button
-                shape="circle"
-                icon={<EyeOutlined />}
-                aria-label="预览"
-              />
-            </Tooltip>
-            <Tooltip title="发布">
-              <Button
-                type="dashed"
-                shape="circle"
-                icon={<SendOutlined style={{ transform: 'rotate(315deg)' }} />}
-                aria-label="发布"
-              />
-            </Tooltip>
-            <Select
-              className="editor-language-select"
-              value={language}
-              onChange={(value: 'zh-CN' | 'en-US') => setLanguage(value)}
-              options={[
-                { label: '中文', value: 'zh-CN' },
-                { label: 'English', value: 'en-US' },
-              ]}
-            />
-          </Space>
-        </div>
-      </div>
-      {(projectContext || reportContext) && (
-        <div className="editor-context-strip">
-          <Space wrap size="middle">
-            {projectContext && (
-              <Tag color={projectContext.projectType === 'private' ? 'gold' : 'green'}>
-                {projectContext.projectType === 'private' ? '个人工程' : '公共工程'}
-              </Tag>
-            )}
-            {reportContext && (
-              <Tag color={reportContext.status === 'published' ? 'green' : 'gold'}>
-                {reportContext.status === 'published' ? '已发布' : '草稿'}
-              </Tag>
-            )}
-            <span>当前报表：{canvasTitle}</span>
-          </Space>
-        </div>
-      )}
       <Layout
         className="editor-layout-wrapper"
         style={{
-          minHeight: PANEL_HEIGHT,
+          height: '100%',
           background: 'transparent',
           gap: 16,
           alignItems: 'stretch',
         }}
       >
-        <div style={{ position: 'relative', height: PANEL_HEIGHT }}>
-          <Layout.Sider
-            width={componentPanelCollapsed ? COMPONENT_COLLAPSED_WIDTH : COMPONENT_PANEL_WIDTH}
-            theme="light"
-            style={{
-              background: 'transparent',
-              height: PANEL_HEIGHT,
-              transition: 'width 0.2s ease',
-            }}
-          >
-            {componentPanelCollapsed ? (
-              <Card
-                className="component-panel-card"
-                bordered={false}
-                bodyStyle={{ padding: 0, height: PANEL_HEIGHT }}
-                style={{ borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}
-              />
-            ) : (
-              <Card
-                className="component-panel-card"
-                title="组件管理"
-                bordered={false}
-                bodyStyle={{ padding: 0, height: PANEL_HEIGHT }}
-                style={{ borderRadius: 8, boxShadow: '0 2px 12px rgba(0,0,0,0.04)', overflow: 'hidden' }}
-              >
-            <Tabs
-              size="small"
-              activeKey={componentTab}
-              onChange={(key) => setComponentTab(key as 'basic' | 'custom')}
-              style={{ padding: '0 16px' }}
-              tabBarStyle={{ margin: 0 }}
-              items={[
-                {
-                  key: 'basic',
-                  label: '基础',
-                  children: (
-                    <div
-                      style={{
-                        padding: 16,
-                        height: `calc(${PANEL_HEIGHT} - 64px)`,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 12,
-                      }}
-                    >
-                      <Input.Search placeholder="搜索组件" allowClear onSearch={setKeyword} style={{ borderRadius: 6 }} />
-                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                        <Collapse
-                          defaultActiveKey={['basicChart']}
-                          bordered={false}
-                          ghost
-                          style={{ flex: 1, overflow: 'auto', background: 'transparent' }}
-                          items={[
-                            {
-                              key: 'basicChart',
-                              label: `基础图表 (${groupedComponents.basicChart.length})`,
-                              children: (
-                                <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.basicChart, loading, handleDragStart, 'chart')}
-                                </div>
-                              ),
-                            },
-                            {
-                              key: 'threeDChart',
-                              label: `三维图表 (${groupedComponents.threeDChart.length})`,
-                              children: (
-                                <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.threeDChart, loading, handleDragStart, 'chart')}
-                                </div>
-                              ),
-                            },
-                            {
-                              key: 'multimedia',
-                              label: `多媒体 (${groupedComponents.multimedia.length})`,
-                              children: (
-                                <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.multimedia, loading, handleDragStart, 'other')}
-                                </div>
-                              ),
-                            },
-                            {
-                              key: 'container',
-                              label: `容器组件 (${groupedComponents.container.length})`,
-                              children: (
-                                <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.container, loading, handleDragStart, 'layout')}
-                                </div>
-                              ),
-                            },
-                            {
-                              key: 'control',
-                              label: `控制类组件 (${groupedComponents.control.length})`,
-                              children: (
-                                <div style={{ padding: '8px 0' }}>
-                                  {renderComponentGrid(groupedComponents.control, loading, handleDragStart, 'form')}
-                                </div>
-                              ),
-                            },
-                          ]}
-                        />
-                      </div>
-                    </div>
-                  ),
-                },
-                {
-                  key: 'custom',
-                  label: '自定义',
-                  children: (
-                    <div style={{ padding: 16, height: 'calc(100vh - 284px)' }}>
-                      <Empty description="自定义组件管理功能建设中" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                    </div>
-                  ),
-                },
-              ]}
-            />
-            </Card>
-          )}
-          </Layout.Sider>
-          <Button
-            type="text"
-            icon={componentPanelCollapsed ? <CaretRightOutlined /> : <CaretLeftOutlined />}
-            onClick={() => setComponentPanelCollapsed(!componentPanelCollapsed)}
-            style={{
-              position: 'absolute',
-              right: -16,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              zIndex: 10,
-              width: 32,
-              height: 32,
-              borderRadius: '50%',
-              background: '#fff',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid #e8e8e8',
-            }}
-            title={componentPanelCollapsed ? '展开组件库' : '收起组件库'}
-          />
-        </div>
-        <Layout style={{ background: 'transparent', gap: 16, alignItems: 'stretch' }}>
+        <Layout style={{ background: 'transparent', gap: 16, alignItems: 'stretch', flex: 1 }}>
           <Layout.Content>
             <Card
               bodyStyle={{
-                height: PANEL_HEIGHT,
+                height: '100%',
                 background: '#fff',
                 border: '1px dashed #d0d0d0',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: 0,
               }}
+              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
@@ -1045,6 +942,8 @@ const handleDatasourceConfigChange = useCallback(
                 background: '#eef1f6',
                 borderRight: '1px solid #e1e6ef',
                 borderBottom: '1px solid #e1e6ef',
+                backgroundImage: 'linear-gradient(to right, rgba(0,0,0,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,0,0,0.08) 1px, transparent 1px)',
+                backgroundSize: `${10 * zoom}px ${10 * zoom}px`,
                 zIndex: 6,
               }}
             />
@@ -1237,220 +1136,6 @@ const handleDatasourceConfigChange = useCallback(
 
 export default CanvasEditor;
 
-function renderComponentGrid(
-  items: ComponentSummary[],
-  loading: boolean,
-  handleDragStart: (e: React.DragEvent, component: ComponentSummary) => void,
-  category?: 'chart' | 'form' | 'layout' | 'other'
-) {
-  if (items.length === 0) {
-    if (loading) {
-      return <Skeleton active />;
-    }
-    return <Empty description="暂无组件" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
-  }
-  // 图表分类使用2列，其他分类使用3列
-  const columnCount = category === 'chart' ? 2 : 3;
-  return (
-    <List
-      loading={loading}
-      dataSource={items}
-      style={{ paddingRight: 4 }}
-      grid={{ gutter: 12, column: columnCount }}
-      renderItem={(item) => (
-        <List.Item key={item.componentId}>
-          <div
-            draggable
-            onDragStart={(e) => handleDragStart(e, item)}
-            style={{
-              border: '1px solid #e4e7ec',
-              borderRadius: 10,
-              background: '#fff',
-              cursor: 'grab',
-              overflow: 'hidden',
-              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
-              aspectRatio: '0.85',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div
-              style={{
-                background: '#f5f7fb',
-                flex: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderBottom: '1px solid #eef1f6',
-                minHeight: 0,
-              }}
-            >
-              <div style={{ transform: 'none' }}>
-                {renderThumbnailContent(item)}
-              </div>
-            </div>
-            <div
-              style={{
-                padding: '8px 6px',
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: 0,
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  fontWeight: 600,
-                  fontSize: 11,
-                  textAlign: 'center',
-                  wordBreak: 'break-word',
-                  lineHeight: 1.3,
-                  display: 'block',
-                  width: '100%',
-                }}
-                title={item.componentName}
-              >
-                {item.componentName}
-              </span>
-            </div>
-          </div>
-        </List.Item>
-      )}
-    />
-  );
-}
-
-function renderThumbnailContent(component: ComponentSummary) {
-  const lowerName = component.componentName.toLowerCase();
-  
-  // 条形图 - 使用水平方向的柱状图图标（优先判断）
-  if (lowerName.includes('条形')) {
-    return <BarChartOutlined style={{ ...thumbnailIconStyle, transform: 'rotate(90deg)' }} />;
-  }
-  // 柱线图 - 组合图表（优先判断）
-  if (lowerName.includes('柱线') || lowerName.includes('bar-line') || lowerName.includes('barline')) {
-    return <BarChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 柱状图
-  if (lowerName.includes('柱') || lowerName.includes('bar')) {
-    return <BarChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 面积图 - 使用折线图图标（面积图是填充的折线图）
-  if (lowerName.includes('面积') || lowerName.includes('area')) {
-    return <LineChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 折线图
-  if (lowerName.includes('折') || lowerName.includes('line')) {
-    return <LineChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 仪表盘
-  if (lowerName.includes('仪表') || lowerName.includes('dashboard') || lowerName.includes('gauge')) {
-    return <DashboardOutlined style={thumbnailIconStyle} />;
-  }
-  // 环形图 - 使用饼图图标（环形图本质上是中空的饼图）
-  if (lowerName.includes('环形') || lowerName.includes('donut')) {
-    return <PieChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 饼图
-  if (lowerName.includes('饼') || lowerName.includes('pie')) {
-    return <PieChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 象形图 - 使用柱状图图标
-  if (lowerName.includes('象形') || lowerName.includes('pictorial')) {
-    return <FundOutlined style={thumbnailIconStyle} />;
-  }
-  
-  // 其他组件如果有预览图或图标，则显示图片
-  const previewSrc = component.previewUrl?.trim() || component.icon?.trim();
-  if (previewSrc) {
-    return <img src={previewSrc} alt={component.componentName} style={{ width: '70%', height: '70%', objectFit: 'contain' }} />;
-  }
-  
-  // 否则使用占位符图标
-  return getPlaceholderIcon(component);
-}
-
-function getPlaceholderIcon(component: ComponentSummary) {
-  const lowerName = component.componentName.toLowerCase();
-  // 条形图 - 使用水平方向的柱状图图标（优先判断）
-  if (lowerName.includes('条形')) {
-    return <BarChartOutlined style={{ ...thumbnailIconStyle, transform: 'rotate(90deg)' }} />;
-  }
-  // 柱线图 - 组合图表（优先判断）
-  if (lowerName.includes('柱线') || lowerName.includes('bar-line') || lowerName.includes('barline')) {
-    return <BarChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 柱状图
-  if (lowerName.includes('柱') || lowerName.includes('bar')) {
-    return <BarChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 面积图
-  if (lowerName.includes('面积') || lowerName.includes('area')) {
-    return <LineChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 折线图
-  if (lowerName.includes('折') || lowerName.includes('line')) {
-    return <LineChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 仪表盘
-  if (lowerName.includes('仪表') || lowerName.includes('dashboard') || lowerName.includes('gauge')) {
-    return <DashboardOutlined style={thumbnailIconStyle} />;
-  }
-  // 环形图
-  if (lowerName.includes('环形') || lowerName.includes('donut')) {
-    return <PieChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 饼图
-  if (lowerName.includes('饼') || lowerName.includes('pie')) {
-    return <PieChartOutlined style={thumbnailIconStyle} />;
-  }
-  // 象形图
-  if (lowerName.includes('象形') || lowerName.includes('pictorial')) {
-    return <FundOutlined style={thumbnailIconStyle} />;
-  }
-  // 散点图
-  if (lowerName.includes('散') || lowerName.includes('dot') || lowerName.includes('点') || lowerName.includes('bubble') || lowerName.includes('scatter')) {
-    return <DotChartOutlined style={thumbnailIconStyle} />;
-  }
-  if (component.type === 'chart') {
-    return <BarChartOutlined style={thumbnailIconStyle} />;
-  }
-  return <AppstoreOutlined style={thumbnailIconStyle} />;
-}
-
-function categorizeComponent(component: ComponentSummary): 'basicChart' | 'threeDChart' | 'multimedia' | 'container' | 'control' {
-  const name = `${component.componentName}${component.alias || ''}`.toLowerCase();
-  
-  // 三维图表：包含3D、三维等关键词
-  const threeDKeywords = ['3d', '三维', '3D'];
-  if (threeDKeywords.some((kw) => name.includes(kw))) {
-    return 'threeDChart';
-  }
-  
-  // 基础图表：普通图表类型
-  const chartKeywords = ['图', 'chart', '仪表', 'dashboard', '指标', 'heatmap', '柱', '折线', '饼', '条形', '面积', '散点', '环形', '象形', '柱线'];
-  if (component.type === 'chart' || chartKeywords.some((kw) => component.componentName.includes(kw) || name.includes(kw))) {
-    return 'basicChart';
-  }
-  
-  // 多媒体：图片、视频、文本等
-  const multimediaKeywords = ['图片', 'image', '视频', 'video', '文本', 'text', '音频', 'audio', '媒体', 'media'];
-  if (multimediaKeywords.some((kw) => name.includes(kw))) {
-    return 'multimedia';
-  }
-  
-  // 容器组件：容器、布局、分组、选项卡等
-  const containerKeywords = ['容器', 'container', '布局', 'layout', 'grid', '栅格', 'flex', '卡片', 'card', 'panel', 'section', '分组', 'group', '选项卡', 'tab'];
-  if (containerKeywords.some((kw) => name.includes(kw))) {
-    return 'container';
-  }
-  
-  // 控制类组件：按钮、筛选框、输入框等
-  return 'control';
-}
-
 function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition | null) {
   if (item.loading) {
     return <Skeleton active style={{ padding: 16 }} />;
@@ -1611,7 +1296,7 @@ function renderFormField(
   if (type === 'enum' && options) {
     return <Select value={value} onChange={onChange} options={options} style={{ width: '100%' }} />;
   }
-  return <Input value={value} onChange={(e) => onChange(e.target.value)} style={{ width: '100%' }} />;
+  return <Input value={value} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)} style={{ width: '100%' }} />;
 }
 
 

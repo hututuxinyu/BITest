@@ -6,6 +6,7 @@ import com.biservice.dto.ReportVO;
 import com.biservice.service.ReportService;
 import com.biservice.service.SchemaService;
 import com.biservice.util.SchemaValidator;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -37,6 +38,9 @@ public class ReportController {
 
     @Autowired
     private SchemaService schemaService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * 获取工程下的报表列表
@@ -202,6 +206,55 @@ public class ReportController {
             return ApiResponse.success(result);
         } catch (Exception e) {
             return ApiResponse.error("验证Schema失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 发布报表
+     * 将报表状态从draft改为published
+     * 
+     * @param userId 用户ID
+     * @param projectId 工程ID
+     * @param reportId 报表ID
+     * @return 报表信息
+     */
+    @PostMapping("/project/{projectId}/{reportId}/publish")
+    public ApiResponse<ReportVO> publishReport(
+            @RequestParam String userId,
+            @PathVariable String projectId,
+            @PathVariable String reportId) {
+        try {
+            ReportVO report = reportService.publishReport(userId, projectId, reportId);
+            return ApiResponse.success("发布报表成功", report);
+        } catch (Exception e) {
+            return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 获取报表Schema
+     * 
+     * @param projectId 工程ID
+     * @param reportId 报表ID
+     * @return Schema JSON字符串
+     */
+    @GetMapping("/project/{projectId}/{reportId}/schema")
+    public ApiResponse<Map<String, Object>> getReportSchema(
+            @PathVariable String projectId,
+            @PathVariable String reportId) {
+        try {
+            // 验证报表是否存在
+            ReportVO report = reportService.getReportDetail(projectId, reportId);
+            
+            // 读取Schema
+            String schemaJson = schemaService.readSchema(reportId);
+            
+            // 解析JSON并返回
+            Map<String, Object> schema = objectMapper.readValue(schemaJson, Map.class);
+            
+            return ApiResponse.success(schema);
+        } catch (Exception e) {
+            return ApiResponse.error("获取Schema失败: " + e.getMessage());
         }
     }
 }

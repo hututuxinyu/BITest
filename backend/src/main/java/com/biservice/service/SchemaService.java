@@ -236,8 +236,24 @@ public class SchemaService {
         // 保存到文件系统
         Files.write(filePath, schemaJson.getBytes(StandardCharsets.UTF_8));
         
-        // 更新报表的schema_file字段
-        report.setSchemaFile(filePath.toString());
+        // 更新报表的schema_file字段（使用相对路径，相对于schemaStoragePath）
+        try {
+            Path storagePath = Paths.get(schemaStoragePath).toAbsolutePath();
+            Path fileAbsolutePath = filePath.toAbsolutePath();
+            
+            // 如果文件在存储目录下，使用相对路径
+            if (fileAbsolutePath.startsWith(storagePath)) {
+                Path relativePath = storagePath.relativize(fileAbsolutePath);
+                report.setSchemaFile("./" + relativePath.toString().replace("\\", "/"));
+            } else {
+                // 如果不在存储目录下，使用绝对路径
+                report.setSchemaFile(filePath.toString());
+            }
+        } catch (Exception e) {
+            // 如果路径计算失败，使用文件名
+            logger.warn("计算相对路径失败，使用文件名: {}", e.getMessage());
+            report.setSchemaFile("./" + filePath.getFileName().toString());
+        }
         report.setUpdateTime(LocalDateTime.now());
         // 如果版本为空，设置默认版本
         if (report.getVersion() == null) {
@@ -263,9 +279,42 @@ public class SchemaService {
         if (!StringUtils.hasText(filePath)) {
             throw new RuntimeException("Schema文件路径为空");
         }
-        Path path = Paths.get(filePath);
+        
+        Path path;
+        
+        // 判断路径类型并解析
+        if (filePath.contains(":") || (filePath.startsWith("/") && !filePath.startsWith("./"))) {
+            // 绝对路径（Windows: 包含:，Linux: 以/开头但不是./）
+            path = Paths.get(filePath);
+        } else if (filePath.startsWith("./")) {
+            // 相对路径（以./开头）
+            String relativePath = filePath.substring(2); // 去掉"./"
+            
+            // 如果路径已经包含schema-storage，直接相对于当前工作目录
+            // 否则相对于schemaStoragePath
+            if (relativePath.startsWith("schema-storage/")) {
+                // 路径已经包含schema-storage，直接使用（相对于当前工作目录）
+                path = Paths.get(relativePath);
+            } else {
+                // 路径不包含schema-storage，相对于schemaStoragePath
+                path = Paths.get(schemaStoragePath, relativePath);
+            }
+        } else {
+            // 相对路径（不以./开头），相对于schemaStoragePath
+            path = Paths.get(schemaStoragePath, filePath);
+        }
+        
+        // 如果文件不存在，尝试直接相对于当前工作目录查找
         if (!Files.exists(path)) {
-            throw new RuntimeException("Schema文件不存在: " + filePath);
+            // 尝试直接使用filePath（去掉./前缀，相对于当前工作目录）
+            String directPath = filePath.startsWith("./") ? filePath.substring(2) : filePath;
+            Path directPathObj = Paths.get(directPath);
+            if (Files.exists(directPathObj)) {
+                path = directPathObj;
+                logger.info("找到Schema文件（相对于工作目录）: {}", directPathObj.toAbsolutePath());
+            } else {
+                throw new RuntimeException("Schema文件不存在: " + filePath + " (尝试路径: " + path.toAbsolutePath() + ")");
+            }
         }
         return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
     }

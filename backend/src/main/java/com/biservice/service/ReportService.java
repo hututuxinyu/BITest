@@ -96,7 +96,10 @@ public class ReportService {
         report.setReportId(UUID.randomUUID().toString());
         report.setProjectId(projectId);
         report.setReportName(request.getReportName());
+        report.setReportType("report"); // 默认类型为report
         report.setVersion("1.0.0");
+        report.setStatus("draft"); // 默认状态为草稿
+        report.setCreatorId(userId);
         report.setCreateTime(LocalDateTime.now());
         report.setUpdateTime(LocalDateTime.now());
 
@@ -259,6 +262,68 @@ public class ReportService {
                 report.getReportId(),
                 report.getVersion()
         );
+    }
+
+    /**
+     * 发布报表
+     * 将报表状态从draft改为published，发布前需要验证Schema有效性
+     * 
+     * @param userId 用户ID
+     * @param projectId 工程ID
+     * @param reportId 报表ID
+     * @return 报表信息
+     */
+    @Transactional
+    public ReportVO publishReport(String userId, String projectId, String reportId) {
+        // 验证工程是否存在且属于当前用户
+        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        if (!projectOpt.isPresent()) {
+            throw new RuntimeException("工程不存在");
+        }
+
+        Project project = projectOpt.get();
+        if (!project.getUserId().equals(userId)) {
+            throw new RuntimeException("无权访问该工程");
+        }
+
+        // 验证报表是否存在
+        Optional<Report> reportOpt = reportRepository.findByProjectIdAndReportId(projectId, reportId);
+        if (!reportOpt.isPresent()) {
+            throw new RuntimeException("报表不存在");
+        }
+
+        Report report = reportOpt.get();
+
+        // 检查报表是否已经是已发布状态
+        if ("published".equals(report.getStatus())) {
+            logger.warn("报表已经是已发布状态，无需重复发布，报表ID: {}", reportId);
+            throw new RuntimeException("报表已经是已发布状态，无需重复发布");
+        }
+
+        // 验证Schema是否存在且有效
+        try {
+            if (StringUtils.hasText(report.getSchemaFile())) {
+                String schemaJson = schemaService.readSchema(reportId);
+                SchemaValidator.SchemaValidationResult validationResult = schemaService.validateSchema(schemaJson);
+                if (!validationResult.isValid()) {
+                    throw new RuntimeException("Schema验证失败，无法发布: " + validationResult.getErrorMessage());
+                }
+            } else {
+                throw new RuntimeException("报表Schema文件不存在，无法发布");
+            }
+        } catch (Exception e) {
+            logger.error("发布报表失败，报表ID: {}", reportId, e);
+            throw new RuntimeException("发布报表失败: " + e.getMessage(), e);
+        }
+
+        // 更新报表状态为published
+        report.setStatus("published");
+        report.setUpdateTime(LocalDateTime.now());
+        reportRepository.save(report);
+
+        logger.info("报表发布成功，报表ID: {}, 用户ID: {}", reportId, userId);
+
+        return convertToVO(report);
     }
 }
 
