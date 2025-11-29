@@ -19,61 +19,54 @@ import java.util.Optional;
 public interface ProjectRepository extends JpaRepository<Project, String> {
 
     /**
-     * 根据用户ID查找所有活跃工程
+     * 根据用户ID查找所有工程
      * 
      * @param userId 用户ID
-     * @param status 状态
      * @return 工程列表
      */
-    List<Project> findByUserIdAndStatus(String userId, String status);
+    List<Project> findByUserId(String userId);
 
     /**
-     * 根据用户ID查找所有活跃工程（分页）
+     * 根据用户ID查找所有工程（分页）
      *
      * @param userId 用户ID
-     * @param status 状态
      * @param pageable 分页参数
      * @return 工程分页
      */
-    Page<Project> findByUserIdAndStatus(String userId, String status, Pageable pageable);
+    Page<Project> findByUserId(String userId, Pageable pageable);
 
     /**
      * 根据用户ID和工程名称查找工程
      * 
      * @param userId 用户ID
      * @param projectName 工程名称
-     * @param status 状态
      * @return 工程Optional
      */
-    Optional<Project> findByUserIdAndProjectNameAndStatus(
-        String userId, String projectName, String status);
+    Optional<Project> findByUserIdAndProjectName(String userId, String projectName);
 
     /**
      * 根据用户ID和工程名称模糊查询
      * 
      * @param userId 用户ID
      * @param projectName 工程名称（支持模糊查询）
-     * @param status 状态
      * @return 工程列表
      */
     @Query("SELECT p FROM Project p WHERE p.userId = :userId " +
-           "AND p.projectName LIKE %:projectName% AND p.status = :status")
+           "AND p.projectName LIKE %:projectName%")
     List<Project> findByUserIdAndProjectNameLike(
         @Param("userId") String userId,
-        @Param("projectName") String projectName,
-        @Param("status") String status);
+        @Param("projectName") String projectName);
 
     /**
      * 根据用户ID和工程名称模糊查询（分页）
      *
      * @param userId 用户ID
      * @param projectName 工程名称
-     * @param status 状态
      * @param pageable 分页参数
      * @return 工程分页
      */
-    Page<Project> findByUserIdAndStatusAndProjectNameContainingIgnoreCase(
-        String userId, String status, String projectName, Pageable pageable);
+    Page<Project> findByUserIdAndProjectNameContainingIgnoreCase(
+        String userId, String projectName, Pageable pageable);
 }
 
 

@@ -15,7 +15,7 @@ import {
   Tag,
   Typography,
 } from 'antd';
-import { FolderOutlined, PlusOutlined, ArrowLeftOutlined, FileTextOutlined, DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { FolderOutlined, PlusOutlined, ArrowLeftOutlined, FileTextOutlined, DeleteOutlined, EditOutlined, DownloadOutlined, ExportOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Project, ReportSummary, CreateReportRequest } from '../types';
 import { projectApi, reportApi } from '../services/api';
@@ -48,6 +48,7 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
   const [reportLoading, setReportLoading] = useState(true);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [form] = Form.useForm<CreateReportRequest>();
 
   useEffect(() => {
@@ -156,6 +157,67 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
     [projectId, user.userId, project]
   );
 
+  /**
+   * 导出单个报表Schema
+   */
+  const handleExportReportSchema = useCallback(
+    async (report: ReportSummary) => {
+      if (!projectId) {
+        return;
+      }
+      try {
+        setExporting(true);
+        const blob = await reportApi.exportReportSchema(user.userId, projectId, report.reportId);
+        
+        // 创建下载链接
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${report.reportName}_${report.reportId}_schema.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        message.success('Schema导出成功');
+      } catch (error) {
+        message.error('导出Schema失败: ' + (error instanceof Error ? error.message : '未知错误'));
+      } finally {
+        setExporting(false);
+      }
+    },
+    [projectId, user.userId]
+  );
+
+  /**
+   * 批量导出工程下所有报表的Schema
+   */
+  const handleExportProjectSchemas = useCallback(async () => {
+    if (!projectId) {
+      return;
+    }
+    try {
+      setExporting(true);
+      const blob = await projectApi.exportProjectSchemas(user.userId, projectId);
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${project?.projectName || 'project'}_${projectId}_schemas.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      message.success('批量导出Schema成功');
+    } catch (error) {
+      message.error('批量导出Schema失败: ' + (error instanceof Error ? error.message : '未知错误'));
+    } finally {
+      setExporting(false);
+    }
+  }, [projectId, user.userId, project]);
+
   const reportColumns: ColumnsType<ReportSummary> = useMemo(
     () => [
       {
@@ -225,6 +287,14 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
             </Button>
             <Button
               type="link"
+              icon={<DownloadOutlined />}
+              onClick={() => handleExportReportSchema(record)}
+              loading={exporting}
+            >
+              导出Schema
+            </Button>
+            <Button
+              type="link"
               danger
               icon={<DeleteOutlined />}
               onClick={() => handleDeleteReport(record)}
@@ -235,7 +305,7 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
         ),
       },
     ],
-    [navigate, project, handleDeleteReport]
+    [navigate, project, handleDeleteReport, handleExportReportSchema, exporting]
   );
 
   if (!projectId) {
@@ -269,6 +339,14 @@ const ProjectWorkspace: React.FC<ProjectWorkspaceProps> = ({ user }) => {
           <Space>
             <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/projects')}>
               返回工程列表
+            </Button>
+            <Button
+              icon={<ExportOutlined />}
+              onClick={handleExportProjectSchemas}
+              loading={exporting}
+              disabled={!reports || reports.length === 0}
+            >
+              批量导出Schema
             </Button>
             <Button
               type="primary"

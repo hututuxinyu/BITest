@@ -116,6 +116,19 @@ export const projectApi = {
     const result: ApiResponse<Project> = await response.json();
     return result;
   },
+
+  /**
+   * 批量导出工程下所有报表的Schema
+   */
+  exportProjectSchemas: async (userId: string, projectId: string): Promise<Blob> => {
+    const response = await fetch(`${API_BASE_URL}/projects/${projectId}/schemas/export?userId=${userId}`, {
+      method: 'GET',
+    });
+    if (!response.ok) {
+      throw new Error(`批量导出失败: ${response.statusText}`);
+    }
+    return await response.blob();
+  },
 };
 
 /**
@@ -171,6 +184,38 @@ export const reportApi = {
       method: 'DELETE',
     });
     const result: ApiResponse<void> = await response.json();
+    return result;
+  },
+
+  /**
+   * 导出报表Schema
+   */
+  exportReportSchema: async (
+    userId: string,
+    projectId: string,
+    reportId: string
+  ): Promise<Blob> => {
+    const response = await fetch(
+      `${API_BASE_URL}/reports/project/${projectId}/${reportId}/schema/export?userId=${userId}`,
+      {
+        method: 'GET',
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`导出失败: ${response.statusText}`);
+    }
+    return await response.blob();
+  },
+
+  /**
+   * 验证报表Schema
+   */
+  validateReportSchema: async (
+    projectId: string,
+    reportId: string
+  ): Promise<ApiResponse<{ valid: boolean; errors: string[]; errorMessage: string }>> => {
+    const response = await fetch(`${API_BASE_URL}/reports/project/${projectId}/${reportId}/schema/validate`);
+    const result: ApiResponse<{ valid: boolean; errors: string[]; errorMessage: string }> = await response.json();
     return result;
   },
 };

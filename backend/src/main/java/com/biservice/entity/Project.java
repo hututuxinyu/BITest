@@ -34,12 +34,6 @@ public class Project {
     private String description;
 
     /**
-     * 工程类型（private/public）
-     */
-    @Column(name = "project_type", nullable = false, length = 20)
-    private String projectType;
-
-    /**
      * 所属用户ID
      */
     @Column(name = "user_id", nullable = false, length = 64)
@@ -62,36 +56,6 @@ public class Project {
      */
     @Column(name = "report_count")
     private Integer reportCount;
-
-    /**
-     * 最后报表更新时间
-     */
-    @Column(name = "last_report_update_time")
-    private LocalDateTime lastReportUpdateTime;
-
-    /**
-     * Codehub仓库
-     */
-    @Column(name = "codehub_repository", length = 255)
-    private String codehubRepository;
-
-    /**
-     * Codehub分支
-     */
-    @Column(name = "codehub_branch", length = 255)
-    private String codehubBranch;
-
-    /**
-     * Codehub路径
-     */
-    @Column(name = "codehub_path", length = 255)
-    private String codehubPath;
-
-    /**
-     * 状态（active/deleted）
-     */
-    @Column(name = "status", length = 20)
-    private String status;
 }
 
 

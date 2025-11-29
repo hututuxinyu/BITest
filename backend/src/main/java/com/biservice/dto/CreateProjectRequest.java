@@ -21,11 +21,6 @@ public class CreateProjectRequest {
      * 工程描述
      */
     private String description;
-
-    /**
-     * 工程类型（private/public）
-     */
-    private String projectType;
 }
 
 

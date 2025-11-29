@@ -78,6 +78,20 @@
             <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
+        <!-- JSON Schema Validator -->
+        <dependency>
+            <groupId>com.github.erosb</groupId>
+            <artifactId>everit-json-schema</artifactId>
+            <version>1.14.3</version>
+        </dependency>
+
+        <!-- JSON Library (required by everit-json-schema) -->
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20231013</version>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

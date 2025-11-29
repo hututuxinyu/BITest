@@ -19,11 +19,6 @@ public class UpdateProjectRequest {
      * 工程描述
      */
     private String description;
-
-    /**
-     * 工程类型
-     */
-    private String projectType;
 }
 
 

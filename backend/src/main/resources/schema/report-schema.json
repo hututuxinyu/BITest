@@ -1,0 +1,837 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://reportbi.example.com/schemas/report-schema.json",
+  "title": "报表Schema定义",
+  "description": "设计态与运行态之间的报表Schema标准定义",
+  "type": "object",
+  "required": ["version", "reportId", "reportName", "reportType", "metadata", "canvas", "components"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema版本号，遵循语义化版本规范",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+    "reportId": {
+      "type": "string",
+      "description": "报表唯一标识符"
+    },
+    "historyArray": {
+        "type": "string",
+        "description": "报表唯一标识符"
+      },
+    "reportName": {
+      "type": "string",
+      "description": "报表名称"
+    },
+    "reportType": {
+      "type": "string",
+      "enum": ["report", "dashboard"],
+      "description": "报表类型：report-报表，dashboard-大屏"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "报表元信息",
+      "required": ["createTime", "updateTime", "creator"],
+      "properties": {
+        "createTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "创建时间，ISO 8601格式"
+        },
+        "updateTime": {
+          "type": "string",
+          "format": "date-time",
+          "description": "更新时间，ISO 8601格式"
+        },
+        "creator": {
+          "type": "string",
+          "description": "创建者ID"
+        },
+        "description": {
+          "type": "string",
+          "description": "报表描述"
+        }
+      }
+    },
+    "canvas": {
+      "type": "object",
+      "description": "画布配置",
+      "required": ["width", "height"],
+      "properties": {
+        "width": {
+          "type": "number",
+          "description": "画布宽度（像素）",
+          "minimum": 1
+        },
+        "height": {
+          "type": "number",
+          "description": "画布高度（像素）",
+          "minimum": 1
+        },
+        "backgroundColor": {
+          "type": "string",
+          "description": "画布背景颜色，支持十六进制颜色值或CSS颜色名称",
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$|^[a-zA-Z]+$"
+        },
+        "grid": {
+          "type": "boolean",
+          "description": "是否显示网格",
+          "default": false
+        },
+        "gridSize": {
+          "type": "number",
+          "description": "网格大小（像素）",
+          "minimum": 1,
+          "default": 10
+        }
+      }
+    },
+    "components": {
+      "type": "array",
+      "description": "组件列表",
+      "items": {
+        "type": "object",
+        "required": ["componentId", "componentType", "position", "size"],
+        "properties": {
+          "componentId": {
+            "type": "string",
+            "description": "组件唯一标识符"
+          },
+          "componentType": {
+            "type": "string",
+            "description": "组件类型，如：barChart, lineChart, pieChart, table, image, video, text, button, filter等"
+          },
+          "componentName": {
+            "type": "string",
+            "description": "组件名称"
+          },
+          "position": {
+            "type": "object",
+            "description": "组件位置",
+            "required": ["x", "y"],
+            "properties": {
+              "x": {
+                "type": "number",
+                "description": "X坐标（像素）",
+                "minimum": 0
+              },
+              "y": {
+                "type": "number",
+                "description": "Y坐标（像素）",
+                "minimum": 0
+              }
+            }
+          },
+          "size": {
+            "type": "object",
+            "description": "组件尺寸",
+            "required": ["width", "height"],
+            "properties": {
+              "width": {
+                "type": "number",
+                "description": "宽度（像素）",
+                "minimum": 1
+              },
+              "height": {
+                "type": "number",
+                "description": "高度（像素）",
+                "minimum": 1
+              }
+            }
+          },
+          "zIndex": {
+            "type": "number",
+            "description": "组件层级，数值越大越靠前",
+            "default": 1
+          },
+          "visible": {
+            "type": "boolean",
+            "description": "是否可见",
+            "default": true
+          },
+          "locked": {
+            "type": "boolean",
+            "description": "是否锁定（锁定后不可编辑）",
+            "default": false
+          },
+          "props": {
+            "type": "object",
+            "description": "组件属性配置，具体属性根据组件类型而定"
+          },
+          "datasourceId": {
+            "type": "string",
+            "description": "绑定的数据源ID"
+          },
+          "datasourceConfig": {
+            "type": "object",
+            "description": "数据源配置（当组件有独立数据源时）",
+            "properties": {
+              "datasourceType": {
+                "type": "string",
+                "enum": ["mysql", "postgresql", "oracle", "hive", "clickhouse", "elasticsearch", "api", "file"],
+                "description": "数据源类型"
+              },
+              "queryConfig": {
+                "type": "object",
+                "description": "查询配置",
+                "properties": {
+                  "sql": {
+                    "type": "string",
+                    "description": "SQL查询语句"
+                  },
+                  "apiUrl": {
+                    "type": "string",
+                    "description": "API接口地址（当数据源类型为api时）"
+                  },
+                  "apiMethod": {
+                    "type": "string",
+                    "enum": ["GET", "POST", "PUT", "DELETE"],
+                    "description": "API请求方法"
+                  },
+                  "apiHeaders": {
+                    "type": "object",
+                    "description": "API请求头"
+                  },
+                  "apiBody": {
+                    "type": "object",
+                    "description": "API请求体"
+                  },
+                  "filePath": {
+                    "type": "string",
+                    "description": "文件路径（当数据源类型为file时）"
+                  },
+                  "fileType": {
+                    "type": "string",
+                    "enum": ["csv", "excel", "json"],
+                    "description": "文件类型"
+                  },
+                  "parameters": {
+                    "type": "array",
+                    "description": "查询参数列表",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string",
+                          "enum": ["string", "number", "date", "boolean"]
+                        },
+                        "value": {
+                          "description": "参数值"
+                        },
+                        "source": {
+                          "type": "string",
+                          "enum": ["static", "control", "url", "user"],
+                          "description": "参数来源：static-静态值，control-控制类组件，url-URL参数，user-用户信息"
+                        },
+                        "sourceId": {
+                          "type": "string",
+                          "description": "参数来源ID（当source为control时，为控制类组件ID）"
+                        }
+                      }
+                    }
+                  },
+                  "filters": {
+                    "type": "array",
+                    "description": "过滤条件列表",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "field": {
+                          "type": "string"
+                        },
+                        "operator": {
+                          "type": "string",
+                          "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "like", "in", "notIn", "between"]
+                        },
+                        "value": {
+                          "description": "过滤值"
+                        }
+                      }
+                    }
+                  },
+                  "fieldMapping": {
+                    "type": "object",
+                    "description": "字段映射配置，将数据源字段映射到组件需要的字段"
+                  }
+                }
+              }
+            }
+          },
+          "i18n": {
+            "type": "object",
+            "description": "组件多语言配置",
+            "patternProperties": {
+              "^[a-z]{2}-[A-Z]{2}$": {
+                "type": "object",
+                "description": "语言代码对应的多语言文本，如zh-CN, en-US",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "style": {
+            "type": "object",
+            "description": "组件默认样式配置",
+            "properties": {
+              "backgroundColor": {
+                "type": "string",
+                "description": "背景颜色"
+              },
+              "color": {
+                "type": "string",
+                "description": "文字颜色"
+              },
+              "fontSize": {
+                "type": "number",
+                "description": "字体大小"
+              },
+              "fontFamily": {
+                "type": "string",
+                "description": "字体类型"
+              },
+              "border": {
+                "type": "object",
+                "properties": {
+                  "width": {
+                    "type": "number"
+                  },
+                  "style": {
+                    "type": "string",
+                    "enum": ["solid", "dashed", "dotted", "none"]
+                  },
+                  "color": {
+                    "type": "string"
+                  },
+                  "radius": {
+                    "type": "number"
+                  }
+                }
+              },
+              "shadow": {
+                "type": "object",
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  },
+                  "blur": {
+                    "type": "number"
+                  },
+                  "color": {
+                    "type": "string"
+                  }
+                }
+              },
+              "opacity": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "datasources": {
+      "type": "array",
+      "description": "数据源配置列表",
+      "items": {
+        "type": "object",
+        "required": ["datasourceId", "datasourceType"],
+        "properties": {
+          "datasourceId": {
+            "type": "string",
+            "description": "数据源唯一标识符"
+          },
+          "datasourceName": {
+            "type": "string",
+            "description": "数据源名称"
+          },
+          "datasourceType": {
+            "type": "string",
+            "enum": ["mysql", "postgresql", "oracle", "hive", "clickhouse", "elasticsearch", "api", "file"],
+            "description": "数据源类型"
+          },
+          "connectionConfig": {
+            "type": "object",
+            "description": "连接配置，具体配置根据数据源类型而定",
+            "properties": {
+              "host": {
+                "type": "string"
+              },
+              "port": {
+                "type": "number"
+              },
+              "database": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string"
+              },
+              "password": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string",
+                "description": "连接URL（JDBC URL或API URL）"
+              },
+              "options": {
+                "type": "object",
+                "description": "其他连接选项"
+              }
+            }
+          },
+          "queryConfig": {
+            "type": "object",
+            "description": "查询配置",
+            "properties": {
+              "sql": {
+                "type": "string",
+                "description": "SQL查询语句"
+              },
+              "apiUrl": {
+                "type": "string",
+                "description": "API接口地址"
+              },
+              "apiMethod": {
+                "type": "string",
+                "enum": ["GET", "POST", "PUT", "DELETE"]
+              },
+              "apiHeaders": {
+                "type": "object"
+              },
+              "apiBody": {
+                "type": "object"
+              },
+              "filePath": {
+                "type": "string"
+              },
+              "fileType": {
+                "type": "string",
+                "enum": ["csv", "excel", "json"]
+              },
+              "parameters": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["string", "number", "date", "boolean"]
+                    },
+                    "value": {
+                      "description": "参数值"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": ["static", "control", "url", "user"]
+                    },
+                    "sourceId": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "filters": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "type": "string"
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "like", "in", "notIn", "between"]
+                    },
+                    "value": {
+                      "description": "过滤值"
+                    }
+                  }
+                }
+              },
+              "fieldMapping": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "interactions": {
+      "type": "array",
+      "description": "交互配置列表",
+      "items": {
+        "type": "object",
+        "required": ["componentId", "events"],
+        "properties": {
+          "componentId": {
+            "type": "string",
+            "description": "触发交互的组件ID"
+          },
+          "events": {
+            "type": "array",
+            "description": "交互事件列表",
+            "items": {
+              "type": "object",
+              "required": ["eventType", "actions"],
+              "properties": {
+                "eventType": {
+                  "type": "string",
+                  "enum": ["click", "hover", "select", "input", "change", "search"],
+                  "description": "事件类型：click-点击，hover-悬停，select-选择，input-输入，change-值变更，search-搜索"
+                },
+                "conditions": {
+                  "type": "array",
+                  "description": "触发条件列表",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "field": {
+                        "type": "string"
+                      },
+                      "operator": {
+                        "type": "string",
+                        "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "like", "in", "notIn"]
+                      },
+                      "value": {
+                        "description": "条件值"
+                      }
+                    }
+                  }
+                },
+                "actions": {
+                  "type": "array",
+                  "description": "交互动作列表",
+                  "items": {
+                    "type": "object",
+                    "required": ["actionType"],
+                    "properties": {
+                      "actionType": {
+                        "type": "string",
+                        "enum": ["drillDown", "associate", "jump", "filter", "popup", "refresh", "dynamicEvent"],
+                        "description": "动作类型：drillDown-下钻，associate-关联，jump-跳转，filter-过滤，popup-弹窗，refresh-刷新，dynamicEvent-动态事件"
+                      },
+                      "target": {
+                        "type": "string",
+                        "description": "目标组件ID或报表ID（当actionType为jump时）"
+                      },
+                      "params": {
+                        "type": "object",
+                        "description": "传递的参数",
+                        "additionalProperties": {
+                          "description": "参数值，可以是静态值或表达式"
+                        }
+                      },
+                      "config": {
+                        "type": "object",
+                        "description": "动作配置，根据actionType不同而不同。当actionType为dynamicEvent时，包含以下结构：",
+                        "properties": {
+                          "apiConfig": {
+                            "type": "object",
+                            "description": "API接口配置（当actionType为dynamicEvent时）",
+                            "properties": {
+                              "url": {
+                                "type": "string",
+                                "description": "API接口地址"
+                              },
+                              "method": {
+                                "type": "string",
+                                "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+                                "description": "HTTP请求方法"
+                              },
+                              "headers": {
+                                "type": "object",
+                                "description": "请求头",
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              },
+                              "queryParams": {
+                                "type": "object",
+                                "description": "查询参数",
+                                "additionalProperties": {
+                                  "description": "参数值，可以是静态值或表达式"
+                                }
+                              },
+                              "body": {
+                                "type": "object",
+                                "description": "请求体（POST/PUT/PATCH请求时使用）",
+                                "additionalProperties": true
+                              },
+                              "timeout": {
+                                "type": "number",
+                                "description": "请求超时时间（毫秒），默认30000"
+                              }
+                            },
+                            "required": ["url", "method"]
+                          },
+                          "authConfig": {
+                            "type": "object",
+                            "description": "认证配置（当actionType为dynamicEvent时）",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "enum": ["none", "bearer", "apiKey", "basic"],
+                                "description": "认证类型：none-无认证，bearer-Bearer Token，apiKey-API Key，basic-Basic Auth"
+                              },
+                              "bearerToken": {
+                                "type": "string",
+                                "description": "Bearer Token（当type为bearer时）"
+                              },
+                              "apiKey": {
+                                "type": "object",
+                                "description": "API Key配置（当type为apiKey时）",
+                                "properties": {
+                                  "key": {
+                                    "type": "string",
+                                    "description": "API Key名称"
+                                  },
+                                  "value": {
+                                    "type": "string",
+                                    "description": "API Key值"
+                                  },
+                                  "location": {
+                                    "type": "string",
+                                    "enum": ["header", "query"],
+                                    "description": "API Key位置：header-请求头，query-查询参数"
+                                  }
+                                }
+                              },
+                              "basicAuth": {
+                                "type": "object",
+                                "description": "Basic Auth配置（当type为basic时）",
+                                "properties": {
+                                  "username": {
+                                    "type": "string",
+                                    "description": "用户名"
+                                  },
+                                  "password": {
+                                    "type": "string",
+                                    "description": "密码"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "paramMapping": {
+                            "type": "object",
+                            "description": "参数映射配置（当actionType为dynamicEvent时）",
+                            "properties": {
+                              "componentData": {
+                                "type": "object",
+                                "description": "组件数据映射",
+                                "additionalProperties": {
+                                  "type": "string",
+                                  "description": "映射字段名"
+                                }
+                              },
+                              "userData": {
+                                "type": "object",
+                                "description": "用户操作数据映射",
+                                "additionalProperties": {
+                                  "type": "string",
+                                  "description": "映射字段名"
+                                }
+                              },
+                              "contextData": {
+                                "type": "object",
+                                "description": "上下文数据映射",
+                                "additionalProperties": {
+                                  "type": "string",
+                                  "description": "映射字段名"
+                                }
+                              },
+                              "staticParams": {
+                                "type": "object",
+                                "description": "静态参数",
+                                "additionalProperties": {
+                                  "description": "静态参数值"
+                                }
+                              }
+                            }
+                          },
+                          "responseConfig": {
+                            "type": "object",
+                            "description": "响应处理配置（当actionType为dynamicEvent时）",
+                            "properties": {
+                              "dataPath": {
+                                "type": "string",
+                                "description": "响应数据路径（JSONPath表达式）"
+                              },
+                              "successCondition": {
+                                "type": "string",
+                                "description": "成功条件判断表达式"
+                              },
+                              "errorPath": {
+                                "type": "string",
+                                "description": "错误信息路径（JSONPath表达式）"
+                              },
+                              "transform": {
+                                "type": "object",
+                                "description": "数据转换配置",
+                                "properties": {
+                                  "type": {
+                                    "type": "string",
+                                    "enum": ["none", "map", "filter", "aggregate"],
+                                    "description": "转换类型：none-不转换，map-映射，filter-过滤，aggregate-聚合"
+                                  },
+                                  "rules": {
+                                    "type": "array",
+                                    "description": "转换规则列表"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "errorHandling": {
+                            "type": "object",
+                            "description": "错误处理配置（当actionType为dynamicEvent时）",
+                            "properties": {
+                              "retry": {
+                                "type": "object",
+                                "description": "重试配置",
+                                "properties": {
+                                  "enabled": {
+                                    "type": "boolean",
+                                    "description": "是否启用重试"
+                                  },
+                                  "maxRetries": {
+                                    "type": "number",
+                                    "description": "最大重试次数"
+                                  },
+                                  "retryDelay": {
+                                    "type": "number",
+                                    "description": "重试延迟（毫秒）"
+                                  }
+                                }
+                              },
+                              "fallback": {
+                                "type": "object",
+                                "description": "降级策略配置",
+                                "properties": {
+                                  "enabled": {
+                                    "type": "boolean",
+                                    "description": "是否启用降级"
+                                  },
+                                  "action": {
+                                    "type": "string",
+                                    "enum": ["showError", "useDefault", "ignore"],
+                                    "description": "降级动作：showError-显示错误，useDefault-使用默认值，ignore-忽略"
+                                  },
+                                  "errorMessage": {
+                                    "type": "string",
+                                    "description": "错误提示信息"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "responseActions": {
+                            "type": "array",
+                            "description": "响应后执行的动作列表（当actionType为dynamicEvent时）",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "enum": ["updateComponent", "triggerAction", "showMessage"],
+                                  "description": "动作类型：updateComponent-更新组件，triggerAction-触发动作，showMessage-显示消息"
+                                },
+                                "target": {
+                                  "type": "string",
+                                  "description": "目标组件ID或动作标识"
+                                },
+                                "config": {
+                                  "type": "object",
+                                  "description": "动作配置",
+                                  "additionalProperties": true
+                                }
+                              },
+                              "required": ["type"]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "i18n": {
+      "type": "object",
+      "description": "报表多语言配置",
+      "patternProperties": {
+        "^[a-z]{2}-[A-Z]{2}$": {
+          "type": "object",
+          "description": "语言代码对应的多语言文本",
+          "properties": {
+            "reportName": {
+              "type": "string"
+            },
+            "description": {
+              "type": "string"
+            },
+            "fieldMappings": {
+              "type": "object",
+              "description": "数据字段名称的多语言映射",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "description": "报表默认样式配置",
+      "properties": {
+        "reportBackground": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["color", "gradient", "image", "video"]
+            },
+            "value": {
+              "type": "string"
+            },
+            "config": {
+              "type": "object"
+            }
+          }
+        },
+        "theme": {
+          "type": "object",
+          "properties": {
+            "themeId": {
+              "type": "string"
+            },
+            "themeName": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

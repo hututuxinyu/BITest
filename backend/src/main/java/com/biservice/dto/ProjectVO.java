@@ -27,11 +27,6 @@ public class ProjectVO {
     private String description;
 
     /**
-     * 工程类型
-     */
-    private String projectType;
-
-    /**
      * 创建时间
      */
     private LocalDateTime createTime;
@@ -45,11 +40,6 @@ public class ProjectVO {
      * 报表数量
      */
     private Integer reportCount;
-
-    /**
-     * 最后报表更新时间
-     */
-    private LocalDateTime lastReportUpdateTime;
 }
 
 

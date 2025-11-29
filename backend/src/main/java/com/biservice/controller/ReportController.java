@@ -4,11 +4,23 @@ import com.biservice.dto.ApiResponse;
 import com.biservice.dto.CreateReportRequest;
 import com.biservice.dto.ReportVO;
 import com.biservice.service.ReportService;
+import com.biservice.service.SchemaService;
+import com.biservice.util.SchemaValidator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 报表控制器
@@ -22,6 +34,9 @@ public class ReportController {
 
     @Autowired
     private ReportService reportService;
+
+    @Autowired
+    private SchemaService schemaService;
 
     /**
      * 获取工程下的报表列表
@@ -97,6 +112,96 @@ public class ReportController {
             return ApiResponse.success("删除报表成功", null);
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 导出报表Schema
+     * 
+     * @param userId 用户ID
+     * @param projectId 工程ID
+     * @param reportId 报表ID
+     * @param request HTTP请求（用于获取IP地址）
+     * @return Schema文件
+     */
+    @GetMapping("/project/{projectId}/{reportId}/schema/export")
+    public ResponseEntity<InputStreamResource> exportReportSchema(
+            @RequestParam String userId,
+            @PathVariable String projectId,
+            @PathVariable String reportId,
+            HttpServletRequest request) {
+        try {
+            // 获取用户IP
+            String userIp = getClientIpAddress(request);
+
+            // 导出Schema
+            InputStream inputStream = reportService.exportReportSchema(userId, projectId, reportId, userIp);
+            String fileName = reportService.getSchemaFileName(reportId);
+
+            // 设置响应头
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, 
+                    "attachment; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()) + "\"");
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(new InputStreamResource(inputStream));
+        } catch (Exception e) {
+            throw new RuntimeException("导出Schema失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 获取客户端IP地址
+     * 
+     * @param request HTTP请求
+     * @return IP地址
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 处理多个IP的情况，取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip != null ? ip : "unknown";
+    }
+
+    /**
+     * 验证报表Schema
+     * 
+     * @param projectId 工程ID
+     * @param reportId 报表ID
+     * @return 验证结果
+     */
+    @GetMapping("/project/{projectId}/{reportId}/schema/validate")
+    public ApiResponse<Map<String, Object>> validateReportSchema(
+            @PathVariable String projectId,
+            @PathVariable String reportId) {
+        try {
+            // 读取Schema
+            String schemaJson = schemaService.readSchema(reportId);
+
+            // 验证Schema
+            SchemaValidator.SchemaValidationResult validationResult = schemaService.validateSchema(schemaJson);
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("valid", validationResult.isValid());
+            result.put("errors", validationResult.getErrors());
+            result.put("errorMessage", validationResult.getErrorMessage());
+
+            return ApiResponse.success(result);
+        } catch (Exception e) {
+            return ApiResponse.error("验证Schema失败: " + e.getMessage());
         }
     }
 }

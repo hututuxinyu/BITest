@@ -3,9 +3,17 @@ package com.biservice.controller;
 import com.biservice.dto.*;
 import com.biservice.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 工程控制器
@@ -124,6 +132,65 @@ public class ProjectController {
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }
+    }
+
+    /**
+     * 批量导出工程下所有报表的Schema
+     * 
+     * @param userId 用户ID
+     * @param projectId 工程ID
+     * @param request HTTP请求（用于获取IP地址）
+     * @return ZIP文件
+     */
+    @GetMapping("/{projectId}/schemas/export")
+    public ResponseEntity<InputStreamResource> exportProjectSchemas(
+            @RequestParam String userId,
+            @PathVariable String projectId,
+            HttpServletRequest request) {
+        try {
+            // 获取用户IP
+            String userIp = getClientIpAddress(request);
+
+            // 批量导出Schema
+            InputStream inputStream = projectService.exportProjectSchemas(userId, projectId, userIp);
+            String fileName = projectService.getZipFileName(projectId);
+
+            // 设置响应头
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.CONTENT_DISPOSITION, 
+                    "attachment; filename=\"" + URLEncoder.encode(fileName, StandardCharsets.UTF_8.toString()) + "\"");
+            headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(new InputStreamResource(inputStream));
+        } catch (Exception e) {
+            throw new RuntimeException("批量导出Schema失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 获取客户端IP地址
+     * 
+     * @param request HTTP请求
+     * @return IP地址
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 处理多个IP的情况，取第一个
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip != null ? ip : "unknown";
     }
 }
 

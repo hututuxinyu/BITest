@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 /**
  * 报表实体类
+ * 按照设计态系统设计说明书简化结构
  * 
  * @author BI Service Team
  */
@@ -22,63 +23,57 @@ public class Report {
     private String reportId;
 
     /**
-     * 所属工程ID
-     */
-    @Column(name = "project_id", nullable = false, length = 64)
-    private String projectId;
-
-    /**
      * 报表名称
      */
     @Column(name = "report_name", nullable = false, length = 255)
     private String reportName;
 
     /**
-     * 报表描述
+     * 报表类型（report/dashboard）
      */
-    @Column(name = "description", columnDefinition = "TEXT")
-    private String description;
+    @Column(name = "report_type", length = 20)
+    private String reportType;
 
     /**
-     * 报表状态（draft/published）
+     * 所属工程ID
+     */
+    @Column(name = "project_id", nullable = false, length = 64)
+    private String projectId;
+
+    /**
+     * Schema文件路径
+     */
+    @Column(name = "schema_file", length = 500)
+    private String schemaFile;
+
+    /**
+     * 版本号
+     */
+    @Column(name = "version", length = 50)
+    private String version;
+
+    /**
+     * 状态（draft/published）
      */
     @Column(name = "status", length = 20)
     private String status;
 
     /**
-     * 模板名称
+     * 创建人ID
      */
-    @Column(name = "template", length = 255)
-    private String template;
-
-    /**
-     * 标签（JSON格式存储）
-     */
-    @Column(name = "tags", columnDefinition = "TEXT")
-    private String tags;
+    @Column(name = "creator_id", length = 64)
+    private String creatorId;
 
     /**
      * 创建时间
      */
-    @Column(name = "created_time", nullable = false)
-    private LocalDateTime createdTime;
+    @Column(name = "create_time", nullable = false)
+    private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
     @Column(name = "update_time", nullable = false)
     private LocalDateTime updateTime;
-
-    /**
-     * 创建人
-     */
-    @Column(name = "created_by", length = 64)
-    private String createdBy;
-
-    /**
-     * 最后编辑人
-     */
-    @Column(name = "last_edited_by", length = 64)
-    private String lastEditedBy;
 }
 
