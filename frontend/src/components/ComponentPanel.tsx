@@ -18,6 +18,21 @@ import {
   DotChartOutlined,
   DashboardOutlined,
   FundOutlined,
+  TableOutlined,
+  ApartmentOutlined,
+  ClockCircleOutlined,
+  FileTextOutlined,
+  DownOutlined,
+  CheckSquareOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  SwapOutlined,
+  FilterOutlined,
+  ThunderboltOutlined,
+  EditOutlined,
+  MinusOutlined,
+  BorderInnerOutlined,
+  PlayCircleOutlined,
 } from '@ant-design/icons';
 import { componentApi } from '../services/componentApi';
 import type {
@@ -53,9 +68,9 @@ const ComponentPanel: React.FC = () => {
   }, [keyword]);
 
   const groupedComponents = useMemo(() => {
-    const groups: Record<'basicChart' | 'threeDChart' | 'multimedia' | 'container' | 'control', ComponentSummary[]> = {
+    const groups: Record<'basicChart' | 'form' | 'multimedia' | 'container' | 'control', ComponentSummary[]> = {
       basicChart: [],
-      threeDChart: [],
+      form: [],
       multimedia: [],
       container: [],
       control: [],
@@ -63,6 +78,12 @@ const ComponentPanel: React.FC = () => {
     components.forEach((component) => {
       const category = categorizeComponent(component);
       groups[category].push(component);
+    });
+    // 对表单组件列表进行排序，确保"表单组件"排在第一位
+    groups.form.sort((a, b) => {
+      if (a.componentName === '表单组件') return -1;
+      if (b.componentName === '表单组件') return 1;
+      return 0;
     });
     return groups;
   }, [components]);
@@ -113,11 +134,11 @@ const ComponentPanel: React.FC = () => {
                         ),
                       },
                       {
-                        key: 'threeDChart',
-                        label: `三维图表 (${groupedComponents.threeDChart.length})`,
+                        key: 'form',
+                        label: `表单组件 (${groupedComponents.form.length})`,
                         children: (
                           <div style={{ padding: '8px 0' }}>
-                            {renderComponentGrid(groupedComponents.threeDChart, loading, handleDragStart, 'chart')}
+                            {renderComponentGrid(groupedComponents.form, loading, handleDragStart, 'form')}
                           </div>
                         ),
                       },
@@ -126,7 +147,7 @@ const ComponentPanel: React.FC = () => {
                         label: `多媒体 (${groupedComponents.multimedia.length})`,
                         children: (
                           <div style={{ padding: '8px 0' }}>
-                            {renderComponentGrid(groupedComponents.multimedia, loading, handleDragStart, 'other')}
+                            {renderComponentGrid(groupedComponents.multimedia, loading, handleDragStart, 'multimedia')}
                           </div>
                         ),
                       },
@@ -173,7 +194,7 @@ function renderComponentGrid(
   items: ComponentSummary[],
   loading: boolean,
   handleDragStart: (e: React.DragEvent, component: ComponentSummary) => void,
-  category?: 'chart' | 'form' | 'layout' | 'other'
+  category?: 'chart' | 'form' | 'multimedia' | 'layout' | 'other'
 ) {
   if (items.length === 0) {
     if (loading) {
@@ -181,8 +202,8 @@ function renderComponentGrid(
     }
     return <Empty description="暂无组件" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
   }
-  // 图表分类使用2列，其他分类使用3列
-  const columnCount = category === 'chart' ? 2 : 3;
+  // 图表、表单和多媒体分类使用2列，其他分类使用3列
+  const columnCount = category === 'chart' || category === 'form' || category === 'multimedia' ? 2 : 3;
   return (
     <List
       loading={loading}
@@ -257,6 +278,74 @@ function renderComponentGrid(
 function renderThumbnailContent(component: ComponentSummary) {
   const lowerName = component.componentName.toLowerCase();
   
+  // 雷达图
+  if (lowerName.includes('雷达') || lowerName.includes('radar')) {
+    return <FundOutlined style={thumbnailIconStyle} />;
+  }
+  // 表格
+  if (lowerName.includes('表格') && !lowerName.includes('树形')) {
+    return <TableOutlined style={thumbnailIconStyle} />;
+  }
+  // 树形表格
+  if (lowerName.includes('树形表格') || lowerName.includes('treetable')) {
+    return <ApartmentOutlined style={thumbnailIconStyle} />;
+  }
+  // 表单组件
+  if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
+    return <AppstoreOutlined style={thumbnailIconStyle} />;
+  }
+  // 周期时间
+  if (lowerName.includes('周期时间') || lowerName.includes('timeperiod')) {
+    return <ClockCircleOutlined style={thumbnailIconStyle} />;
+  }
+  // 文本框
+  if (lowerName.includes('文本框') || (lowerName.includes('文本') && !lowerName.includes('输入'))) {
+    return <FileTextOutlined style={thumbnailIconStyle} />;
+  }
+  // 下拉框
+  if (lowerName.includes('下拉框') || lowerName.includes('select')) {
+    return <DownOutlined style={thumbnailIconStyle} />;
+  }
+  // 多选框
+  if (lowerName.includes('多选框') || lowerName.includes('checkbox')) {
+    return <CheckSquareOutlined style={thumbnailIconStyle} />;
+  }
+  // 日期段选择
+  if (lowerName.includes('日期段') || lowerName.includes('daterange')) {
+    return <CalendarOutlined style={thumbnailIconStyle} />;
+  }
+  // 单选框
+  if (lowerName.includes('单选框') || lowerName.includes('radio')) {
+    return <CheckCircleOutlined style={thumbnailIconStyle} />;
+  }
+  // 开关切换
+  if (lowerName.includes('开关') || lowerName.includes('switch')) {
+    return <SwapOutlined style={thumbnailIconStyle} />;
+  }
+  // 过滤器
+  if (lowerName.includes('过滤器') || lowerName.includes('filter')) {
+    return <FilterOutlined style={thumbnailIconStyle} />;
+  }
+  // 按钮
+  if (lowerName.includes('按钮') || lowerName.includes('button')) {
+    return <ThunderboltOutlined style={thumbnailIconStyle} />;
+  }
+  // 输入框
+  if (lowerName.includes('输入框') || lowerName.includes('input')) {
+    return <EditOutlined style={thumbnailIconStyle} />;
+  }
+  // 线条
+  if (lowerName.includes('线条') || lowerName.includes('line')) {
+    return <MinusOutlined style={thumbnailIconStyle} />;
+  }
+  // 边框
+  if (lowerName.includes('边框') || lowerName.includes('border')) {
+    return <BorderInnerOutlined style={thumbnailIconStyle} />;
+  }
+  // 视频
+  if (lowerName.includes('视频') || lowerName.includes('video')) {
+    return <PlayCircleOutlined style={thumbnailIconStyle} />;
+  }
   // 条形图 - 使用水平方向的柱状图图标（优先判断）
   if (lowerName.includes('条形')) {
     return <BarChartOutlined style={{ ...thumbnailIconStyle, transform: 'rotate(90deg)' }} />;
@@ -306,6 +395,64 @@ function renderThumbnailContent(component: ComponentSummary) {
 
 function getPlaceholderIcon(component: ComponentSummary) {
   const lowerName = component.componentName.toLowerCase();
+  // 雷达图
+  if (lowerName.includes('雷达') || lowerName.includes('radar')) {
+    return <FundOutlined style={thumbnailIconStyle} />;
+  }
+  // 表格
+  if (lowerName.includes('表格') && !lowerName.includes('树形')) {
+    return <TableOutlined style={thumbnailIconStyle} />;
+  }
+  // 树形表格
+  if (lowerName.includes('树形表格') || lowerName.includes('treetable')) {
+    return <ApartmentOutlined style={thumbnailIconStyle} />;
+  }
+  // 表单组件图标
+  if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
+    return <AppstoreOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('周期时间') || lowerName.includes('timeperiod')) {
+    return <ClockCircleOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('文本框') || (lowerName.includes('文本') && !lowerName.includes('输入'))) {
+    return <FileTextOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('下拉框') || lowerName.includes('select')) {
+    return <DownOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('多选框') || lowerName.includes('checkbox')) {
+    return <CheckSquareOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('日期段') || lowerName.includes('daterange')) {
+    return <CalendarOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('单选框') || lowerName.includes('radio')) {
+    return <CheckCircleOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('开关') || lowerName.includes('switch')) {
+    return <SwapOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('过滤器') || lowerName.includes('filter')) {
+    return <FilterOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('按钮') || lowerName.includes('button')) {
+    return <ThunderboltOutlined style={thumbnailIconStyle} />;
+  }
+  if (lowerName.includes('输入框') || lowerName.includes('input')) {
+    return <EditOutlined style={thumbnailIconStyle} />;
+  }
+  // 线条
+  if (lowerName.includes('线条') || lowerName.includes('line')) {
+    return <MinusOutlined style={thumbnailIconStyle} />;
+  }
+  // 边框
+  if (lowerName.includes('边框') || lowerName.includes('border')) {
+    return <BorderInnerOutlined style={thumbnailIconStyle} />;
+  }
+  // 视频
+  if (lowerName.includes('视频') || lowerName.includes('video')) {
+    return <PlayCircleOutlined style={thumbnailIconStyle} />;
+  }
   // 条形图 - 使用水平方向的柱状图图标（优先判断）
   if (lowerName.includes('条形')) {
     return <BarChartOutlined style={{ ...thumbnailIconStyle, transform: 'rotate(90deg)' }} />;
@@ -352,25 +499,44 @@ function getPlaceholderIcon(component: ComponentSummary) {
   return <AppstoreOutlined style={thumbnailIconStyle} />;
 }
 
-function categorizeComponent(component: ComponentSummary): 'basicChart' | 'threeDChart' | 'multimedia' | 'container' | 'control' {
+function categorizeComponent(component: ComponentSummary): 'basicChart' | 'form' | 'multimedia' | 'container' | 'control' {
   const name = `${component.componentName}${component.alias || ''}`.toLowerCase();
   
-  // 三维图表：包含3D、三维等关键词
-  const threeDKeywords = ['3d', '三维', '3D'];
-  if (threeDKeywords.some((kw) => name.includes(kw))) {
-    return 'threeDChart';
+  // 优先检查 categories 字段
+  if (component.categories && component.categories.length > 0) {
+    if (component.categories.includes('form')) {
+      return 'form';
+    }
+    if (component.categories.includes('media')) {
+      return 'multimedia';
+    }
+    if (component.categories.includes('container')) {
+      return 'container';
+    }
+    if (component.categories.includes('chart')) {
+      return 'basicChart';
+    }
+    if (component.categories.includes('control')) {
+      return 'control';
+    }
   }
   
-  // 基础图表：普通图表类型
-  const chartKeywords = ['图', 'chart', '仪表', 'dashboard', '指标', 'heatmap', '柱', '折线', '饼', '条形', '面积', '散点', '环形', '象形', '柱线'];
-  if (component.type === 'chart' || chartKeywords.some((kw) => component.componentName.includes(kw) || name.includes(kw))) {
-    return 'basicChart';
+  // 表单组件：周期时间、文本框、下拉框、多选框、日期段选择、单选框、开关切换、过滤器、按钮、输入框、表单组件
+  const formKeywords = ['表单组件', 'form', '周期时间', 'timeperiod', '文本框', 'text', '下拉框', 'select', '多选框', 'checkbox', '日期段', 'daterange', '单选框', 'radio', '开关', 'switch', '过滤器', 'filter', '按钮', 'button', '输入框', 'input'];
+  if (formKeywords.some((kw) => component.componentName.includes(kw) || name.includes(kw))) {
+    return 'form';
   }
   
-  // 多媒体：图片、视频、文本等
+  // 多媒体：图片、视频、文本等（优先于图表判断）
   const multimediaKeywords = ['图片', 'image', '视频', 'video', '文本', 'text', '音频', 'audio', '媒体', 'media'];
   if (multimediaKeywords.some((kw) => name.includes(kw))) {
     return 'multimedia';
+  }
+  
+  // 基础图表：普通图表类型，包括雷达图、表格、树形表格
+  const chartKeywords = ['图', 'chart', '仪表', 'dashboard', '指标', 'heatmap', '柱', '折线', '饼', '条形', '面积', '散点', '环形', '象形', '柱线', '雷达', 'radar', '表格', 'table', '树形表格', 'treetable'];
+  if (component.type === 'chart' || chartKeywords.some((kw) => component.componentName.includes(kw) || name.includes(kw))) {
+    return 'basicChart';
   }
   
   // 容器组件：容器、布局、分组、选项卡等
@@ -379,7 +545,7 @@ function categorizeComponent(component: ComponentSummary): 'basicChart' | 'three
     return 'container';
   }
   
-  // 控制类组件：按钮、筛选框、输入框等
+  // 控制类组件：按钮、筛选框、输入框等（不在form分类中的）
   return 'control';
 }
 

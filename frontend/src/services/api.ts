@@ -253,3 +253,44 @@ export const reportApi = {
   },
 };
 
+/**
+ * 模板API
+ */
+export const templateApi = {
+  /**
+   * 获取所有模板列表
+   */
+  getAllTemplates: async (): Promise<ApiResponse<any[]>> => {
+    const response = await fetch(`${API_BASE_URL}/templates`);
+    const result: ApiResponse<any[]> = await response.json();
+    return result;
+  },
+
+  /**
+   * 根据分类获取模板列表
+   */
+  getTemplatesByCategory: async (category: string): Promise<ApiResponse<any[]>> => {
+    const response = await fetch(`${API_BASE_URL}/templates/category/${category}`);
+    const result: ApiResponse<any[]> = await response.json();
+    return result;
+  },
+
+  /**
+   * 获取模板详情
+   */
+  getTemplateById: async (templateId: string): Promise<ApiResponse<any>> => {
+    const response = await fetch(`${API_BASE_URL}/templates/${templateId}`);
+    const result: ApiResponse<any> = await response.json();
+    return result;
+  },
+
+  /**
+   * 获取模板Schema
+   */
+  getTemplateSchema: async (templateId: string): Promise<ApiResponse<any>> => {
+    const response = await fetch(`${API_BASE_URL}/templates/${templateId}/schema`);
+    const result: ApiResponse<any> = await response.json();
+    return result;
+  },
+};
+

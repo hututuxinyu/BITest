@@ -1,62 +1,1338 @@
 {
   "version": "1.0.0",
-  "reportId": "report-001",
-  "reportName": "月度销售报表",
-  "reportType": "report",
+  "reportId": "dashboard-sales-001",
+  "reportName": "2024年度销售数据总览 Dashboard",
+  "reportType": "dashboard",
   "metadata": {
-    "createTime": "2024-01-15T10:30:00Z",
-    "updateTime": "2024-01-20T14:20:00Z",
-    "creator": "user-001",
-    "description": "用于分析月度销售数据的BI报表"
+    "createTime": "2024-06-30T10:00:00Z",
+    "updateTime": "2024-06-30T18:30:25Z",
+    "creator": "admin",
+    "description": "企业销售数据可视化 Dashboard 大屏，面向企业销售决策层与运营团队"
   },
   "canvas": {
     "width": 1920,
     "height": 1080,
-    "backgroundColor": "#f5f5f5",
-    "grid": true,
+    "backgroundColor": "#0A1629",
+    "grid": false,
     "gridSize": 10
   },
   "components": [
     {
-      "componentId": "comp-001",
-      "componentType": "barChart",
-      "componentName": "月度销售额柱状图",
+      "componentId": "comp-header-title",
+      "componentType": "text",
+      "componentName": "主标题",
       "position": {
-        "x": 100,
-        "y": 100
+        "x": 40,
+        "y": 20
       },
       "size": {
         "width": 600,
-        "height": 400
+        "height": 40
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "2024年度销售数据总览 Dashboard",
+        "fontSize": 24,
+        "fontWeight": "bold",
+        "color": "#165DFF",
+        "textAlign": "left"
+      },
+      "style": {
+        "backgroundColor": "transparent"
+      }
+    },
+    {
+      "componentId": "comp-header-subtitle",
+      "componentType": "text",
+      "componentName": "副标题",
+      "position": {
+        "x": 40,
+        "y": 70
+      },
+      "size": {
+        "width": 400,
+        "height": 20
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "实时更新・区域全覆盖・多维度分析",
+        "fontSize": 14,
+        "fontWeight": "normal",
+        "color": "#666666",
+        "textAlign": "left"
+      },
+      "style": {
+        "backgroundColor": "transparent"
+      }
+    },
+    {
+      "componentId": "comp-filter-time",
+      "componentType": "select",
+      "componentName": "时间筛选器",
+      "position": {
+        "x": 1200,
+        "y": 30
+      },
+      "size": {
+        "width": 150,
+        "height": 32
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "label": "时间",
+        "options": [
+          { "label": "本月", "value": "month" },
+          { "label": "本季度", "value": "quarter" },
+          { "label": "上半年", "value": "halfYear" },
+          { "label": "全年", "value": "year" }
+        ],
+        "defaultValue": "halfYear",
+        "placeholder": "请选择时间"
+      },
+      "style": {
+        "backgroundColor": "#F5F7FA"
+      }
+    },
+    {
+      "componentId": "comp-filter-region",
+      "componentType": "checkbox",
+      "componentName": "区域筛选器",
+      "position": {
+        "x": 1380,
+        "y": 30
+      },
+      "size": {
+        "width": 300,
+        "height": 32
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "label": "区域",
+        "options": [
+          { "label": "华东", "value": "east" },
+          { "label": "华北", "value": "north" },
+          { "label": "华南", "value": "south" },
+          { "label": "西南", "value": "southwest" },
+          { "label": "西北", "value": "northwest" },
+          { "label": "东北", "value": "northeast" }
+        ],
+        "defaultValue": ["east", "north", "south", "southwest", "northwest", "northeast"]
+      },
+      "style": {
+        "backgroundColor": "#F5F7FA"
+      }
+    },
+    {
+      "componentId": "comp-filter-product",
+      "componentType": "select",
+      "componentName": "产品筛选器",
+      "position": {
+        "x": 1700,
+        "y": 30
+      },
+      "size": {
+        "width": 150,
+        "height": 32
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "label": "产品",
+        "options": [
+          { "label": "全品类", "value": "all" },
+          { "label": "手机", "value": "phone" },
+          { "label": "智能手表", "value": "watch" },
+          { "label": "无线耳机", "value": "earphone" },
+          { "label": "平板电脑", "value": "tablet" }
+        ],
+        "defaultValue": "all",
+        "placeholder": "请选择产品"
+      },
+      "style": {
+        "backgroundColor": "#F5F7FA"
+      }
+    },
+    {
+      "componentId": "comp-update-time",
+      "componentType": "text",
+      "componentName": "更新时间",
+      "position": {
+        "x": 1700,
+        "y": 80
+      },
+      "size": {
+        "width": 200,
+        "height": 20
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "最后更新：2024-06-30 18:30:25",
+        "fontSize": 12,
+        "fontWeight": "normal",
+        "color": "#999999",
+        "textAlign": "right"
+      },
+      "style": {
+        "backgroundColor": "transparent"
+      }
+    },
+    {
+      "componentId": "comp-border-top",
+      "componentType": "border",
+      "componentName": "顶部边框",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "width": 1920,
+        "height": 120
       },
       "zIndex": 1,
       "visible": true,
       "locked": false,
       "props": {
-        "title": "月度销售额",
-        "xAxisField": "month",
+        "color": "#165DFF",
+        "width": 2,
+        "style": "solid",
+        "radius": 0
+      }
+    },
+    {
+      "componentId": "comp-line-1",
+      "componentType": "line",
+      "componentName": "分隔线1",
+      "position": {
+        "x": 0,
+        "y": 120
+      },
+      "size": {
+        "width": 1920,
+        "height": 1
+      },
+      "zIndex": 2,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "direction": "horizontal",
+        "color": "#165DFF",
+        "width": 1,
+        "style": "solid"
+      }
+    },
+    {
+      "componentId": "comp-left-border",
+      "componentType": "border",
+      "componentName": "左侧区域边框",
+      "position": {
+        "x": 20,
+        "y": 140
+      },
+      "size": {
+        "width": 800,
+        "height": 700
+      },
+      "zIndex": 3,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#165DFF",
+        "width": 2,
+        "style": "solid",
+        "radius": 8
+      }
+    },
+    {
+      "componentId": "comp-line-chart",
+      "componentType": "lineChart",
+      "componentName": "销售趋势折线图",
+      "position": {
+        "x": 40,
+        "y": 160
+      },
+      "size": {
+        "width": 760,
+        "height": 350
+      },
+      "zIndex": 4,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "销售趋势（日维度）",
+        "xAxisField": "date",
         "yAxisField": "amount",
-        "color": "#1890ff",
+        "smooth": true,
+        "showArea": true,
         "showLegend": true,
         "showTooltip": true
       },
-      "datasourceConfig": {
-        "sourceType": "static",
+      "data": {
         "bindingType": "static",
         "staticConfig": {
           "data": [
-            {"month": "1月", "amount": 120},
-            {"month": "2月", "amount": 150},
-            {"month": "3月", "amount": 180},
-            {"month": "4月", "amount": 200}
+            { "category": "2024-01-01", "value": 12.5, "series": "实际销售额" },
+            { "category": "2024-01-08", "value": 15.2, "series": "实际销售额" },
+            { "category": "2024-01-15", "value": 18.8, "series": "实际销售额" },
+            { "category": "2024-01-22", "value": 22.3, "series": "实际销售额" },
+            { "category": "2024-01-29", "value": 20.1, "series": "实际销售额" },
+            { "category": "2024-02-05", "value": 25.6, "series": "实际销售额" },
+            { "category": "2024-02-12", "value": 28.9, "series": "实际销售额" },
+            { "category": "2024-02-19", "value": 24.3, "series": "实际销售额" },
+            { "category": "2024-02-26", "value": 30.2, "series": "实际销售额" },
+            { "category": "2024-03-05", "value": 27.8, "series": "实际销售额" },
+            { "category": "2024-03-12", "value": 32.5, "series": "实际销售额" },
+            { "category": "2024-03-19", "value": 29.1, "series": "实际销售额" },
+            { "category": "2024-03-26", "value": 35.6, "series": "实际销售额" },
+            { "category": "2024-04-02", "value": 33.2, "series": "实际销售额" },
+            { "category": "2024-04-09", "value": 38.9, "series": "实际销售额" },
+            { "category": "2024-04-16", "value": 36.5, "series": "实际销售额" },
+            { "category": "2024-04-23", "value": 41.2, "series": "实际销售额" },
+            { "category": "2024-04-30", "value": 39.8, "series": "实际销售额" },
+            { "category": "2024-05-07", "value": 44.5, "series": "实际销售额" },
+            { "category": "2024-05-14", "value": 42.1, "series": "实际销售额" },
+            { "category": "2024-05-21", "value": 47.8, "series": "实际销售额" },
+            { "category": "2024-05-28", "value": 45.3, "series": "实际销售额" },
+            { "category": "2024-06-04", "value": 50.2, "series": "实际销售额" },
+            { "category": "2024-06-11", "value": 48.6, "series": "实际销售额" },
+            { "category": "2024-06-18", "value": 52.9, "series": "实际销售额" },
+            { "category": "2024-06-25", "value": 51.3, "series": "实际销售额" },
+            { "category": "2024-01-01", "value": 15.0, "series": "目标销售额" },
+            { "category": "2024-01-08", "value": 16.0, "series": "目标销售额" },
+            { "category": "2024-01-15", "value": 17.0, "series": "目标销售额" },
+            { "category": "2024-01-22", "value": 18.0, "series": "目标销售额" },
+            { "category": "2024-01-29", "value": 19.0, "series": "目标销售额" },
+            { "category": "2024-02-05", "value": 20.0, "series": "目标销售额" },
+            { "category": "2024-02-12", "value": 21.0, "series": "目标销售额" },
+            { "category": "2024-02-19", "value": 22.0, "series": "目标销售额" },
+            { "category": "2024-02-26", "value": 23.0, "series": "目标销售额" },
+            { "category": "2024-03-05", "value": 24.0, "series": "目标销售额" },
+            { "category": "2024-03-12", "value": 25.0, "series": "目标销售额" },
+            { "category": "2024-03-19", "value": 26.0, "series": "目标销售额" },
+            { "category": "2024-03-26", "value": 27.0, "series": "目标销售额" },
+            { "category": "2024-04-02", "value": 28.0, "series": "目标销售额" },
+            { "category": "2024-04-09", "value": 29.0, "series": "目标销售额" },
+            { "category": "2024-04-16", "value": 30.0, "series": "目标销售额" },
+            { "category": "2024-04-23", "value": 31.0, "series": "目标销售额" },
+            { "category": "2024-04-30", "value": 32.0, "series": "目标销售额" },
+            { "category": "2024-05-07", "value": 33.0, "series": "目标销售额" },
+            { "category": "2024-05-14", "value": 34.0, "series": "目标销售额" },
+            { "category": "2024-05-21", "value": 35.0, "series": "目标销售额" },
+            { "category": "2024-05-28", "value": 36.0, "series": "目标销售额" },
+            { "category": "2024-06-04", "value": 37.0, "series": "目标销售额" },
+            { "category": "2024-06-11", "value": 38.0, "series": "目标销售额" },
+            { "category": "2024-06-18", "value": 39.0, "series": "目标销售额" },
+            { "category": "2024-06-25", "value": 40.0, "series": "目标销售额" }
           ]
         }
       },
-      "interactions": []
+      "staticData": [
+        { "category": "2024-01-01", "value": 12.5, "series": "实际销售额" },
+        { "category": "2024-01-08", "value": 15.2, "series": "实际销售额" },
+        { "category": "2024-01-15", "value": 18.8, "series": "实际销售额" },
+        { "category": "2024-01-22", "value": 22.3, "series": "实际销售额" },
+        { "category": "2024-01-29", "value": 20.1, "series": "实际销售额" },
+        { "category": "2024-02-05", "value": 25.6, "series": "实际销售额" },
+        { "category": "2024-02-12", "value": 28.9, "series": "实际销售额" },
+        { "category": "2024-02-19", "value": 24.3, "series": "实际销售额" },
+        { "category": "2024-02-26", "value": 30.2, "series": "实际销售额" },
+        { "category": "2024-03-05", "value": 27.8, "series": "实际销售额" },
+        { "category": "2024-03-12", "value": 32.5, "series": "实际销售额" },
+        { "category": "2024-03-19", "value": 29.1, "series": "实际销售额" },
+        { "category": "2024-03-26", "value": 35.6, "series": "实际销售额" },
+        { "category": "2024-04-02", "value": 33.2, "series": "实际销售额" },
+        { "category": "2024-04-09", "value": 38.9, "series": "实际销售额" },
+        { "category": "2024-04-16", "value": 36.5, "series": "实际销售额" },
+        { "category": "2024-04-23", "value": 41.2, "series": "实际销售额" },
+        { "category": "2024-04-30", "value": 39.8, "series": "实际销售额" },
+        { "category": "2024-05-07", "value": 44.5, "series": "实际销售额" },
+        { "category": "2024-05-14", "value": 42.1, "series": "实际销售额" },
+        { "category": "2024-05-21", "value": 47.8, "series": "实际销售额" },
+        { "category": "2024-05-28", "value": 45.3, "series": "实际销售额" },
+        { "category": "2024-06-04", "value": 50.2, "series": "实际销售额" },
+        { "category": "2024-06-11", "value": 48.6, "series": "实际销售额" },
+        { "category": "2024-06-18", "value": 52.9, "series": "实际销售额" },
+        { "category": "2024-06-25", "value": 51.3, "series": "实际销售额" }
+      ],
+      "style": {
+        "backgroundColor": "#1A2332"
+      }
+    },
+    {
+      "componentId": "comp-line-2",
+      "componentType": "line",
+      "componentName": "分隔线2",
+      "position": {
+        "x": 40,
+        "y": 530
+      },
+      "size": {
+        "width": 760,
+        "height": 1
+      },
+      "zIndex": 4,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "direction": "horizontal",
+        "color": "#165DFF",
+        "width": 1,
+        "style": "dashed"
+      }
+    },
+    {
+      "componentId": "comp-bar-chart",
+      "componentType": "barChart",
+      "componentName": "月度销售额柱状图",
+      "position": {
+        "x": 40,
+        "y": 550
+      },
+      "size": {
+        "width": 760,
+        "height": 350
+      },
+      "zIndex": 4,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "月度销售额对比",
+        "xAxisField": "month",
+        "yAxisField": "amount",
+        "showLegend": true,
+        "showTooltip": true,
+        "stack": "none"
+      },
+      "data": {
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            { "category": "1月", "value": 178.5, "series": "2024年销售额" },
+            { "category": "2月", "value": 210.5, "series": "2024年销售额" },
+            { "category": "3月", "value": 195.2, "series": "2024年销售额" },
+            { "category": "4月", "value": 225.8, "series": "2024年销售额" },
+            { "category": "5月", "value": 240.3, "series": "2024年销售额" },
+            { "category": "6月", "value": 242.7, "series": "2024年销售额" },
+            { "category": "1月", "value": 150.2, "series": "2023年销售额" },
+            { "category": "2月", "value": 178.1, "series": "2023年销售额" },
+            { "category": "3月", "value": 165.3, "series": "2023年销售额" },
+            { "category": "4月", "value": 190.5, "series": "2023年销售额" },
+            { "category": "5月", "value": 203.2, "series": "2023年销售额" },
+            { "category": "6月", "value": 205.4, "series": "2023年销售额" }
+          ]
+        }
+      },
+      "staticData": [
+        { "category": "1月", "value": 178.5, "series": "2024年销售额" },
+        { "category": "2月", "value": 210.5, "series": "2024年销售额" },
+        { "category": "3月", "value": 195.2, "series": "2024年销售额" },
+        { "category": "4月", "value": 225.8, "series": "2024年销售额" },
+        { "category": "5月", "value": 240.3, "series": "2024年销售额" },
+        { "category": "6月", "value": 242.7, "series": "2024年销售额" },
+        { "category": "1月", "value": 150.2, "series": "2023年销售额" },
+        { "category": "2月", "value": 178.1, "series": "2023年销售额" },
+        { "category": "3月", "value": 165.3, "series": "2023年销售额" },
+        { "category": "4月", "value": 190.5, "series": "2023年销售额" },
+        { "category": "5月", "value": 203.2, "series": "2023年销售额" },
+        { "category": "6月", "value": 205.4, "series": "2023年销售额" }
+      ],
+      "style": {
+        "backgroundColor": "#1A2332"
+      }
+    },
+    {
+      "componentId": "comp-right-top-border",
+      "componentType": "border",
+      "componentName": "右侧上区边框",
+      "position": {
+        "x": 860,
+        "y": 140
+      },
+      "size": {
+        "width": 1120,
+        "height": 350
+      },
+      "zIndex": 3,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#165DFF",
+        "width": 2,
+        "style": "solid",
+        "radius": 8
+      }
+    },
+    {
+      "componentId": "comp-kpi-1",
+      "componentType": "border",
+      "componentName": "KPI卡片1-总销售额",
+      "position": {
+        "x": 880,
+        "y": 160
+      },
+      "size": {
+        "width": 530,
+        "height": 150
+      },
+      "zIndex": 5,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#165DFF",
+        "width": 1,
+        "style": "solid",
+        "radius": 8
+      },
+      "style": {
+        "backgroundColor": "#F5F7FA"
+      }
+    },
+    {
+      "componentId": "comp-kpi-1-label",
+      "componentType": "text",
+      "componentName": "KPI1标签",
+      "position": {
+        "x": 900,
+        "y": 170
+      },
+      "size": {
+        "width": 200,
+        "height": 20
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "上半年总销售额",
+        "fontSize": 14,
+        "fontWeight": "normal",
+        "color": "#666666",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-1-value",
+      "componentType": "text",
+      "componentName": "KPI1数值",
+      "position": {
+        "x": 900,
+        "y": 200
+      },
+      "size": {
+        "width": 300,
+        "height": 40
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "1093.0 万元",
+        "fontSize": 32,
+        "fontWeight": "bold",
+        "color": "#165DFF",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-1-trend",
+      "componentType": "text",
+      "componentName": "KPI1趋势",
+      "position": {
+        "x": 900,
+        "y": 250
+      },
+      "size": {
+        "width": 200,
+        "height": 20
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "同比增长 12.5% ↑",
+        "fontSize": 12,
+        "fontWeight": "normal",
+        "color": "#00B42A",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-2",
+      "componentType": "border",
+      "componentName": "KPI卡片2-客单价",
+      "position": {
+        "x": 1430,
+        "y": 160
+      },
+      "size": {
+        "width": 530,
+        "height": 150
+      },
+      "zIndex": 5,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#69B1FF",
+        "width": 1,
+        "style": "solid",
+        "radius": 8
+      },
+      "style": {
+        "backgroundColor": "#F5F7FA"
+      }
+    },
+    {
+      "componentId": "comp-kpi-2-label",
+      "componentType": "text",
+      "componentName": "KPI2标签",
+      "position": {
+        "x": 1450,
+        "y": 170
+      },
+      "size": {
+        "width": 200,
+        "height": 20
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "平均客单价",
+        "fontSize": 14,
+        "fontWeight": "normal",
+        "color": "#666666",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-2-value",
+      "componentType": "text",
+      "componentName": "KPI2数值",
+      "position": {
+        "x": 1450,
+        "y": 200
+      },
+      "size": {
+        "width": 300,
+        "height": 40
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "2.38 万元",
+        "fontSize": 32,
+        "fontWeight": "bold",
+        "color": "#69B1FF",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-2-trend",
+      "componentType": "text",
+      "componentName": "KPI2趋势",
+      "position": {
+        "x": 1450,
+        "y": 250
+      },
+      "size": {
+        "width": 200,
+        "height": 20
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "环比增长 3.2% ↑",
+        "fontSize": 12,
+        "fontWeight": "normal",
+        "color": "#00B42A",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-3",
+      "componentType": "border",
+      "componentName": "KPI卡片3-完成率",
+      "position": {
+        "x": 880,
+        "y": 330
+      },
+      "size": {
+        "width": 530,
+        "height": 150
+      },
+      "zIndex": 5,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#FF7D00",
+        "width": 1,
+        "style": "solid",
+        "radius": 8
+      },
+      "style": {
+        "backgroundColor": "#F5F7FA"
+      }
+    },
+    {
+      "componentId": "comp-kpi-3-label",
+      "componentType": "text",
+      "componentName": "KPI3标签",
+      "position": {
+        "x": 900,
+        "y": 340
+      },
+      "size": {
+        "width": 200,
+        "height": 20
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "销售目标完成率",
+        "fontSize": 14,
+        "fontWeight": "normal",
+        "color": "#666666",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-3-value",
+      "componentType": "text",
+      "componentName": "KPI3数值",
+      "position": {
+        "x": 900,
+        "y": 370
+      },
+      "size": {
+        "width": 300,
+        "height": 40
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "86.7%",
+        "fontSize": 32,
+        "fontWeight": "bold",
+        "color": "#FF7D00",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-3-chart",
+      "componentType": "pieChart",
+      "componentName": "KPI3环形图",
+      "position": {
+        "x": 1200,
+        "y": 360
+      },
+      "size": {
+        "width": 180,
+        "height": 120
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "",
+        "innerRadius": 50,
+        "showLegend": false,
+        "showTooltip": true
+      },
+      "data": {
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            { "name": "已完成", "value": 86.7 },
+            { "name": "未完成", "value": 13.3 }
+          ]
+        }
+      },
+      "staticData": [
+        { "name": "已完成", "value": 86.7 },
+        { "name": "未完成", "value": 13.3 }
+      ],
+      "style": {
+        "backgroundColor": "transparent"
+      }
+    },
+    {
+      "componentId": "comp-kpi-4",
+      "componentType": "border",
+      "componentName": "KPI卡片4-产品占比",
+      "position": {
+        "x": 1430,
+        "y": 330
+      },
+      "size": {
+        "width": 530,
+        "height": 150
+      },
+      "zIndex": 5,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#00B42A",
+        "width": 1,
+        "style": "solid",
+        "radius": 8
+      },
+      "style": {
+        "backgroundColor": "#F5F7FA"
+      }
+    },
+    {
+      "componentId": "comp-kpi-4-label",
+      "componentType": "text",
+      "componentName": "KPI4标签",
+      "position": {
+        "x": 1450,
+        "y": 340
+      },
+      "size": {
+        "width": 200,
+        "height": 20
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "热销产品占比",
+        "fontSize": 14,
+        "fontWeight": "normal",
+        "color": "#666666",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-4-value",
+      "componentType": "text",
+      "componentName": "KPI4数值",
+      "position": {
+        "x": 1450,
+        "y": 360
+      },
+      "size": {
+        "width": 300,
+        "height": 20
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "手机 32.1%",
+        "fontSize": 16,
+        "fontWeight": "bold",
+        "color": "#00B42A",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-kpi-4-chart",
+      "componentType": "pieChart",
+      "componentName": "KPI4环形图",
+      "position": {
+        "x": 1500,
+        "y": 390
+      },
+      "size": {
+        "width": 180,
+        "height": 80
+      },
+      "zIndex": 6,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "",
+        "innerRadius": 50,
+        "showLegend": false,
+        "showTooltip": true
+      },
+      "data": {
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            { "name": "手机", "value": 32.1 },
+            { "name": "手表", "value": 28.5 },
+            { "name": "耳机", "value": 24.3 },
+            { "name": "平板", "value": 15.1 }
+          ]
+        }
+      },
+      "staticData": [
+        { "name": "手机", "value": 32.1 },
+        { "name": "手表", "value": 28.5 },
+        { "name": "耳机", "value": 24.3 },
+        { "name": "平板", "value": 15.1 }
+      ],
+      "style": {
+        "backgroundColor": "transparent"
+      }
+    },
+    {
+      "componentId": "comp-line-3",
+      "componentType": "line",
+      "componentName": "分隔线3",
+      "position": {
+        "x": 860,
+        "y": 510
+      },
+      "size": {
+        "width": 1120,
+        "height": 1
+      },
+      "zIndex": 3,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "direction": "horizontal",
+        "color": "#165DFF",
+        "width": 1,
+        "style": "dashed"
+      }
+    },
+    {
+      "componentId": "comp-right-bottom-border",
+      "componentType": "border",
+      "componentName": "右侧下区边框",
+      "position": {
+        "x": 860,
+        "y": 530
+      },
+      "size": {
+        "width": 1120,
+        "height": 350
+      },
+      "zIndex": 3,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#165DFF",
+        "width": 2,
+        "style": "solid",
+        "radius": 8
+      }
+    },
+    {
+      "componentId": "comp-pie-chart",
+      "componentType": "pieChart",
+      "componentName": "区域销售分布饼图",
+      "position": {
+        "x": 880,
+        "y": 550
+      },
+      "size": {
+        "width": 370,
+        "height": 310
+      },
+      "zIndex": 4,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "区域销售占比",
+        "innerRadius": 40,
+        "showLegend": true,
+        "showTooltip": true
+      },
+      "data": {
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            { "name": "华东", "value": 35.0 },
+            { "name": "华北", "value": 25.0 },
+            { "name": "华南", "value": 20.0 },
+            { "name": "西南", "value": 10.0 },
+            { "name": "西北", "value": 5.0 },
+            { "name": "东北", "value": 5.0 }
+          ]
+        }
+      },
+      "staticData": [
+        { "name": "华东", "value": 35.0 },
+        { "name": "华北", "value": 25.0 },
+        { "name": "华南", "value": 20.0 },
+        { "name": "西南", "value": 10.0 },
+        { "name": "西北", "value": 5.0 },
+        { "name": "东北", "value": 5.0 }
+      ],
+      "style": {
+        "backgroundColor": "#1A2332"
+      }
+    },
+    {
+      "componentId": "comp-table",
+      "componentType": "table",
+      "componentName": "销售明细表格",
+      "position": {
+        "x": 1280,
+        "y": 550
+      },
+      "size": {
+        "width": 680,
+        "height": 310
+      },
+      "zIndex": 4,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "TOP10 销售明细",
+        "columns": [
+          {
+            "field": "date",
+            "title": "日期",
+            "width": 100
+          },
+          {
+            "field": "product",
+            "title": "产品",
+            "width": 120
+          },
+          {
+            "field": "region",
+            "title": "区域",
+            "width": 100
+          },
+          {
+            "field": "amount",
+            "title": "销售额",
+            "width": 120,
+            "format": "number"
+          },
+          {
+            "field": "salesperson",
+            "title": "销售人员",
+            "width": 120
+          },
+          {
+            "field": "completionRate",
+            "title": "完成率",
+            "width": 90,
+            "format": "percent"
+          }
+        ],
+        "pagination": {
+          "pageSize": 10,
+          "showSizeChanger": false
+        }
+      },
+      "data": {
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            { "key": "1", "date": "2024-06-28", "product": "手机", "region": "华东", "amount": 52.8, "salesperson": "张三", "completionRate": 95.2 },
+            { "key": "2", "date": "2024-06-27", "product": "智能手表", "region": "华北", "amount": 48.5, "salesperson": "李四", "completionRate": 88.6 },
+            { "key": "3", "date": "2024-06-26", "product": "无线耳机", "region": "华南", "amount": 45.2, "salesperson": "王五", "completionRate": 92.3 },
+            { "key": "4", "date": "2024-06-25", "product": "手机", "region": "华东", "amount": 51.3, "salesperson": "赵六", "completionRate": 89.7 },
+            { "key": "5", "date": "2024-06-24", "product": "平板电脑", "region": "西南", "amount": 42.1, "salesperson": "孙七", "completionRate": 85.4 },
+            { "key": "6", "date": "2024-06-23", "product": "智能手表", "region": "华北", "amount": 46.8, "salesperson": "周八", "completionRate": 91.2 },
+            { "key": "7", "date": "2024-06-22", "product": "手机", "region": "华南", "amount": 49.5, "salesperson": "吴九", "completionRate": 87.8 },
+            { "key": "8", "date": "2024-06-21", "product": "无线耳机", "region": "华东", "amount": 44.2, "salesperson": "郑十", "completionRate": 93.5 },
+            { "key": "9", "date": "2024-06-20", "product": "平板电脑", "region": "西北", "amount": 38.9, "salesperson": "钱一", "completionRate": 82.1 },
+            { "key": "10", "date": "2024-06-19", "product": "智能手表", "region": "东北", "amount": 41.6, "salesperson": "孙二", "completionRate": 90.3 }
+          ]
+        }
+      },
+      "staticData": [
+        { "key": "1", "date": "2024-06-28", "product": "手机", "region": "华东", "amount": 52.8, "salesperson": "张三", "completionRate": 95.2 },
+        { "key": "2", "date": "2024-06-27", "product": "智能手表", "region": "华北", "amount": 48.5, "salesperson": "李四", "completionRate": 88.6 },
+        { "key": "3", "date": "2024-06-26", "product": "无线耳机", "region": "华南", "amount": 45.2, "salesperson": "王五", "completionRate": 92.3 },
+        { "key": "4", "date": "2024-06-25", "product": "手机", "region": "华东", "amount": 51.3, "salesperson": "赵六", "completionRate": 89.7 },
+        { "key": "5", "date": "2024-06-24", "product": "平板电脑", "region": "西南", "amount": 42.1, "salesperson": "孙七", "completionRate": 85.4 },
+        { "key": "6", "date": "2024-06-23", "product": "智能手表", "region": "华北", "amount": 46.8, "salesperson": "周八", "completionRate": 91.2 },
+        { "key": "7", "date": "2024-06-22", "product": "手机", "region": "华南", "amount": 49.5, "salesperson": "吴九", "completionRate": 87.8 },
+        { "key": "8", "date": "2024-06-21", "product": "无线耳机", "region": "华东", "amount": 44.2, "salesperson": "郑十", "completionRate": 93.5 },
+        { "key": "9", "date": "2024-06-20", "product": "平板电脑", "region": "西北", "amount": 38.9, "salesperson": "钱一", "completionRate": 82.1 },
+        { "key": "10", "date": "2024-06-19", "product": "智能手表", "region": "东北", "amount": 41.6, "salesperson": "孙二", "completionRate": 90.3 }
+      ],
+      "style": {
+        "backgroundColor": "#1A2332"
+      }
+    },
+    {
+      "componentId": "comp-line-4",
+      "componentType": "line",
+      "componentName": "分隔线4",
+      "position": {
+        "x": 0,
+        "y": 900
+      },
+      "size": {
+        "width": 1920,
+        "height": 1
+      },
+      "zIndex": 2,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "direction": "horizontal",
+        "color": "#165DFF",
+        "width": 1,
+        "style": "solid"
+      }
+    },
+    {
+      "componentId": "comp-bottom-border",
+      "componentType": "border",
+      "componentName": "底部边框",
+      "position": {
+        "x": 0,
+        "y": 900
+      },
+      "size": {
+        "width": 1920,
+        "height": 60
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#165DFF",
+        "width": 2,
+        "style": "solid",
+        "radius": 0
+      }
+    },
+    {
+      "componentId": "comp-footer-left",
+      "componentType": "text",
+      "componentName": "底部左侧文本",
+      "position": {
+        "x": 40,
+        "y": 920
+      },
+      "size": {
+        "width": 800,
+        "height": 20
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "数据来源：企业销售数据库 / CRM 系统 / 区域上报系统",
+        "fontSize": 12,
+        "fontWeight": "normal",
+        "color": "#999999",
+        "textAlign": "left"
+      }
+    },
+    {
+      "componentId": "comp-footer-right",
+      "componentType": "text",
+      "componentName": "底部右侧文本",
+      "position": {
+        "x": 1080,
+        "y": 920
+      },
+      "size": {
+        "width": 800,
+        "height": 20
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "©2024 企业数据中心 技术支持：BI 研发部",
+        "fontSize": 12,
+        "fontWeight": "normal",
+        "color": "#999999",
+        "textAlign": "right"
+      }
     }
   ],
   "datasources": [],
-  "interactions": [],
-  "i18n": {}
+  "interactions": [
+    {
+      "componentId": "comp-filter-time",
+      "events": [
+        {
+          "eventType": "change",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "filter",
+              "target": "comp-line-chart",
+              "params": {
+                "timeRange": "${value}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-bar-chart",
+              "params": {
+                "timeRange": "${value}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-table",
+              "params": {
+                "timeRange": "${value}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "componentId": "comp-filter-region",
+      "events": [
+        {
+          "eventType": "change",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "filter",
+              "target": "comp-line-chart",
+              "params": {
+                "regions": "${value}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-bar-chart",
+              "params": {
+                "regions": "${value}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-pie-chart",
+              "params": {
+                "regions": "${value}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-table",
+              "params": {
+                "regions": "${value}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "componentId": "comp-filter-product",
+      "events": [
+        {
+          "eventType": "change",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "filter",
+              "target": "comp-line-chart",
+              "params": {
+                "product": "${value}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-bar-chart",
+              "params": {
+                "product": "${value}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-table",
+              "params": {
+                "product": "${value}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "componentId": "comp-bar-chart",
+      "events": [
+        {
+          "eventType": "click",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "drillDown",
+              "target": "comp-line-chart",
+              "params": {
+                "month": "${data.month}"
+              },
+              "config": {
+                "drillDownField": "month",
+                "targetField": "date"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "componentId": "comp-pie-chart",
+      "events": [
+        {
+          "eventType": "click",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "filter",
+              "target": "comp-table",
+              "params": {
+                "region": "${data.name}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "i18n": {
+    "zh-CN": {
+      "reportName": "2024年度销售数据总览 Dashboard",
+      "description": "企业销售数据可视化 Dashboard 大屏",
+      "fieldMappings": {
+        "date": "日期",
+        "product": "产品",
+        "amount": "销售额",
+        "region": "区域",
+        "salesperson": "销售人员",
+        "completionRate": "完成率"
+      }
+    },
+    "en-US": {
+      "reportName": "2024 Annual Sales Data Overview Dashboard",
+      "description": "Enterprise Sales Data Visualization Dashboard",
+      "fieldMappings": {
+        "date": "Date",
+        "product": "Product",
+        "amount": "Sales Amount",
+        "region": "Region",
+        "salesperson": "Salesperson",
+        "completionRate": "Completion Rate"
+      }
+    }
+  },
+  "style": {
+    "reportBackground": {
+      "type": "color",
+      "value": "#0A1629"
+    },
+    "theme": {
+      "themeId": "theme-dashboard-dark",
+      "themeName": "大屏深色主题"
+    }
+  }
 }
 

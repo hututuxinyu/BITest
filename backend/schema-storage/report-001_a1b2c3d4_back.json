@@ -1,0 +1,489 @@
+{
+  "version": "1.0.0",
+  "reportId": "report-001",
+  "reportName": "月度销售报表",
+  "reportType": "report",
+  "metadata": {
+    "createTime": "2024-01-15T10:30:00Z",
+    "updateTime": "2024-01-20T14:20:00Z",
+    "creator": "user-001",
+    "description": "用于分析月度销售数据的BI报表"
+  },
+  "canvas": {
+    "width": 1920,
+    "height": 1080,
+    "backgroundColor": "#0A1629",
+    "grid": true,
+    "gridSize": 10
+  },
+  "components": [
+    {
+      "componentId": "comp-outer-border",
+      "componentType": "border",
+      "componentName": "最外层边框",
+      "position": {
+        "x": 80,
+        "y": 80
+      },
+      "size": {
+        "width": 1640,
+        "height": 870
+      },
+      "zIndex": 0,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "color": "#165DFF",
+        "width": 2,
+        "style": "solid",
+        "radius": 0
+      },
+      "style": {
+        "backgroundColor": "transparent"
+      }
+    },
+    {
+      "componentId": "comp-001",
+      "componentType": "barChart",
+      "componentName": "月度销售额柱状图",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 600,
+        "height": 400
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "月度销售额",
+        "xAxisField": "month",
+        "yAxisField": "amount",
+        "color": "#1890ff",
+        "showLegend": true,
+        "showTooltip": true
+      },
+      "datasourceId": "ds-001",
+      "data": {
+        "bindingType": "dataset",
+        "datasetConfig": {
+          "datasourceId": "ds-001",
+          "query": "SELECT month, amount FROM sales_monthly ORDER BY month",
+          "params": {}
+        }
+      },
+      "staticData": [
+        { "category": "1月", "value": 120, "series": "销售额" },
+        { "category": "2月", "value": 132, "series": "销售额" },
+        { "category": "3月", "value": 101, "series": "销售额" },
+        { "category": "4月", "value": 134, "series": "销售额" },
+        { "category": "5月", "value": 90, "series": "销售额" },
+        { "category": "6月", "value": 230, "series": "销售额" }
+      ],
+      "i18n": {
+        "zh-CN": {
+          "title": "月度销售额",
+          "xAxisLabel": "月份",
+          "yAxisLabel": "销售额（万元）"
+        },
+        "en-US": {
+          "title": "Monthly Sales",
+          "xAxisLabel": "Month",
+          "yAxisLabel": "Sales Amount (10K)"
+        }
+      },
+      "style": {
+        "backgroundColor": "#ffffff",
+        "border": {
+          "width": 1,
+          "style": "solid",
+          "color": "#e8e8e8",
+          "radius": 4
+        },
+        "shadow": {
+          "x": 0,
+          "y": 2,
+          "blur": 4,
+          "color": "rgba(0,0,0,0.1)"
+        }
+      }
+    },
+    {
+      "componentId": "comp-002",
+      "componentType": "lineChart",
+      "componentName": "销售趋势折线图",
+      "position": {
+        "x": 750,
+        "y": 100
+      },
+      "size": {
+        "width": 600,
+        "height": 400
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "销售趋势",
+        "xAxisField": "date",
+        "yAxisField": "amount",
+        "smooth": true,
+        "showArea": true
+      },
+      "datasourceId": "ds-001",
+      "data": {
+        "bindingType": "dataset",
+        "datasetConfig": {
+          "datasourceId": "ds-001",
+          "query": "SELECT date, amount FROM sales_trend ORDER BY date",
+          "params": {}
+        }
+      },
+      "staticData": [
+        { "category": "2024-01-01", "value": 120, "series": "销售额" },
+        { "category": "2024-01-02", "value": 132, "series": "销售额" },
+        { "category": "2024-01-03", "value": 101, "series": "销售额" },
+        { "category": "2024-01-04", "value": 134, "series": "销售额" },
+        { "category": "2024-01-05", "value": 90, "series": "销售额" },
+        { "category": "2024-01-06", "value": 230, "series": "销售额" },
+        { "category": "2024-01-07", "value": 210, "series": "销售额" }
+      ],
+      "i18n": {
+        "zh-CN": {
+          "title": "销售趋势",
+          "xAxisLabel": "日期",
+          "yAxisLabel": "销售额"
+        },
+        "en-US": {
+          "title": "Sales Trend",
+          "xAxisLabel": "Date",
+          "yAxisLabel": "Sales Amount"
+        }
+      },
+      "style": {
+        "backgroundColor": "#ffffff",
+        "border": {
+          "width": 1,
+          "style": "solid",
+          "color": "#e8e8e8",
+          "radius": 4
+        }
+      }
+    },
+    {
+      "componentId": "comp-003",
+      "componentType": "table",
+      "componentName": "销售明细表",
+      "position": {
+        "x": 100,
+        "y": 550
+      },
+      "size": {
+        "width": 1250,
+        "height": 400
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "销售明细",
+        "columns": [
+          {
+            "field": "date",
+            "title": "日期",
+            "width": 120
+          },
+          {
+            "field": "product",
+            "title": "产品",
+            "width": 150
+          },
+          {
+            "field": "amount",
+            "title": "销售额",
+            "width": 120,
+            "format": "number"
+          },
+          {
+            "field": "quantity",
+            "title": "数量",
+            "width": 100
+          }
+        ],
+        "pagination": {
+          "pageSize": 20,
+          "showSizeChanger": true
+        }
+      },
+      "datasourceId": "ds-001",
+      "data": {
+        "bindingType": "static",
+        "staticConfig": {
+          "data": [
+            { "key": "1", "date": "2024-01-15", "product": "产品A", "amount": 12000, "quantity": 100 },
+            { "key": "2", "date": "2024-01-16", "product": "产品B", "amount": 15000, "quantity": 150 },
+            { "key": "3", "date": "2024-01-17", "product": "产品A", "amount": 18000, "quantity": 180 },
+            { "key": "4", "date": "2024-01-18", "product": "产品C", "amount": 20000, "quantity": 200 },
+            { "key": "5", "date": "2024-01-19", "product": "产品B", "amount": 16000, "quantity": 160 },
+            { "key": "6", "date": "2024-01-20", "product": "产品A", "amount": 22000, "quantity": 220 }
+          ]
+        }
+      },
+      "staticData": [
+        { "key": "1", "date": "2024-01-15", "product": "产品A", "amount": 12000, "quantity": 100 },
+        { "key": "2", "date": "2024-01-16", "product": "产品B", "amount": 15000, "quantity": 150 },
+        { "key": "3", "date": "2024-01-17", "product": "产品A", "amount": 18000, "quantity": 180 },
+        { "key": "4", "date": "2024-01-18", "product": "产品C", "amount": 20000, "quantity": 200 },
+        { "key": "5", "date": "2024-01-19", "product": "产品B", "amount": 16000, "quantity": 160 },
+        { "key": "6", "date": "2024-01-20", "product": "产品A", "amount": 22000, "quantity": 220 }
+      ],
+      "i18n": {
+        "zh-CN": {
+          "title": "销售明细",
+          "columns": {
+            "date": "日期",
+            "product": "产品",
+            "amount": "销售额",
+            "quantity": "数量"
+          }
+        },
+        "en-US": {
+          "title": "Sales Details",
+          "columns": {
+            "date": "Date",
+            "product": "Product",
+            "amount": "Sales Amount",
+            "quantity": "Quantity"
+          }
+        }
+      },
+      "style": {
+        "backgroundColor": "#ffffff",
+        "border": {
+          "width": 1,
+          "style": "solid",
+          "color": "#e8e8e8",
+          "radius": 4
+        }
+      }
+    },
+    {
+      "componentId": "comp-004",
+      "componentType": "filter",
+      "componentName": "日期筛选器",
+      "position": {
+        "x": 1400,
+        "y": 100
+      },
+      "size": {
+        "width": 300,
+        "height": 50
+      },
+      "zIndex": 2,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "type": "dateRange",
+        "label": "选择日期范围",
+        "format": "YYYY-MM-DD",
+        "defaultValue": null
+      },
+      "i18n": {
+        "zh-CN": {
+          "label": "选择日期范围"
+        },
+        "en-US": {
+          "label": "Select Date Range"
+        }
+      }
+    },
+    {
+      "componentId": "comp-005",
+      "componentType": "Button",
+      "componentName": "刷新按钮",
+      "position": {
+        "x": 1400,
+        "y": 170
+      },
+      "size": {
+        "width": 100,
+        "height": 40
+      },
+      "zIndex": 2,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "text": "刷新",
+        "type": "primary",
+        "size": "middle"
+      },
+      "i18n": {
+        "zh-CN": {
+          "text": "刷新"
+        },
+        "en-US": {
+          "text": "Refresh"
+        }
+      }
+    }
+  ],
+  "datasources": [
+    {
+      "datasourceId": "ds-001",
+      "datasourceName": "销售数据库",
+      "datasourceType": "mysql",
+      "connectionConfig": {
+        "host": "localhost",
+        "port": 3306,
+        "database": "sales_db",
+        "username": "readonly_user",
+        "password": "encrypted_password"
+      },
+      "queryConfig": {
+        "sql": "SELECT date, product, amount, quantity FROM sales_data WHERE date >= ? AND date <= ? ORDER BY date DESC",
+        "parameters": [
+          {
+            "name": "startDate",
+            "type": "date",
+            "source": "control",
+            "sourceId": "comp-004"
+          },
+          {
+            "name": "endDate",
+            "type": "date",
+            "source": "control",
+            "sourceId": "comp-004"
+          }
+        ],
+        "fieldMapping": {
+          "date": "date",
+          "product": "product",
+          "amount": "amount",
+          "quantity": "quantity"
+        }
+      }
+    }
+  ],
+  "interactions": [
+    {
+      "componentId": "comp-001",
+      "events": [
+        {
+          "eventType": "click",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "drillDown",
+              "target": "comp-003",
+              "params": {
+                "month": "${data.month}",
+                "year": "${data.year}"
+              },
+              "config": {
+                "drillDownField": "month",
+                "targetField": "date"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "componentId": "comp-004",
+      "events": [
+        {
+          "eventType": "change",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "filter",
+              "target": "comp-001",
+              "params": {
+                "startDate": "${value[0]}",
+                "endDate": "${value[1]}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-002",
+              "params": {
+                "startDate": "${value[0]}",
+                "endDate": "${value[1]}"
+              }
+            },
+            {
+              "actionType": "filter",
+              "target": "comp-003",
+              "params": {
+                "startDate": "${value[0]}",
+                "endDate": "${value[1]}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "componentId": "comp-005",
+      "events": [
+        {
+          "eventType": "click",
+          "conditions": [],
+          "actions": [
+            {
+              "actionType": "refresh",
+              "target": "comp-001"
+            },
+            {
+              "actionType": "refresh",
+              "target": "comp-002"
+            },
+            {
+              "actionType": "refresh",
+              "target": "comp-003"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "i18n": {
+    "zh-CN": {
+      "reportName": "销售数据分析报表",
+      "description": "展示销售数据的综合分析报表",
+      "fieldMappings": {
+        "date": "日期",
+        "product": "产品",
+        "amount": "销售额",
+        "quantity": "数量",
+        "month": "月份",
+        "year": "年份"
+      }
+    },
+    "en-US": {
+      "reportName": "Sales Data Analysis Report",
+      "description": "Comprehensive analysis report of sales data",
+      "fieldMappings": {
+        "date": "Date",
+        "product": "Product",
+        "amount": "Sales Amount",
+        "quantity": "Quantity",
+        "month": "Month",
+        "year": "Year"
+      }
+    }
+  },
+  "style": {
+    "reportBackground": {
+      "type": "color",
+      "value": "#f5f5f5"
+    },
+    "theme": {
+      "themeId": "theme-default",
+      "themeName": "默认主题"
+    }
+  }
+}
+

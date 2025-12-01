@@ -21,7 +21,11 @@ import {
 } from '@ant-design/icons';
 import type { ComponentSummary, ComponentDefinition, DatasourceConfig } from '../types';
 import { componentApi } from '../services/componentApi';
+import { templateApi } from '../services/api';
+import type { TemplateDefinition } from '../types/reportCreation';
 import ChartRenderer from './ChartRenderer';
+import FormRenderer from './FormRenderer';
+import TableRenderer from './TableRenderer';
 import EnhancedCanvas, { EnhancedCanvasItem } from './EnhancedCanvas';
 import CanvasToolbar from './CanvasToolbar';
 import { HistoryManager } from '../utils/historyManager';
@@ -47,6 +51,8 @@ interface CanvasItem {
   size?: { width: number; height: number };
   zIndex?: number;
   datasourceConfig?: DatasourceConfig;
+  parentId?: string; // 父组件ID，用于嵌套
+  children?: string[]; // 子组件ID列表
 }
 
 interface CanvasWorkspaceProps {
@@ -76,8 +82,310 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
     []
   );
 
+  // 转换为EnhancedCanvasItem
+  const convertToEnhancedItems = useCallback((items: CanvasItem[]): EnhancedCanvasItem[] => {
+    return items.map((item, index) => ({
+      id: item.id,
+      component: item.component,
+      definition: item.definition,
+      loading: item.loading,
+      error: item.error,
+      propsValues: item.propsValues,
+      position: item.position || { x: 50, y: 50 + index * 100 },
+      size: item.size || { width: 400, height: 300 },
+      zIndex: item.zIndex || index + 1,
+      datasourceConfig: item.datasourceConfig,
+    }));
+  }, []);
+
+  // 将Schema中的componentType映射到componentId
+  const mapComponentTypeToId = useCallback((componentType: string): string => {
+    const normalizedType = componentType.toLowerCase();
+    const typeMap: Record<string, string> = {
+      barchart: 'chart-bar',
+      linechart: 'chart-line',
+      piechart: 'chart-pie',
+      radarchart: 'chart-radar',
+      table: 'chart-table',
+      treetable: 'chart-tree-table',
+      gauge: 'chart-gauge',
+      image: 'media-image',
+      video: 'media-video',
+      line: 'media-line',
+      border: 'media-border',
+      text: 'media-text',
+      button: 'control-button',
+      filter: 'control-filter',
+      input: 'control-input',
+      form: 'form-form',
+      timeperiod: 'form-time-period',
+      textarea: 'form-text',
+      select: 'form-select',
+      checkbox: 'form-checkbox',
+      daterange: 'form-date-range',
+      radio: 'form-radio',
+      switch: 'form-switch',
+    };
+    return typeMap[normalizedType] || componentType;
+  }, []);
+
+  // 解析Schema并加载到画布
+  const loadSchemaToCanvas = useCallback(async (schema: any) => {
+    if (!schema || !schema.components || !Array.isArray(schema.components)) {
+      return;
+    }
+
+    try {
+      // 获取所有组件列表，用于查找组件定义
+      const allComponents = await componentApi.listComponents({});
+      const componentMap = new Map(allComponents.map((c) => [c.componentId, c]));
+
+      // 创建数据源映射表（从 schema.datasources）
+      const datasourceMap = new Map();
+      if (schema.datasources && Array.isArray(schema.datasources)) {
+        for (const ds of schema.datasources) {
+          datasourceMap.set(ds.datasourceId, ds);
+        }
+      }
+
+      // 解析Schema中的组件
+      const parsedItems: CanvasItem[] = [];
+      const itemSchemaMap = new Map<string, any>(); // 存储itemId到schemaComponent的映射
+      
+      for (const schemaComponent of schema.components) {
+        // 跳过不可见的组件
+        if (schemaComponent.visible === false) {
+          continue;
+        }
+
+        // 映射componentType到componentId
+        const componentId = mapComponentTypeToId(schemaComponent.componentType || '');
+        let component = componentMap.get(componentId);
+
+        // 对于 border 组件，如果找不到，创建一个临时的组件对象
+        if (!component && componentId === 'media-border') {
+          component = {
+            componentId: 'media-border',
+            componentName: schemaComponent.componentName || '边框',
+            alias: 'border',
+            version: '1.0.0',
+            type: 'media',
+            icon: '',
+            previewUrl: '',
+            description: '边框组件',
+            categories: ['border'],
+            tags: ['border', 'media'],
+            author: 'system',
+            releaseTime: new Date().toISOString(),
+          };
+        }
+
+        if (!component) {
+          console.warn(`未找到组件: ${componentId} (componentType: ${schemaComponent.componentType})`);
+          continue;
+        }
+
+        // 处理数据源配置
+        let datasourceConfig: DatasourceConfig | undefined = undefined;
+        
+        if (schemaComponent.data) {
+          if (schemaComponent.data.bindingType === 'dataset' && schemaComponent.data.datasetConfig) {
+            datasourceConfig = {
+              sourceType: 'dataset',
+              bindingType: 'dataset',
+              datasetConfig: {
+                datasourceId: schemaComponent.data.datasetConfig.datasourceId || schemaComponent.datasourceId || '',
+                query: schemaComponent.data.datasetConfig.query || '',
+                params: schemaComponent.data.datasetConfig.params || {},
+              },
+            };
+          } else if (schemaComponent.data.bindingType === 'static' && schemaComponent.data.staticConfig) {
+            datasourceConfig = {
+              sourceType: 'static',
+              bindingType: 'static',
+              staticConfig: {
+                data: schemaComponent.data.staticConfig.data || [],
+              },
+            };
+          }
+        }
+        
+        if (!datasourceConfig && schemaComponent.datasourceId) {
+          const datasource = datasourceMap.get(schemaComponent.datasourceId);
+          if (datasource && datasource.queryConfig) {
+            datasourceConfig = {
+              sourceType: 'dataset',
+              bindingType: 'dataset',
+              datasetConfig: {
+                datasourceId: datasource.datasourceId,
+                query: datasource.queryConfig.sql || '',
+                params: datasource.queryConfig.parameters?.reduce((acc: Record<string, any>, param: any) => {
+                  acc[param.name] = param;
+                  return acc;
+                }, {}),
+              },
+            };
+          }
+        }
+        
+        if (!datasourceConfig && schemaComponent.datasourceConfig) {
+          datasourceConfig = schemaComponent.datasourceConfig;
+        }
+        
+        if (!datasourceConfig && schemaComponent.staticData) {
+          datasourceConfig = {
+            sourceType: 'static',
+            bindingType: 'static',
+            staticConfig: {
+              data: Array.isArray(schemaComponent.staticData) ? schemaComponent.staticData : [],
+            },
+          };
+        }
+
+        // 创建CanvasItem
+        const itemId = schemaComponent.componentId || `${componentId}-${Date.now()}-${parsedItems.length}`;
+        const canvasItem: CanvasItem = {
+          id: itemId,
+          component,
+          loading: true,
+          position: schemaComponent.position || { x: 100, y: 100 },
+          size: schemaComponent.size || { width: 400, height: 300 },
+          zIndex: schemaComponent.zIndex || parsedItems.length + 1,
+          propsValues: schemaComponent.props || {},
+          datasourceConfig,
+        };
+
+        parsedItems.push(canvasItem);
+        itemSchemaMap.set(itemId, schemaComponent);
+      }
+
+      // 先设置初始画布项
+      setCanvasItems(parsedItems);
+
+      // 然后异步加载每个组件的定义
+      for (const canvasItem of parsedItems) {
+        const schemaComponent = itemSchemaMap.get(canvasItem.id);
+        const componentId = canvasItem.component.componentId;
+
+        componentApi
+          .getDefinition(componentId)
+          .then((def) => {
+            if (def) {
+              setCanvasItems((prev) =>
+                prev.map((item) =>
+                  item.id === canvasItem.id
+                    ? {
+                        ...item,
+                        definition: def,
+                        loading: false,
+                        propsValues: {
+                          ...def.defaultProps,
+                          ...(schemaComponent?.props || {}),
+                        },
+                      }
+                    : item
+                )
+              );
+            } else {
+              if (componentId === 'media-border') {
+                setCanvasItems((prev) =>
+                  prev.map((item) =>
+                    item.id === canvasItem.id
+                      ? {
+                          ...item,
+                          loading: false,
+                        }
+                      : item
+                  )
+                );
+              } else {
+                setCanvasItems((prev) =>
+                  prev.map((item) =>
+                    item.id === canvasItem.id
+                      ? {
+                          ...item,
+                          loading: false,
+                          error: '未找到组件定义',
+                        }
+                      : item
+                  )
+                );
+              }
+            }
+          })
+          .catch(() => {
+            if (componentId === 'media-border') {
+              setCanvasItems((prev) =>
+                prev.map((item) =>
+                  item.id === canvasItem.id
+                    ? {
+                        ...item,
+                        loading: false,
+                      }
+                    : item
+                )
+              );
+            } else {
+              setCanvasItems((prev) =>
+                prev.map((item) =>
+                  item.id === canvasItem.id
+                    ? {
+                        ...item,
+                        loading: false,
+                        error: '加载组件定义失败',
+                      }
+                    : item
+                )
+              );
+            }
+          });
+      }
+      
+      // 更新历史记录
+      if (parsedItems.length > 0) {
+        const enhancedItems = convertToEnhancedItems(parsedItems);
+        historyManagerRef.current.push(enhancedItems);
+      }
+
+      message.success(`已加载 ${parsedItems.length} 个组件到画布`);
+    } catch (error: any) {
+      console.error('加载Schema失败:', error);
+      message.error('加载Schema失败: ' + (error.message || '未知错误'));
+    }
+  }, [mapComponentTypeToId, convertToEnhancedItems]);
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    
+    // 检查是否是模板拖拽
+    const templateData = e.dataTransfer.getData('template');
+    if (templateData) {
+      try {
+        const template = JSON.parse(templateData) as TemplateDefinition;
+        // 从后端API获取模板schema
+        templateApi
+          .getTemplateSchema(template.templateId)
+          .then((response) => {
+            if (response.success && response.data) {
+              loadSchemaToCanvas(response.data);
+              message.success(`已加载模板：${template.name}`);
+            } else {
+              message.warning(`模板 ${template.name} 的 Schema 数据不存在`);
+            }
+          })
+          .catch((error) => {
+            console.error('加载模板Schema失败:', error);
+            message.error('加载模板失败: ' + (error.message || '未知错误'));
+          });
+        return;
+      } catch (error) {
+        console.error('解析模板数据失败:', error);
+        message.error('加载模板失败');
+        return;
+      }
+    }
+    
+    // 处理组件拖拽
     const data = e.dataTransfer.getData('component');
     if (!data) {
       return;
@@ -136,21 +444,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   };
-
-  const convertToEnhancedItems = useCallback((items: CanvasItem[]): EnhancedCanvasItem[] => {
-    return items.map((item, index) => ({
-      id: item.id,
-      component: item.component,
-      definition: item.definition,
-      loading: item.loading,
-      error: item.error,
-      propsValues: item.propsValues,
-      position: item.position || { x: 50, y: 50 + index * 100 },
-      size: item.size || { width: 400, height: 300 },
-      zIndex: item.zIndex || index + 1,
-      datasourceConfig: item.datasourceConfig,
-    }));
-  }, []);
 
   const convertFromEnhancedItems = useCallback((items: EnhancedCanvasItem[]): CanvasItem[] => {
     return items.map((item) => ({
@@ -439,6 +732,18 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
                         }
                         return mergedDefinition;
                       })();
+                      // 如果是表单组件，查找并渲染子组件
+                      const childItems = canvasItem.children
+                        ? canvasItem.children
+                            .map((childId) => canvasItems.find((ci) => ci.id === childId))
+                            .filter((ci): ci is CanvasItem => ci !== undefined)
+                        : [];
+                      
+                      // 为表单组件添加 formId 到 propsValues
+                      const formPropsValues = canvasItem.component.componentId === 'form-form'
+                        ? { ...canvasItem.propsValues, formId: canvasItem.id }
+                        : canvasItem.propsValues;
+                      
                       return (
                         <div
                           style={{
@@ -448,9 +753,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
+                            position: 'relative',
                           }}
                         >
-                          {renderCanvasContent(canvasItem, effectiveDefinition)}
+                          {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems)}
                         </div>
                       );
                     }}
@@ -579,7 +885,28 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
   );
 };
 
-function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition | null) {
+function renderCanvasContent(
+  item: CanvasItem,
+  definition?: ComponentDefinition | null,
+  propsValues?: Record<string, any>,
+  childItems: CanvasItem[] = []
+) {
+  // 对于 border 组件，即使有 error 或没有 definition，也尝试直接渲染
+  if (item.component.componentId === 'media-border') {
+    const borderProps = propsValues || item.propsValues || {};
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          border: `${borderProps.width || 2}px ${borderProps.style || 'solid'} ${borderProps.color || '#165DFF'}`,
+          borderRadius: borderProps.radius ? `${borderProps.radius}px` : '0',
+          backgroundColor: borderProps.backgroundColor || 'transparent',
+        }}
+      />
+    );
+  }
+  
   if (item.loading) {
     return <Skeleton active style={{ padding: 16 }} />;
   }
@@ -593,21 +920,151 @@ function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition 
       />
     );
   }
-  if (definition && item.component.type === 'chart') {
+  if (definition) {
+    // 表格组件（使用专门的 TableRenderer）
+    if (item.component.componentId === 'chart-table' || item.component.componentId === 'chart-tree-table') {
+      return (
+        <TableRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        />
+      );
+    }
+    // 图表组件
+    if (item.component.type === 'chart') {
+      return (
+        <ChartRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height="100%"
+          width="100%"
+        />
+      );
+    }
+    // 媒体组件（text、border、line）
+    // 对于 border 组件，即使没有 definition 也可以直接渲染
+    if (item.component.componentId === 'media-border') {
+      if (!definition) {
+        const borderProps = propsValues || item.propsValues || {};
+        return (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              border: `${borderProps.width || 2}px ${borderProps.style || 'solid'} ${borderProps.color || '#165DFF'}`,
+              borderRadius: borderProps.radius ? `${borderProps.radius}px` : '0',
+              backgroundColor: borderProps.backgroundColor || 'transparent',
+            }}
+          />
+        );
+      }
+      return (
+        <FormRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        />
+      );
+    }
+    
+    if (item.component.type === 'media' || 
+        item.component.componentId === 'media-text' || 
+        item.component.componentId === 'media-line') {
+      return (
+        <FormRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        />
+      );
+    }
+    
+    // 表单组件和控制组件
+    // 检查：type 为 'control' 或 'form'，或者 categories 包含 'form'
+    const isFormOrControl = 
+      item.component.type === 'control' || 
+      item.component.type === 'form' ||
+      item.component.categories?.includes('form');
+    
+    if (isFormOrControl) {
+      // 渲染子组件（只在表单组件中渲染）
+      const children = item.component.componentId === 'form-form' && childItems.length > 0 ? (
+        <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'auto' }}>
+          {childItems.map((child) => {
+            const childDefinition = child.definition;
+            const childEffectiveDefinition = childDefinition
+              ? {
+                  ...childDefinition,
+                  defaultProps: {
+                    ...(childDefinition.defaultProps || {}),
+                    ...(child.propsValues || {}),
+                  },
+                }
+              : null;
+            return (
+              <div
+                key={child.id}
+                style={{
+                  position: 'absolute',
+                  left: (child.position?.x || 0) + 16, // 加上表单的 padding
+                  top: (child.position?.y || 0) + 32, // 加上表单的 padding 和标题高度
+                  width: child.size?.width || 200,
+                  height: child.size?.height || 32,
+                  pointerEvents: 'auto',
+                }}
+              >
+                {renderCanvasContent(child, childEffectiveDefinition, child.propsValues)}
+              </div>
+            );
+          })}
+        </div>
+      ) : null;
+      
+      return (
+        <FormRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        >
+          {children}
+        </FormRenderer>
+      );
+    }
+  }
+  // 如果没有定义，显示错误信息
+  if (!definition) {
     return (
-      <ChartRenderer
-        componentId={item.component.componentId}
-        definition={definition}
-        height="100%"
-        width="100%"
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={`${item.component.componentName} - 组件定义未加载`}
+        style={{ margin: 0, padding: '32px 0' }}
+      />
+    );
+  }
+  // 如果没有定义或类型不匹配，显示预览图或占位符
+  if (item.component.previewUrl) {
+    return (
+      <img
+        src={item.component.previewUrl}
+        alt={item.component.componentName}
+        style={{ width: '100%', height: 240, objectFit: 'cover' }}
       />
     );
   }
   return (
-    <img
-      src={item.component.previewUrl}
-      alt={item.component.componentName}
-      style={{ width: '100%', height: 240, objectFit: 'cover' }}
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={`${item.component.componentName} - 暂不支持预览`}
+      style={{ margin: 0, padding: '32px 0' }}
     />
   );
 }

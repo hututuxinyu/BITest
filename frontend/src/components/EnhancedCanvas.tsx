@@ -684,6 +684,15 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         {/* 组件 */}
         {items.map((item) => {
           const isSelected = selectedIds.includes(item.id);
+          // 判断是否是 border 组件
+          const isBorderComponent = item.component.componentId === 'media-border' || 
+                                   item.component.categories?.includes('border') ||
+                                   item.component.type === 'border';
+          // 非 border 组件：未选中时不显示边框，选中时显示编辑边框
+          // border 组件：保持其自身定义的边框样式（通过 props），选中时额外显示编辑边框
+          const borderStyle = isSelected 
+            ? '2px solid #1890ff' 
+            : 'none'; // 未选中时所有组件都不显示容器边框（border 组件的边框由组件内部渲染）
           return (
             <div
               key={item.id}
@@ -693,8 +702,8 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
                 top: item.position.y,
                 width: item.size.width,
                 height: item.size.height,
-                border: isSelected ? '2px solid #1890ff' : '1px solid #d9d9d9',
-                background: '#fff',
+                border: borderStyle,
+                background: isBorderComponent ? 'transparent' : '#fff',
                 cursor: isDragging && isSelected ? 'grabbing' : isSelected ? 'move' : 'grab',
                 zIndex: item.zIndex,
                 boxShadow: isSelected ? '0 0 0 2px rgba(24, 144, 255, 0.2)' : 'none',

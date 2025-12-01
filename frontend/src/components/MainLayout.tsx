@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
-import { Layout, Avatar, Dropdown, Space, message, Menu, Button, Input, Tag, Select, Tooltip, Modal } from 'antd';
+import { Layout, Avatar, Dropdown, Space, message, Menu, Button, Tag, Select, Tooltip, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -12,10 +12,12 @@ import {
   SaveOutlined,
   EyeOutlined,
   SendOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import ComponentPanel from './ComponentPanel';
 import TemplatePanel from './TemplatePanel';
 import CanvasWorkspace from './CanvasWorkspace';
+import ReportPreview from './ReportPreview';
 import { useEditorContext } from '../contexts/EditorContext';
 import { projectApi, reportApi } from '../services/api';
 
@@ -54,6 +56,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
   const menuCollapsed = true;
   const [selectedMenuKey, setSelectedMenuKey] = useState<string>('/projects');
   const [subPanelCollapsed, setSubPanelCollapsed] = useState<boolean>(false);
+  const [previewVisible, setPreviewVisible] = useState<boolean>(false);
   
   // 报表编辑界面相关状态
   const isEditorPage = location.pathname.includes('/reports/') && location.pathname.includes('/editor');
@@ -84,20 +87,24 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
   }, [isEditorPage, params.projectId, effectiveUserId, editorContext]);
 
   useEffect(() => {
-    if (isEditorPage && params.projectId && params.reportId && !editorContext?.reportContext) {
-      reportApi
-        .getReportDetail(params.projectId, params.reportId)
-        .then((response) => {
-          if (response.success) {
-            editorContext?.setReportContext(response.data);
-            if (response.data.reportName) {
-              editorContext?.setReportTitle(response.data.reportName);
+    if (isEditorPage && params.projectId && params.reportId && editorContext) {
+      // 检查是否需要加载：如果当前报表ID与context中的不同，或者context中没有报表信息，则需要加载
+      const needLoad = !editorContext.reportContext || editorContext.reportContext.reportId !== params.reportId;
+      if (needLoad) {
+        reportApi
+          .getReportDetail(params.projectId, params.reportId)
+          .then((response) => {
+            if (response.success && editorContext) {
+              editorContext.setReportContext(response.data);
+              if (response.data.reportName) {
+                editorContext.setReportTitle(response.data.reportName);
+              }
+            } else {
+              message.error(response.message || '报表信息加载失败');
             }
-          } else {
-            message.error(response.message || '报表信息加载失败');
-          }
-        })
-        .catch(() => message.error('报表信息加载失败'));
+          })
+          .catch(() => message.error('报表信息加载失败'));
+      }
     }
   }, [isEditorPage, params.projectId, params.reportId, editorContext]);
 
@@ -273,7 +280,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
       return null;
     }
 
-    const canvasTitle = editorContext.reportContext?.reportName || '未命名报表';
+    // 优先使用 reportContext 中的 reportName，如果没有则使用 reportTitle，最后才使用默认值
+    const canvasTitle = editorContext.reportContext?.reportName || editorContext.reportTitle || '未命名报表';
 
     return (
       <>
@@ -302,15 +310,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
             )}
           </Space>
         </div>
-        {/* 中间：报表名称（可编辑） */}
-        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <Input
-            value={editorContext.reportTitle}
-            onChange={(e) => editorContext.setReportTitle(e.target.value)}
-            placeholder="请输入报表名称"
-            style={{ width: 300, textAlign: 'center' }}
-            bordered={false}
-          />
+        {/* 中间：报表名称 */}
+        <div className="dtc-header-center" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          {canvasTitle}
         </div>
         {/* 右侧：操作按钮组、语言切换和用户信息 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16, flex: '0 0 auto' }}>
@@ -328,6 +330,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
                 shape="circle"
                 icon={<EyeOutlined />}
                 aria-label="预览"
+                onClick={() => setPreviewVisible(true)}
               />
             </Tooltip>
             <Tooltip title={editorContext.reportContext?.status === 'published' ? '已发布' : '发布报表'}>
@@ -510,6 +513,39 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
           </Content>
         </Layout>
       </Layout>
+      
+      {/* 预览模态框 */}
+      {isEditorPage && editorContext && (
+        <Modal
+          title={
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>报表预览</span>
+              <Button
+                type="text"
+                icon={<CloseOutlined />}
+                onClick={() => setPreviewVisible(false)}
+                style={{ marginLeft: 16 }}
+              />
+            </div>
+          }
+          open={previewVisible}
+          onCancel={() => setPreviewVisible(false)}
+          footer={null}
+          width="100%"
+          style={{ top: 0, paddingBottom: 0 }}
+          bodyStyle={{ padding: 0, height: '100vh', overflow: 'hidden' }}
+          closable={false}
+        >
+          <div style={{ width: '100%', height: '100vh', overflow: 'hidden' }}>
+            <ReportPreview
+              items={editorContext.canvasItems}
+              canvasWidth={editorContext.canvasWidth}
+              canvasHeight={editorContext.canvasHeight}
+              backgroundColor={editorContext.canvasBackgroundColor}
+            />
+          </div>
+        </Modal>
+      )}
     </Layout>
   );
 };

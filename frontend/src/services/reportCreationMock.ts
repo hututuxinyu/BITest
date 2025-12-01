@@ -41,31 +41,13 @@ const codeRepositories: CodeRepository[] = [
 
 const templates: TemplateDefinition[] = [
   {
-    templateId: 'tpl-001',
-    name: '销售概览仪表盘',
+    templateId: 'tpl-dashboard-sales',
+    name: '2024年度销售数据总览 Dashboard',
     category: 'dashboard',
-    description: '包含销售额趋势、渠道占比、热力分布等模块',
+    description: '企业销售数据可视化 Dashboard 大屏，包含销售趋势、月度对比、区域分布、销售明细等模块',
     previewUrl: '',
-    tags: ['销售', '大屏', '实时'],
-    recommendFor: ['Retail', 'E-Commerce'],
-  },
-  {
-    templateId: 'tpl-002',
-    name: '运营KPI报表',
-    category: 'report',
-    description: '适用于月度运营复盘，预置KPI卡片和图表布局',
-    previewUrl: '',
-    tags: ['运营', 'KPI'],
-    recommendFor: ['Operations'],
-  },
-  {
-    templateId: 'tpl-003',
-    name: '空白模板',
-    category: 'blank',
-    description: '完全自定义布局，适配多场景设计',
-    previewUrl: '',
-    tags: ['自定义'],
-    recommendFor: ['Advanced Designers'],
+    tags: ['销售', '大屏', '实时', 'Dashboard'],
+    recommendFor: ['Retail', 'E-Commerce', 'Sales'],
   },
 ];
 

@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import {
   Card,
   Empty,
+  Input,
+  Space,
+  Button,
   message,
   Skeleton,
   Result,
@@ -13,8 +16,7 @@ import {
   Select,
   Collapse,
   Modal,
-  Button,
-  Input,
+  Tooltip,
 } from 'antd';
 import {
   CaretLeftOutlined,
@@ -23,8 +25,11 @@ import {
 import type { ComponentDefinition, ComponentSummary, DatasourceConfig, Project, ReportSummary } from '../types';
 import { componentApi } from '../services/componentApi';
 import ChartRenderer from '../components/ChartRenderer';
-import { useLocation, useParams } from 'react-router-dom';
-import { projectApi, reportApi } from '../services/api';
+import FormRenderer from '../components/FormRenderer';
+import TableRenderer from '../components/TableRenderer';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { projectApi, reportApi, templateApi } from '../services/api';
+import type { TemplateDefinition } from '../types/reportCreation';
 import EnhancedCanvas, { EnhancedCanvasItem } from '../components/EnhancedCanvas';
 import CanvasToolbar from '../components/CanvasToolbar';
 import { HistoryManager } from '../utils/historyManager';
@@ -44,118 +49,16 @@ interface CanvasItem {
   size?: { width: number; height: number };
   zIndex?: number;
   datasourceConfig?: DatasourceConfig;
+  parentId?: string; // 父组件ID，用于嵌套
+  children?: string[]; // 子组件ID列表
 }
 
-// 画布区域高度：100%
-const PANEL_HEIGHT = '100%';
 const PROPERTY_COLLAPSED_WIDTH = 8;
 const PROPERTY_PANEL_WIDTH = 230;
 const RULER_SIZE = 24;
 const RULER_INTERVAL = 100;
 const PROPERTY_LABEL_WIDTH = 72;
 const FORM_ITEM_SPACING = 12;
-const thumbnailIconStyle: React.CSSProperties = { fontSize: 32, color: '#3b76f6', transform: 'none' };
-const removedComponentNames = new Set(['标签容器', '图片', '日期选择器组件']);
-const additionalComponents: ComponentSummary[] = [
-  {
-    componentId: 'custom-bar-chart',
-    componentName: '条形图',
-    alias: 'BarChart',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '展示分类数据的条形对比图',
-    categories: [],
-    tags: [],
-    author: 'system',
-    releaseTime: '2024-01-01',
-  },
-  {
-    componentId: 'custom-area-chart',
-    componentName: '面积图',
-    alias: 'AreaChart',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '展示累积趋势的面积图',
-    categories: [],
-    tags: [],
-    author: 'system',
-    releaseTime: '2024-01-01',
-  },
-  {
-    componentId: 'custom-dashboard',
-    componentName: '仪表盘',
-    alias: 'Dashboard',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '展示关键指标的仪表盘图',
-    categories: [],
-    tags: [],
-    author: 'system',
-    releaseTime: '2024-01-01',
-  },
-  {
-    componentId: 'custom-donut-chart',
-    componentName: '环形图',
-    alias: 'DonutChart',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '展示占比结构的环形图',
-    categories: [],
-    tags: [],
-    author: 'system',
-    releaseTime: '2024-01-01',
-  },
-  {
-    componentId: 'custom-pictorial-chart',
-    componentName: '象形图',
-    alias: 'PictorialChart',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '支持自定义图形的带状图示',
-    categories: [],
-    tags: [],
-    author: 'system',
-    releaseTime: '2024-01-01',
-  },
-  {
-    componentId: 'custom-scatter-chart',
-    componentName: '散点图',
-    alias: 'ScatterChart',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '展示变量关系的散点图',
-    categories: [],
-    tags: [],
-    author: 'system',
-    releaseTime: '2024-01-01',
-  },
-  {
-    componentId: 'custom-bar-line-chart',
-    componentName: '柱线图',
-    alias: 'BarLineChart',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '柱状与折线组合的复合图',
-    categories: [],
-    tags: [],
-    author: 'system',
-    releaseTime: '2024-01-01',
-  },
-];
 
 interface CanvasEditorProps {
   user?: { userId: string; username?: string };
@@ -163,6 +66,7 @@ interface CanvasEditorProps {
 
 const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const { projectId, reportId } = useParams<{ projectId?: string; reportId?: string }>();
+  const navigate = useNavigate();
   const location = useLocation();
   const locationState = (location.state as { project?: Project; report?: ReportSummary }) || {};
   const [projectContext, setProjectContext] = useState<Project | undefined>(locationState.project);
@@ -184,7 +88,14 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const historyManagerRef = useRef<HistoryManager<EnhancedCanvasItem[]>>(new HistoryManager(50));
   const schemaLoadedKeyRef = useRef<string>(''); // 标记已加载的Schema标识（projectId-reportId），避免重复加载
   const effectiveUserId = user?.userId || 'user-001';
-  const editorContext = useEditorContext();
+  
+  // 获取 EditorContext（可能不存在，需要安全处理）
+  let editorContext: ReturnType<typeof useEditorContext> | null = null;
+  try {
+    editorContext = useEditorContext();
+  } catch (e) {
+    // 如果不在 EditorContextProvider 中，editorContext 为 null
+  }
 
   useEffect(() => {
     if (projectId && !projectContext) {
@@ -218,20 +129,34 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
 
   // 将Schema中的componentType映射到componentId
   const mapComponentTypeToId = useCallback((componentType: string): string => {
+    // 转换为小写以支持大小写不敏感的匹配
+    const normalizedType = componentType.toLowerCase();
     const typeMap: Record<string, string> = {
-      barChart: 'chart-bar',
-      lineChart: 'chart-line',
-      pieChart: 'chart-pie',
+      barchart: 'chart-bar',
+      linechart: 'chart-line',
+      piechart: 'chart-pie',
+      radarchart: 'chart-radar',
       table: 'chart-table',
+      treetable: 'chart-tree-table',
       gauge: 'chart-gauge',
       image: 'media-image',
       video: 'media-video',
+      line: 'media-line',
+      border: 'media-border',
       text: 'media-text',
       button: 'control-button',
       filter: 'control-filter',
       input: 'control-input',
+      form: 'form-form',
+      timeperiod: 'form-time-period',
+      textarea: 'form-text',
+      select: 'form-select',
+      checkbox: 'form-checkbox',
+      daterange: 'form-date-range',
+      radio: 'form-radio',
+      switch: 'form-switch',
     };
-    return typeMap[componentType] || componentType;
+    return typeMap[normalizedType] || componentType;
   }, []);
 
 
@@ -278,8 +203,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       const allComponents = await componentApi.listComponents({});
       const componentMap = new Map(allComponents.map((c) => [c.componentId, c]));
 
+      // 创建数据源映射表（从 schema.datasources）
+      const datasourceMap = new Map();
+      if (schema.datasources && Array.isArray(schema.datasources)) {
+        for (const ds of schema.datasources) {
+          datasourceMap.set(ds.datasourceId, ds);
+        }
+      }
+
       // 解析Schema中的组件
       const parsedItems: CanvasItem[] = [];
+      const itemSchemaMap = new Map<string, any>(); // 存储itemId到schemaComponent的映射
       
       for (const schemaComponent of schema.components) {
         // 跳过不可见的组件
@@ -289,28 +223,121 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
 
         // 映射componentType到componentId
         const componentId = mapComponentTypeToId(schemaComponent.componentType || '');
-        const component = componentMap.get(componentId);
+        let component = componentMap.get(componentId);
+
+        // 对于 border 组件，如果找不到，创建一个临时的组件对象
+        if (!component && componentId === 'media-border') {
+          component = {
+            componentId: 'media-border',
+            componentName: schemaComponent.componentName || '边框',
+            alias: 'border',
+            version: '1.0.0',
+            type: 'media',
+            icon: '',
+            previewUrl: '',
+            description: '边框组件',
+            categories: ['border'],
+            tags: ['border', 'media'],
+            author: 'system',
+            releaseTime: new Date().toISOString(),
+          };
+        }
 
         if (!component) {
           console.warn(`未找到组件: ${componentId} (componentType: ${schemaComponent.componentType})`);
           continue;
         }
 
+        // 处理数据源配置
+        // 优先级：data.datasetConfig > datasourceId (从 datasources 查找) > datasourceConfig > staticData
+        let datasourceConfig: DatasourceConfig | undefined = undefined;
+        
+        // 1. 优先使用组件中的 data 字段（数据配置）
+        if (schemaComponent.data) {
+          if (schemaComponent.data.bindingType === 'dataset' && schemaComponent.data.datasetConfig) {
+            datasourceConfig = {
+              sourceType: 'dataset',
+              bindingType: 'dataset',
+              datasetConfig: {
+                datasourceId: schemaComponent.data.datasetConfig.datasourceId || schemaComponent.datasourceId || '',
+                query: schemaComponent.data.datasetConfig.query || '',
+                params: schemaComponent.data.datasetConfig.params || {},
+              },
+            };
+          } else if (schemaComponent.data.bindingType === 'static' && schemaComponent.data.staticConfig) {
+            datasourceConfig = {
+              sourceType: 'static',
+              bindingType: 'static',
+              staticConfig: {
+                data: schemaComponent.data.staticConfig.data || [],
+              },
+            };
+          }
+        }
+        
+        // 2. 如果组件有 datasourceId 且没有 data 配置，从 datasources 中查找
+        if (!datasourceConfig && schemaComponent.datasourceId) {
+          const datasource = datasourceMap.get(schemaComponent.datasourceId);
+          if (datasource && datasource.queryConfig) {
+            // 将 schema 中的数据源格式转换为 DatasourceConfig 格式
+            datasourceConfig = {
+              sourceType: 'dataset',
+              bindingType: 'dataset',
+              datasetConfig: {
+                datasourceId: datasource.datasourceId,
+                query: datasource.queryConfig.sql || '',
+                params: datasource.queryConfig.parameters?.reduce((acc: Record<string, any>, param: any) => {
+                  acc[param.name] = param;
+                  return acc;
+                }, {}),
+              },
+            };
+          }
+        }
+        
+        // 3. 如果直接提供了 datasourceConfig，直接使用
+        if (!datasourceConfig && schemaComponent.datasourceConfig) {
+          datasourceConfig = schemaComponent.datasourceConfig;
+        }
+        
+        // 4. 如果有 staticData 字段，使用静态数据
+        if (!datasourceConfig && schemaComponent.staticData) {
+          datasourceConfig = {
+            sourceType: 'static',
+            bindingType: 'static',
+            staticConfig: {
+              data: Array.isArray(schemaComponent.staticData) ? schemaComponent.staticData : [],
+            },
+          };
+        }
+
         // 创建CanvasItem
+        const itemId = schemaComponent.componentId || `${componentId}-${Date.now()}-${parsedItems.length}`;
         const canvasItem: CanvasItem = {
-          id: schemaComponent.componentId || `${componentId}-${Date.now()}`,
+          id: itemId,
           component,
           loading: true,
           position: schemaComponent.position || { x: 100, y: 100 },
           size: schemaComponent.size || { width: 400, height: 300 },
           zIndex: schemaComponent.zIndex || parsedItems.length + 1,
           propsValues: schemaComponent.props || {},
-          datasourceConfig: schemaComponent.datasourceConfig || undefined,
+          datasourceConfig,
         };
 
         parsedItems.push(canvasItem);
+        itemSchemaMap.set(itemId, schemaComponent); // 保存映射关系
+      }
+
+      // 先设置初始画布项，确保异步更新时能找到对应的item
+      setCanvasItems(parsedItems);
+
+      // 然后异步加载每个组件的定义
+      for (const canvasItem of parsedItems) {
+        const schemaComponent = itemSchemaMap.get(canvasItem.id);
+        const componentId = canvasItem.component.componentId;
 
         // 异步加载组件定义
+        // 对于 border 组件，即使定义加载失败也不设置 error，因为可以直接使用 props 渲染
         componentApi
           .getDefinition(componentId)
           .then((def) => {
@@ -324,8 +351,51 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                         loading: false,
                         propsValues: {
                           ...def.defaultProps,
-                          ...schemaComponent.props,
+                          ...(schemaComponent?.props || {}),
                         },
+                      }
+                    : item
+                )
+              );
+            } else {
+              // 对于 border 组件，即使没有定义也不设置 error
+              if (componentId === 'media-border') {
+                setCanvasItems((prev) =>
+                  prev.map((item) =>
+                    item.id === canvasItem.id
+                      ? {
+                          ...item,
+                          loading: false,
+                          // 不设置 error，让组件直接使用 props 渲染
+                        }
+                      : item
+                  )
+                );
+              } else {
+                setCanvasItems((prev) =>
+                  prev.map((item) =>
+                    item.id === canvasItem.id
+                      ? {
+                          ...item,
+                          loading: false,
+                          error: '未找到组件定义',
+                        }
+                      : item
+                  )
+                );
+              }
+            }
+          })
+          .catch(() => {
+            // 对于 border 组件，即使加载失败也不设置 error
+            if (componentId === 'media-border') {
+              setCanvasItems((prev) =>
+                prev.map((item) =>
+                  item.id === canvasItem.id
+                    ? {
+                        ...item,
+                        loading: false,
+                        // 不设置 error，让组件直接使用 props 渲染
                       }
                     : item
                 )
@@ -337,35 +407,30 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                     ? {
                         ...item,
                         loading: false,
-                        error: '未找到组件定义',
+                        error: '加载组件定义失败',
                       }
                     : item
                 )
               );
             }
-          })
-          .catch(() => {
-            setCanvasItems((prev) =>
-              prev.map((item) =>
-                item.id === canvasItem.id
-                  ? {
-                      ...item,
-                      loading: false,
-                      error: '加载组件定义失败',
-                    }
-                  : item
-              )
-            );
           });
       }
-
-      // 设置初始画布项
-      setCanvasItems(parsedItems);
+      
+      // 更新画布尺寸到 EditorContext
+      if (editorContext && schema.canvas) {
+        editorContext.setCanvasWidth(schema.canvas.width || 1920);
+        editorContext.setCanvasHeight(schema.canvas.height || 1080);
+        editorContext.setCanvasBackgroundColor(schema.canvas.backgroundColor || '#fafafa');
+      }
       
       // 更新历史记录
       if (parsedItems.length > 0) {
         const enhancedItems = convertToEnhancedItems(parsedItems);
         historyManagerRef.current.push(enhancedItems);
+        // 同步到 EditorContext
+        if (editorContext) {
+          editorContext.setCanvasItems(enhancedItems);
+        }
       }
 
       message.success(`已加载 ${parsedItems.length} 个组件到画布`);
@@ -427,37 +492,134 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const [enhancedItems, setEnhancedItems] = useState<EnhancedCanvasItem[]>([]);
 
   useEffect(() => {
-    setEnhancedItems(convertToEnhancedItems(canvasItems));
-  }, [canvasItems, convertToEnhancedItems]);
+    const enhanced = convertToEnhancedItems(canvasItems);
+    setEnhancedItems(enhanced);
+    // 同步到 EditorContext 用于预览
+    if (editorContext) {
+      editorContext.setCanvasItems(enhanced);
+    }
+  }, [canvasItems, convertToEnhancedItems, editorContext]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    
+    // 检查是否是模板拖拽
+    const templateData = e.dataTransfer.getData('template');
+    if (templateData) {
+      try {
+        const template = JSON.parse(templateData) as TemplateDefinition;
+        // 从后端API获取模板schema
+        templateApi
+          .getTemplateSchema(template.templateId)
+          .then((response) => {
+            if (response.success && response.data) {
+              loadSchemaToCanvas(response.data);
+              message.success(`已加载模板：${template.name}`);
+            } else {
+              message.warning(`模板 ${template.name} 的 Schema 数据不存在`);
+            }
+          })
+          .catch((error) => {
+            console.error('加载模板Schema失败:', error);
+            message.error('加载模板失败: ' + (error.message || '未知错误'));
+          });
+        return;
+      } catch (error) {
+        console.error('解析模板数据失败:', error);
+        message.error('加载模板失败');
+        return;
+      }
+    }
+    
+    // 处理组件拖拽
     const data = e.dataTransfer.getData('component');
     if (!data) {
       return;
     }
     const component = JSON.parse(data) as ComponentSummary;
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoom - 50;
-    const y = (e.clientY - rect.top) / zoom - 50;
+    const canvasX = (e.clientX - rect.left) / zoom;
+    const canvasY = (e.clientY - rect.top) / zoom;
+
+    // 检查是否拖拽到表单组件内部
+    let parentId: string | undefined;
+    let dropX = canvasX;
+    let dropY = canvasY;
+
+    // 查找所有表单组件，检查拖拽位置是否在其中
+    for (const item of canvasItems) {
+      if (item.component.componentId === 'form-form' && item.position && item.size) {
+        const formX = item.position.x;
+        const formY = item.position.y;
+        const formWidth = item.size.width;
+        const formHeight = item.size.height;
+        
+        if (
+          canvasX >= formX &&
+          canvasX <= formX + formWidth &&
+          canvasY >= formY &&
+          canvasY <= formY + formHeight
+        ) {
+          parentId = item.id;
+          // 计算相对于表单组件的位置（减去表单的 padding）
+          dropX = canvasX - formX - 16; // 16px padding
+          dropY = canvasY - formY - 16; // 16px padding
+          break;
+        }
+      }
+    }
+
+    // 根据组件类型设置默认大小
+    const getDefaultSize = (comp: ComponentSummary): { width: number; height: number } => {
+      // 表单组件使用更大的尺寸
+      if (comp.componentId === 'form-form') {
+        return { width: 600, height: 400 };
+      }
+      // 表单控件使用较小的尺寸
+      if (comp.categories?.includes('form') || comp.type === 'control') {
+        return { width: 200, height: 32 };
+      }
+      // 图表组件使用默认尺寸
+      if (comp.type === 'chart') {
+        return { width: 400, height: 300 };
+      }
+      // 其他组件使用默认尺寸
+      return { width: 400, height: 300 };
+    };
+
+    const defaultSize = getDefaultSize(component);
 
     const newItem: CanvasItem = {
       id: `${component.componentId}-${Date.now()}`,
       component,
       loading: true,
-      position: { x: Math.max(0, x), y: Math.max(0, y) },
-      size: { width: 400, height: 300 },
+      position: { x: Math.max(0, dropX), y: Math.max(0, dropY) },
+      size: defaultSize,
       zIndex: canvasItems.length + 1,
+      parentId,
     };
     const updatedItems = [...canvasItems, newItem];
+    
+    // 如果拖拽到表单组件内部，更新父组件的 children 列表
+    if (parentId) {
+      const parentIndex = updatedItems.findIndex((item) => item.id === parentId);
+      if (parentIndex !== -1) {
+        const parent = updatedItems[parentIndex];
+        updatedItems[parentIndex] = {
+          ...parent,
+          children: [...(parent.children || []), newItem.id],
+        };
+      }
+    }
+    
     setCanvasItems(updatedItems);
     setSelectedItemIds([newItem.id]);
     message.success(`已将 ${component.componentName} 添加到画布`);
     componentApi
       .getDefinition(component.componentId)
       .then((def) => {
-        setCanvasItems((prev) =>
-          prev.map((item) =>
+        setCanvasItems((prev) => {
+          const updated = prev.map((item) =>
             item.id === newItem.id
               ? {
                   ...item,
@@ -467,9 +629,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                   propsValues: def?.defaultProps ? { ...def.defaultProps } : {},
                 }
               : item
-          )
         );
-        historyManagerRef.current.push(convertToEnhancedItems([...canvasItems, newItem]));
+          return updated;
+        });
+        historyManagerRef.current.push(convertToEnhancedItems(updatedItems));
       })
       .catch(() => {
         setCanvasItems((prev) =>
@@ -533,9 +696,20 @@ const handleDatasourceConfigChange = useCallback(
     (items: EnhancedCanvasItem[]) => {
       setEnhancedItems(items);
       setCanvasItems(convertFromEnhancedItems(items));
+      // 同步到 EditorContext 用于预览
+      if (editorContext) {
+        editorContext.setCanvasItems(items);
+      }
     },
-    [convertFromEnhancedItems]
+    [convertFromEnhancedItems, editorContext]
   );
+  
+  // 当 enhancedItems 变化时，同步到 EditorContext
+  useEffect(() => {
+    if (editorContext && enhancedItems.length >= 0) {
+      editorContext.setCanvasItems(enhancedItems);
+    }
+  }, [enhancedItems, editorContext]);
 
   const handleSelectionChange = useCallback((ids: string[]) => {
     setSelectedItemIds(ids);
@@ -545,6 +719,55 @@ const handleDatasourceConfigChange = useCallback(
     setSelectedItemIds([id]);
   }, []);
 
+  // 发布报表处理函数
+  const handlePublish = useCallback(async () => {
+    if (!projectId || !reportId) {
+      message.warning('请先创建或选择报表');
+      return;
+    }
+
+    try {
+      // 先验证Schema
+      const validateResponse = await reportApi.validateReportSchema(projectId, reportId);
+      if (!validateResponse.success) {
+        message.error(validateResponse.message || 'Schema验证失败');
+        return;
+      }
+
+      if (!validateResponse.data.valid) {
+        Modal.warning({
+          title: 'Schema验证失败',
+          content: validateResponse.data.errorMessage || 'Schema格式不正确，无法发布',
+        });
+        return;
+      }
+
+      // 确认发布
+      Modal.confirm({
+        title: '确认发布',
+        content: '发布后报表将在运行态可见，是否确认发布？',
+        onOk: async () => {
+          try {
+            const response = await reportApi.publishReport(effectiveUserId, projectId, reportId);
+            if (response.success && response.data) {
+              message.success('发布成功');
+              // 更新报表上下文状态
+              setReportContext({
+                ...reportContext!,
+                status: 'published',
+              });
+            } else {
+              message.error(response.message || '发布失败');
+            }
+          } catch (error: any) {
+            message.error(error.message || '发布失败');
+          }
+        },
+      });
+    } catch (error: any) {
+      message.error(error.message || '发布失败');
+    }
+  }, [projectId, reportId, effectiveUserId, reportContext]);
 
   // 对齐功能
   const handleAlignLeft = useCallback(() => {
@@ -781,51 +1004,35 @@ const handleDatasourceConfigChange = useCallback(
       },
     });
   }, [handleItemsChange]);
-  
-  // 使用EditorContext同步状态
-  useEffect(() => {
-    if (projectContext) {
-      editorContext.setProjectContext(projectContext);
-    }
-  }, [projectContext, editorContext]);
-
-  useEffect(() => {
-    if (reportContext) {
-      editorContext.setReportContext(reportContext);
-      if (reportContext.reportName) {
-        editorContext.setReportTitle(reportContext.reportName);
-      }
-    }
-  }, [reportContext, editorContext]);
-
   return (
     <div
       style={{
         height: '100%',
-        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: 24,
       }}
     >
       <Layout
-        className="editor-layout-wrapper"
         style={{
           height: '100%',
           background: 'transparent',
           gap: 16,
           alignItems: 'stretch',
+          flex: 1,
         }}
       >
-        <Layout style={{ background: 'transparent', gap: 16, alignItems: 'stretch', flex: 1 }}>
-          <Layout.Content>
+        <Layout.Content style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <Card
               bodyStyle={{
-                height: '100%',
+              height: '100%',
                 background: '#fff',
                 border: '1px dashed #d0d0d0',
                 display: 'flex',
                 flexDirection: 'column',
                 padding: 0,
               }}
-              style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+            style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
@@ -973,13 +1180,13 @@ const handleDatasourceConfigChange = useCallback(
                     }
                     const effectiveDefinition = (() => {
                       if (!canvasItem.definition) {
-                        return canvasItem.definition;
+                        return null;
                       }
                       let mergedDefinition: ComponentDefinition = canvasItem.definition;
                       if (canvasItem.propsValues) {
                         mergedDefinition = {
                           ...mergedDefinition,
-                          defaultProps: { ...mergedDefinition.defaultProps, ...canvasItem.propsValues },
+                          defaultProps: { ...(mergedDefinition.defaultProps || {}), ...canvasItem.propsValues },
                         };
                       }
                       if (
@@ -993,6 +1200,19 @@ const handleDatasourceConfigChange = useCallback(
                       }
                       return mergedDefinition;
                     })();
+                    
+                    // 如果是表单组件，查找并渲染子组件
+                    const childItems = canvasItem.children
+                      ? canvasItem.children
+                          .map((childId) => canvasItems.find((ci) => ci.id === childId))
+                          .filter((ci): ci is CanvasItem => ci !== undefined)
+                      : [];
+                    
+                    // 为表单组件添加 formId 到 propsValues
+                    const formPropsValues = canvasItem.component.componentId === 'form-form'
+                      ? { ...canvasItem.propsValues, formId: canvasItem.id }
+                      : canvasItem.propsValues;
+                    
                     return (
                       <div
                         style={{
@@ -1002,9 +1222,10 @@ const handleDatasourceConfigChange = useCallback(
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
+                          position: 'relative',
                         }}
                       >
-                        {renderCanvasContent(canvasItem, effectiveDefinition)}
+                        {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems)}
                       </div>
                     );
                   }}
@@ -1022,7 +1243,7 @@ const handleDatasourceConfigChange = useCallback(
               </div>
             </Card>
           </Layout.Content>
-          <div style={{ position: 'relative', height: PANEL_HEIGHT }}>
+        <div style={{ position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
             <Layout.Sider
               width={propertyPanelCollapsed ? PROPERTY_COLLAPSED_WIDTH : PROPERTY_PANEL_WIDTH}
               theme="light"
@@ -1030,7 +1251,7 @@ const handleDatasourceConfigChange = useCallback(
                 background: '#fff',
                 padding: propertyPanelCollapsed ? '16px 8px' : 16,
                 borderRadius: 8,
-                height: PANEL_HEIGHT,
+              height: '100%',
                 transition: 'width 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
@@ -1061,7 +1282,7 @@ const handleDatasourceConfigChange = useCallback(
                       key: 'property',
                       label: '属性',
                       children: (
-                        <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 108px)`, overflow: 'auto' }}>
+                        <div style={{ padding: 16, height: 'calc(100% - 108px)', overflow: 'auto' }}>
                           <PropertyPanel
                             item={selectedItem}
                             onPropChange={handlePropChange}
@@ -1074,7 +1295,7 @@ const handleDatasourceConfigChange = useCallback(
                       key: 'datasource',
                       label: '数据源',
                       children: (
-                        <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 108px)`, overflow: 'auto' }}>
+                        <div style={{ padding: 16, height: 'calc(100% - 108px)', overflow: 'auto' }}>
                           <DatasourceConfigPanel
                             componentId={selectedItem?.id}
                             componentDefinition={selectedItem?.definition}
@@ -1090,7 +1311,7 @@ const handleDatasourceConfigChange = useCallback(
                       key: 'interaction',
                       label: '交互',
                       children: (
-                        <div style={{ padding: 16, height: `calc(${PANEL_HEIGHT} - 108px)`, overflow: 'auto' }}>
+                        <div style={{ padding: 16, height: 'calc(100% - 108px)', overflow: 'auto' }}>
                           <InteractionConfigPanel
                             componentId={selectedItem?.id}
                             onConfigChange={() => {
@@ -1128,7 +1349,6 @@ const handleDatasourceConfigChange = useCallback(
               title={propertyPanelCollapsed ? '展开属性面板' : '收起属性面板'}
             />
           </div>
-        </Layout>
       </Layout>
     </div>
   );
@@ -1136,7 +1356,28 @@ const handleDatasourceConfigChange = useCallback(
 
 export default CanvasEditor;
 
-function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition | null) {
+function renderCanvasContent(
+  item: CanvasItem,
+  definition?: ComponentDefinition | null,
+  propsValues?: Record<string, any>,
+  childItems: CanvasItem[] = []
+) {
+  // 对于 border 组件，即使有 error 或没有 definition，也尝试直接渲染
+  if (item.component.componentId === 'media-border') {
+    const borderProps = propsValues || item.propsValues || {};
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          border: `${borderProps.width || 2}px ${borderProps.style || 'solid'} ${borderProps.color || '#165DFF'}`,
+          borderRadius: borderProps.radius ? `${borderProps.radius}px` : '0',
+          backgroundColor: borderProps.backgroundColor || 'transparent',
+        }}
+      />
+    );
+  }
+  
   if (item.loading) {
     return <Skeleton active style={{ padding: 16 }} />;
   }
@@ -1150,7 +1391,21 @@ function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition 
       />
     );
   }
-  if (definition && item.component.type === 'chart') {
+  if (definition) {
+    // 表格组件（使用专门的 TableRenderer）
+    if (item.component.componentId === 'chart-table' || item.component.componentId === 'chart-tree-table') {
+      return (
+        <TableRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        />
+      );
+    }
+    // 图表组件
+    if (item.component.type === 'chart') {
     return (
       <ChartRenderer
         componentId={item.component.componentId}
@@ -1160,11 +1415,127 @@ function renderCanvasContent(item: CanvasItem, definition?: ComponentDefinition 
       />
     );
   }
+    // 媒体组件（text、border、line）
+    // 对于 border 组件，即使没有 definition 也可以直接渲染
+    if (item.component.componentId === 'media-border') {
+      if (!definition) {
+        const borderProps = propsValues || item.propsValues || {};
+        return (
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              border: `${borderProps.width || 2}px ${borderProps.style || 'solid'} ${borderProps.color || '#165DFF'}`,
+              borderRadius: borderProps.radius ? `${borderProps.radius}px` : '0',
+              backgroundColor: borderProps.backgroundColor || 'transparent',
+            }}
+          />
+        );
+      }
+      return (
+        <FormRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        />
+      );
+    }
+    
+    if (item.component.type === 'media' || 
+        item.component.componentId === 'media-text' || 
+        item.component.componentId === 'media-line') {
+      return (
+        <FormRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        />
+      );
+    }
+    
+    // 表单组件和控制组件
+    // 检查：type 为 'control' 或 'form'，或者 categories 包含 'form'
+    const isFormOrControl = 
+      item.component.type === 'control' || 
+      item.component.type === 'form' ||
+      item.component.categories?.includes('form');
+    
+    if (isFormOrControl) {
+      // 渲染子组件（只在表单组件中渲染）
+      const children = item.component.componentId === 'form-form' && childItems.length > 0 ? (
+        <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'auto' }}>
+          {childItems.map((child) => {
+            const childDefinition = child.definition;
+            const childEffectiveDefinition = childDefinition
+              ? {
+                  ...childDefinition,
+                  defaultProps: {
+                    ...(childDefinition.defaultProps || {}),
+                    ...(child.propsValues || {}),
+                  },
+                }
+              : null;
+            return (
+              <div
+                key={child.id}
+                style={{
+                  position: 'absolute',
+                  left: (child.position?.x || 0) + 16, // 加上表单的 padding
+                  top: (child.position?.y || 0) + 32, // 加上表单的 padding 和标题高度
+                  width: child.size?.width || 200,
+                  height: child.size?.height || 32,
+                  pointerEvents: 'auto',
+                }}
+              >
+                {renderCanvasContent(child, childEffectiveDefinition, child.propsValues)}
+              </div>
+            );
+          })}
+        </div>
+      ) : null;
+      
+      return (
+        <FormRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        >
+          {children}
+        </FormRenderer>
+      );
+    }
+  }
+  // 如果没有定义，显示错误信息
+  if (!definition) {
+    return (
+      <Empty
+        image={Empty.PRESENTED_IMAGE_SIMPLE}
+        description={`${item.component.componentName} - 组件定义未加载`}
+        style={{ margin: 0, padding: '32px 0' }}
+      />
+    );
+  }
+  // 如果没有定义或类型不匹配，显示预览图或占位符
+  if (item.component.previewUrl) {
   return (
     <img
       src={item.component.previewUrl}
       alt={item.component.componentName}
       style={{ width: '100%', height: 240, objectFit: 'cover' }}
+      />
+    );
+  }
+  return (
+    <Empty
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description={`${item.component.componentName} - 暂不支持预览`}
+      style={{ margin: 0, padding: '32px 0' }}
     />
   );
 }
@@ -1296,7 +1667,7 @@ function renderFormField(
   if (type === 'enum' && options) {
     return <Select value={value} onChange={onChange} options={options} style={{ width: '100%' }} />;
   }
-  return <Input value={value} onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)} style={{ width: '100%' }} />;
+  return <Input value={value} onChange={(e) => onChange(e.target.value)} style={{ width: '100%' }} />;
 }
 
 

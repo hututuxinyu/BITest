@@ -1,0 +1,178 @@
+import React, { useMemo } from 'react';
+import type { EnhancedCanvasItem } from './EnhancedCanvas';
+import ChartRenderer from './ChartRenderer';
+import FormRenderer from './FormRenderer';
+import TableRenderer from './TableRenderer';
+import type { ComponentDefinition } from '../types';
+
+interface ReportPreviewProps {
+  items: EnhancedCanvasItem[];
+  canvasWidth?: number;
+  canvasHeight?: number;
+  backgroundColor?: string;
+}
+
+/**
+ * 报表预览组件
+ * 用于预览报表，不显示编辑相关的UI元素
+ */
+const ReportPreview: React.FC<ReportPreviewProps> = ({
+  items,
+  canvasWidth = 1920,
+  canvasHeight = 1080,
+  backgroundColor = '#fafafa',
+}) => {
+  // 渲染组件内容
+  const renderItem = (item: EnhancedCanvasItem): React.ReactNode => {
+    if (item.loading) {
+      return <div style={{ padding: 16 }}>加载中...</div>;
+    }
+    if (item.error) {
+      return <div style={{ padding: 16, color: '#ff4d4f' }}>渲染失败: {item.error}</div>;
+    }
+
+    // 对于 border 组件，即使没有 definition 也可以直接渲染
+    if (!item.definition && item.component.componentId !== 'media-border') {
+      return <div style={{ padding: 16 }}>组件定义未加载</div>;
+    }
+    
+    // 如果 border 组件没有 definition，使用默认的 props
+    if (item.component.componentId === 'media-border' && !item.definition) {
+      const borderProps = item.propsValues || {};
+      return (
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            border: `${borderProps.width || 2}px ${borderProps.style || 'solid'} ${borderProps.color || '#165DFF'}`,
+            borderRadius: borderProps.radius ? `${borderProps.radius}px` : '0',
+            backgroundColor: borderProps.backgroundColor || 'transparent',
+          }}
+        />
+      );
+    }
+
+    const effectiveDefinition: ComponentDefinition = (() => {
+      let mergedDefinition: ComponentDefinition = item.definition;
+      if (item.propsValues) {
+        mergedDefinition = {
+          ...mergedDefinition,
+          defaultProps: { ...(mergedDefinition.defaultProps || {}), ...item.propsValues },
+        };
+      }
+      if (item.datasourceConfig?.bindingType === 'static' && item.datasourceConfig.staticConfig) {
+        mergedDefinition = {
+          ...mergedDefinition,
+          defaultData: item.datasourceConfig.staticConfig.data,
+        };
+      }
+      return mergedDefinition;
+    })();
+
+    // 表格组件
+    if (item.component.componentId === 'chart-table' || item.component.componentId === 'chart-tree-table') {
+      return (
+        <TableRenderer
+          componentId={item.component.componentId}
+          definition={effectiveDefinition}
+          height={item.size.height}
+          width={item.size.width}
+          propsValues={item.propsValues}
+        />
+      );
+    }
+
+    // 图表组件
+    if (item.component.type === 'chart') {
+      return (
+        <ChartRenderer
+          componentId={item.component.componentId}
+          definition={effectiveDefinition}
+          height="100%"
+          width="100%"
+        />
+      );
+    }
+
+    // 媒体组件和表单组件
+    if (
+      item.component.type === 'media' ||
+      item.component.type === 'control' ||
+      item.component.type === 'form' ||
+      item.component.categories?.includes('form') ||
+      item.component.componentId === 'media-text' ||
+      item.component.componentId === 'media-border' ||
+      item.component.componentId === 'media-line'
+    ) {
+      return (
+        <FormRenderer
+          componentId={item.component.componentId}
+          definition={effectiveDefinition}
+          height={item.size.height}
+          width={item.size.width}
+          propsValues={item.propsValues}
+        />
+      );
+    }
+
+    return <div style={{ padding: 16 }}>暂不支持该组件的预览</div>;
+  };
+
+  // 按 zIndex 排序
+  const sortedItems = useMemo(() => {
+    return [...items].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+  }, [items]);
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        overflow: 'auto',
+        background: backgroundColor,
+        position: 'relative',
+      }}
+    >
+      <div
+        style={{
+          position: 'relative',
+          width: canvasWidth,
+          height: canvasHeight,
+          margin: '0 auto',
+          background: backgroundColor,
+        }}
+      >
+        {sortedItems.map((item) => {
+          // 判断是否是 border 组件
+          const isBorderComponent =
+            item.component.componentId === 'media-border' ||
+            item.component.categories?.includes('border') ||
+            item.component.type === 'border';
+
+          return (
+            <div
+              key={item.id}
+              style={{
+                position: 'absolute',
+                left: item.position.x,
+                top: item.position.y,
+                width: item.size.width,
+                height: item.size.height,
+                zIndex: item.zIndex || 0,
+                // 预览模式下不显示边框和背景（border组件除外，它需要透明背景以显示内部边框）
+                border: 'none',
+                background: isBorderComponent ? 'transparent' : 'transparent',
+                pointerEvents: 'auto',
+              }}
+            >
+              {renderItem(item)}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default ReportPreview;
+
