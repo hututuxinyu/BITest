@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Select, Input, Button, message, Empty, Space, InputNumber, Radio, Collapse } from 'antd';
+import { CaretRightOutlined } from '@ant-design/icons';
 import type { InteractionConfig, InteractionEventType, InteractionActionType } from '../types';
 import { interactionApi } from '../services/interactionApi';
 import DynamicEventConfig from './DynamicEventConfig';
@@ -118,97 +119,121 @@ const InteractionConfigPanel: React.FC<InteractionConfigPanelProps> = ({
   }
 
   return (
-    <Form layout="vertical">
-      <Form.Item label="交互事件">
-        <Select
-          value={eventType}
-          onChange={handleEventTypeChange}
-          options={[
-            { label: '点击', value: 'click' },
-            { label: '悬停', value: 'hover' },
-            { label: '选择', value: 'select' },
-            { label: '输入', value: 'input' },
-            { label: '值变更', value: 'change' },
-          ]}
+    <Collapse
+      bordered={false}
+      defaultActiveKey={['event', 'action']}
+      expandIcon={({ isActive }) => (
+        <CaretRightOutlined
+          style={{
+            transform: isActive ? 'rotate(90deg)' : 'rotate(0deg)',
+            transition: 'transform 0.2s ease',
+          }}
         />
-      </Form.Item>
-
-      <Form.Item label="交互动作">
-        <Select
-          value={actionType}
-          onChange={handleActionTypeChange}
-          placeholder="请选择交互动作"
-          options={[
-            { label: '下钻', value: 'drillDown' },
-            { label: '关联', value: 'associate' },
-            { label: '跳转', value: 'jump' },
-            { label: '过滤', value: 'filter' },
-            { label: '弹窗', value: 'popup' },
-            { label: '动态事件', value: 'dynamicEvent' },
-          ]}
-        />
-      </Form.Item>
-
-      {actionType === 'dynamicEvent' && (
-        <Form.Item>
-          <DynamicEventConfig
-            config={dynamicEventConfig}
-            onChange={handleDynamicEventConfigChange}
-          />
-        </Form.Item>
       )}
+      className="config-collapse"
+    >
+      <Collapse.Panel header="交互事件" key="event">
+        <Form layout="vertical">
+          <Form.Item label="事件类型" className="config-item">
+            <Select
+              value={eventType}
+              onChange={handleEventTypeChange}
+              options={[
+                { label: '点击', value: 'click' },
+                { label: '悬停', value: 'hover' },
+                { label: '选择', value: 'select' },
+                { label: '输入', value: 'input' },
+                { label: '值变更', value: 'change' },
+              ]}
+            />
+            <div className="config-item-description">选择触发交互的事件类型</div>
+          </Form.Item>
+        </Form>
+      </Collapse.Panel>
 
-      {actionType === 'jump' && (
-        <Form.Item label="跳转URL">
-          <Input
-            placeholder="请输入跳转URL"
-            onChange={(e) => {
-              const newConfig: InteractionConfig = {
-                eventType,
-                actions: [
-                  {
-                    type: 'jump',
-                    config: { url: e.target.value },
-                  },
-                ],
-              };
-              if (onConfigChange) {
-                onConfigChange(newConfig);
-              }
-              if (componentId) {
-                interactionApi.saveComponentInteractionConfig(componentId, newConfig);
-              }
-            }}
-          />
-        </Form.Item>
-      )}
+      <Collapse.Panel header="交互动作" key="action">
+        <Form layout="vertical">
+          <Form.Item label="动作类型" className="config-item">
+            <Select
+              value={actionType}
+              onChange={handleActionTypeChange}
+              placeholder="请选择交互动作"
+              options={[
+                { label: '下钻', value: 'drillDown' },
+                { label: '关联', value: 'associate' },
+                { label: '跳转', value: 'jump' },
+                { label: '过滤', value: 'filter' },
+                { label: '弹窗', value: 'popup' },
+                { label: '动态事件', value: 'dynamicEvent' },
+              ]}
+            />
+            <div className="config-item-description">选择交互触发后执行的动作类型</div>
+          </Form.Item>
 
-      {actionType === 'popup' && (
-        <Form.Item label="弹窗内容">
-          <TextArea
-            rows={4}
-            placeholder="请输入弹窗显示的内容"
-            onChange={(e) => {
-              const newConfig: InteractionConfig = {
-                eventType,
-                actions: [
-                  {
-                    type: 'popup',
-                    config: { content: e.target.value },
-                  },
-                ],
-              };
-              if (onConfigChange) {
-                onConfigChange(newConfig);
-              }
-              if (componentId) {
-                interactionApi.saveComponentInteractionConfig(componentId, newConfig);
-              }
-            }}
-          />
-        </Form.Item>
-      )}
-    </Form>
+          {actionType === 'dynamicEvent' && (
+            <Form.Item className="config-item">
+              <DynamicEventConfig
+                config={dynamicEventConfig}
+                onChange={handleDynamicEventConfigChange}
+              />
+            </Form.Item>
+          )}
+
+          {actionType === 'jump' && (
+            <Form.Item label="跳转URL" className="config-item">
+              <Input
+                placeholder="请输入跳转URL"
+                onChange={(e) => {
+                  const newConfig: InteractionConfig = {
+                    eventType,
+                    actions: [
+                      {
+                        type: 'jump',
+                        config: { url: e.target.value },
+                      },
+                    ],
+                  };
+                  if (onConfigChange) {
+                    onConfigChange(newConfig);
+                  }
+                  if (componentId) {
+                    interactionApi.saveComponentInteractionConfig(componentId, newConfig);
+                  }
+                }}
+              />
+              <div className="config-item-description">输入跳转的目标URL地址</div>
+            </Form.Item>
+          )}
+
+          {actionType === 'popup' && (
+            <Form.Item label="弹窗内容" className="config-item">
+              <TextArea
+                rows={4}
+                placeholder="请输入弹窗显示的内容"
+                onChange={(e) => {
+                  const newConfig: InteractionConfig = {
+                    eventType,
+                    actions: [
+                      {
+                        type: 'popup',
+                        config: { content: e.target.value },
+                      },
+                    ],
+                  };
+                  if (onConfigChange) {
+                    onConfigChange(newConfig);
+                  }
+                  if (componentId) {
+                    interactionApi.saveComponentInteractionConfig(componentId, newConfig);
+                  }
+                }}
+              />
+              <div className="config-item-description">输入弹窗中要显示的内容</div>
+            </Form.Item>
+          )}
+        </Form>
+      </Collapse.Panel>
+    </Collapse>
   );
 };
 

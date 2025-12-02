@@ -129,6 +129,33 @@ code {
   padding: 0 !important;
 }
 
+/* 确保属性面板Sider高度正确 */
+.ant-layout-sider:has(.property-panel) {
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  align-items: stretch !important;
+}
+
+/* 针对属性面板Sider的通用规则 - 覆盖Ant Design默认样式 */
+.ant-layout-sider.ant-layout-sider-light {
+  height: 100% !important;
+  min-height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保CanvasEditor中的属性面板Sider高度正确 */
+div[style*="height: '100%'"] .ant-layout-sider.ant-layout-sider-light {
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  flex: 0 0 auto !important;
+  box-sizing: border-box !important;
+}
+
 .project-page {
   display: flex;
   flex-direction: column;

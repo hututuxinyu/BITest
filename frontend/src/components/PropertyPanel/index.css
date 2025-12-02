@@ -1,0 +1,582 @@
+/* 确保父容器Sider高度正确 */
+.ant-layout-sider:has(.property-panel) {
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  align-items: stretch !important;
+}
+
+/* 属性配置面板样式 */
+.property-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  min-height: 100% !important;
+  background: #F5F7FA;
+  border-left: 1px solid #E5E7EB;
+  font-family: '微软雅黑', 'Microsoft YaHei', sans-serif;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  position: relative;
+  padding: 16px;
+  flex: 1;
+}
+
+.property-panel .ant-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-tabs-content-holder {
+  flex: 1;
+  overflow: hidden !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-tabs-content {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-tabs-tabpane {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-tabs-tab {
+  font-size: 12px;
+  color: #666666;
+  padding: 10px 6px;
+  margin: 0 2px 0 0;
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+.property-panel .ant-tabs-tab:hover {
+  color: #333333;
+}
+
+.property-panel .ant-tabs-nav {
+  margin: 0;
+  padding: 0 4px;
+}
+
+.property-panel .ant-tabs-nav-list {
+  gap: 0;
+  width: 100%;
+  display: flex;
+}
+
+.property-panel .ant-tabs-tab-btn {
+  width: 100%;
+  text-align: center;
+}
+
+.property-panel .ant-tabs-tab-active {
+  color: #165DFF;
+}
+
+.property-panel .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #165DFF;
+}
+
+.property-panel .ant-tabs-ink-bar {
+  background: #165DFF;
+  height: 2px;
+}
+
+.property-panel-content {
+  padding: 0;
+  height: 100%;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-y: auto;
+  overflow-x: hidden !important;
+  box-sizing: border-box !important;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.property-panel-empty {
+  padding: 40px 16px;
+  text-align: center;
+  color: #666666;
+  font-size: 13px;
+}
+
+.property-panel-actions {
+  padding: 16px;
+  border-top: 1px solid #E5E7EB;
+  background: #FFFFFF;
+  flex-shrink: 0;
+}
+
+/* 配置分组样式 */
+.config-section {
+  margin-bottom: 20px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.config-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #E5E7EB;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.config-item {
+  margin-bottom: 12px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.config-item-label {
+  font-size: 13px;
+  color: #111827;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.config-item-description {
+  font-size: 11px;
+  color: #999999;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.config-item .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.config-item .ant-input,
+.config-item .ant-input-number,
+.config-item .ant-select {
+  font-size: 13px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.config-item .ant-form-item-control-input {
+  width: 100%;
+  max-width: 100%;
+}
+
+.config-item .ant-form-item-control-input-content {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 确保Form组件宽度固定 */
+.property-panel .ant-form {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保所有表单元素不会超出容器 */
+.property-panel .ant-form-item {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-form-item-control {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-form-item-control-input {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.property-panel .ant-form-item-control-input-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.property-panel .ant-form-item-label {
+  width: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.property-panel * {
+  box-sizing: border-box;
+}
+
+/* 确保所有tab内容区域宽度固定 */
+.property-panel .canvas-config-tab,
+.property-panel .component-property-tab,
+.property-panel .datasource-config-tab,
+.property-panel .interaction-config-tab {
+  min-height: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+}
+
+/* 确保所有子组件容器宽度固定 */
+.property-panel .datasource-config-tab > *,
+.property-panel .interaction-config-tab > *,
+.property-panel .canvas-config-tab > *,
+.property-panel .component-property-tab > * {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保折叠面板宽度固定 */
+.property-panel .ant-collapse,
+.property-panel .config-collapse {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-collapse-item,
+.property-panel .config-collapse .ant-collapse-item {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-collapse-header,
+.property-panel .config-collapse .ant-collapse-header {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-collapse-content,
+.property-panel .config-collapse .ant-collapse-content {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-collapse-content-box,
+.property-panel .config-collapse .ant-collapse-content-box {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保Select下拉框不会导致宽度变化 */
+.property-panel .ant-select:not(.unit-selector .ant-select) {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+.property-panel .ant-select-selector {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保Select下拉菜单不会影响布局 */
+.property-panel .ant-select-dropdown {
+  position: absolute !important;
+}
+
+/* 确保所有tab内容容器宽度固定 */
+.property-panel .datasource-config-tab,
+.property-panel .interaction-config-tab {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden;
+}
+
+/* 确保Input和TextArea宽度固定 */
+.property-panel .ant-input,
+.property-panel .ant-input-number,
+.property-panel .ant-input-number-input,
+.property-panel textarea.ant-input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保单位选择器宽度固定 */
+.property-panel .unit-selector {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.property-panel .unit-selector .ant-input-number {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: 1;
+  box-sizing: border-box !important;
+}
+
+.property-panel .unit-selector .ant-select {
+  width: 60px !important;
+  max-width: 60px !important;
+  min-width: 60px !important;
+  flex-shrink: 0;
+}
+
+/* 确保Switch和其他组件宽度固定 */
+.property-panel .ant-switch {
+  flex-shrink: 0;
+}
+
+.property-panel .ant-btn {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* 确保所有div元素不会超出容器 */
+.property-panel > div,
+.property-panel .ant-tabs-content > div,
+.property-panel .ant-tabs-tabpane > div,
+.property-panel .ant-tabs-content-holder > div {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保所有flex容器宽度固定 */
+.property-panel div[style*="display: flex"],
+.property-panel div[style*="display:flex"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保内边距flex容器宽度固定 */
+.property-panel .config-item > div[style*="display: flex"],
+.property-panel .config-item > div[style*="display:flex"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保flex子元素宽度正确 */
+.property-panel div[style*="flex: 1"] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保flex容器中的InputNumber宽度正确 */
+.property-panel div[style*="display: flex"] .ant-input-number,
+.property-panel div[style*="display:flex"] .ant-input-number {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex: 1;
+  box-sizing: border-box !important;
+}
+
+.property-panel div[style*="display: flex"] .ant-input-number-input,
+.property-panel div[style*="display:flex"] .ant-input-number-input {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 强制所有元素宽度不超过容器 */
+.property-panel,
+.property-panel * {
+  max-width: 100% !important;
+}
+
+/* 特别处理可能导致宽度变化的组件 */
+.property-panel .ant-upload,
+.property-panel .ant-upload-list,
+.property-panel .ant-empty {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 确保Space组件不会导致宽度变化 */
+.property-panel .ant-space {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.property-panel .ant-space-item {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 颜色拾取器样式 */
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.color-picker-preview {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #E5E7EB;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.color-picker-input {
+  flex: 1;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 折叠面板样式 */
+.config-collapse {
+  background: transparent;
+  border: none;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.config-collapse .ant-collapse-item {
+  border: none;
+  margin-bottom: 8px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.config-collapse .ant-collapse-header {
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.config-collapse .ant-collapse-content {
+  border: none;
+  padding: 0;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.config-collapse .ant-collapse-content-box {
+  padding: 8px 0 0 0;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* 单位选择器样式 */
+.unit-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.unit-selector .ant-input-number {
+  flex: 1;
+}
+
+.unit-selector .ant-select {
+  width: 60px;
+}
+
+/* 响应式适配 */
+@media (max-width: 1440px) {
+  .property-panel {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .property-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 420px;
+    z-index: 1000;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  }
+}
+

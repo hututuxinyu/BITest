@@ -1,0 +1,11 @@
+.canvas-config-tab {
+  height: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+}
+

@@ -29,16 +29,13 @@ import TableRenderer from './TableRenderer';
 import EnhancedCanvas, { EnhancedCanvasItem } from './EnhancedCanvas';
 import CanvasToolbar from './CanvasToolbar';
 import { HistoryManager } from '../utils/historyManager';
-import DatasourceConfigPanel from './DatasourceConfigPanel';
-import InteractionConfigPanel from './InteractionConfigPanel';
+import PropertyPanel, { type CanvasConfig } from './PropertyPanel';
 
 const PANEL_HEIGHT = '100%';
-const PROPERTY_PANEL_WIDTH = 230;
+const PROPERTY_PANEL_WIDTH = 420;
 const PROPERTY_COLLAPSED_WIDTH = 8;
 const RULER_SIZE = 32;
 const RULER_INTERVAL = 100;
-const PROPERTY_LABEL_WIDTH = 72;
-const FORM_ITEM_SPACING = 12;
 
 interface CanvasItem {
   id: string;
@@ -68,9 +65,21 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(false);
-  const [configTab, setConfigTab] = useState<'property' | 'datasource' | 'interaction'>('property');
   const [showGrid, setShowGrid] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>({
+    width: 1920,
+    height: 1080,
+    adaptMode: 'scale',
+    gridVisible: true,
+    gridSize: 10,
+    title: '未命名报表',
+    description: '',
+    backgroundType: 'solid',
+    backgroundColor: '#F5F5F5',
+    borderEnabled: false,
+    globalFont: '微软雅黑',
+  });
   const historyManagerRef = useRef<HistoryManager<EnhancedCanvasItem[]>>(new HistoryManager(50));
 
   const horizontalMarks = useMemo(
@@ -501,6 +510,18 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
     [selectedItemIds]
   );
 
+  const handleCanvasConfigChange = useCallback((config: CanvasConfig) => {
+    setCanvasConfig(config);
+    // 可以根据需要更新画布相关的状态，比如网格显示
+    setShowGrid(config.gridVisible);
+  }, []);
+
+  const handleItemChange = useCallback((updatedItem: CanvasItem) => {
+    setCanvasItems((prev) =>
+      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+    );
+  }, []);
+
   const selectedItem = canvasItems.find((item) => selectedItemIds.includes(item.id));
 
   const handleItemsChange = useCallback(
@@ -780,13 +801,19 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
             theme="light"
             style={{
               background: '#fff',
-              padding: propertyPanelCollapsed ? '16px 8px' : 16,
+              padding: propertyPanelCollapsed ? '16px 8px' : 0,
               borderRadius: 8,
               height: '100%',
+              width: propertyPanelCollapsed ? PROPERTY_COLLAPSED_WIDTH : PROPERTY_PANEL_WIDTH,
+              minWidth: propertyPanelCollapsed ? PROPERTY_COLLAPSED_WIDTH : PROPERTY_PANEL_WIDTH,
+              maxWidth: propertyPanelCollapsed ? PROPERTY_COLLAPSED_WIDTH : PROPERTY_PANEL_WIDTH,
               transition: 'width 0.2s ease',
               display: 'flex',
               alignItems: 'center',
               justifyContent: propertyPanelCollapsed ? 'center' : 'stretch',
+              flexShrink: 0,
+              overflow: 'hidden',
+              boxSizing: 'border-box',
             }}
           >
             {propertyPanelCollapsed ? (
@@ -797,64 +824,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
                 bodyStyle={{ padding: 0, height: '100%' }}
               />
             ) : (
-              <Card
-                className="property-panel-card"
-                bordered={false}
-                style={{ height: '100%' }}
-                bodyStyle={{ padding: 0, height: '100%' }}
-              >
-                <Tabs
-                  activeKey={configTab}
-                  onChange={(key) => setConfigTab(key as 'property' | 'datasource' | 'interaction')}
-                  size="small"
-                  tabBarGutter={16}
-                  items={[
-                    {
-                      key: 'property',
-                      label: '属性',
-                      children: (
-                        <div style={{ padding: 16, height: 'calc(100% - 108px)', overflow: 'auto' }}>
-                          <PropertyPanel
-                            item={selectedItem}
-                            onPropChange={handlePropChange}
-                            selectedCount={selectedItemIds.length}
-                          />
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'datasource',
-                      label: '数据源',
-                      children: (
-                        <div style={{ padding: 16, height: 'calc(100% - 108px)', overflow: 'auto' }}>
-                          <DatasourceConfigPanel
-                            componentId={selectedItem?.id}
-                            componentDefinition={selectedItem?.definition}
-                            onConfigChange={(config) => {
-                              handleDatasourceConfigChange(config);
-                              message.success('数据源配置已更新');
-                            }}
-                          />
-                        </div>
-                      ),
-                    },
-                    {
-                      key: 'interaction',
-                      label: '交互',
-                      children: (
-                        <div style={{ padding: 16, height: 'calc(100% - 108px)', overflow: 'auto' }}>
-                          <InteractionConfigPanel
-                            componentId={selectedItem?.id}
-                            onConfigChange={() => {
-                              message.success('交互配置已更新');
-                            }}
-                          />
-                        </div>
-                      ),
-                    },
-                  ]}
-                />
-              </Card>
+              <PropertyPanel
+                item={selectedItem}
+                selectedCount={selectedItemIds.length}
+                canvasConfig={canvasConfig}
+                onCanvasConfigChange={handleCanvasConfigChange}
+                onPropChange={handlePropChange}
+                onItemChange={handleItemChange}
+              />
             )}
           </Layout.Sider>
           <Button
@@ -1069,135 +1046,6 @@ function renderCanvasContent(
   );
 }
 
-interface PropertyPanelProps {
-  item?: CanvasItem;
-  onPropChange: (field: string, value: any) => void;
-  selectedCount?: number;
-}
-
-const PropertyPanel: React.FC<PropertyPanelProps> = ({ item, onPropChange, selectedCount = 0 }) => {
-  if (selectedCount === 0) {
-    return <Empty description="请选择画布中的组件实例" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
-  }
-  if (selectedCount > 1) {
-    return <Empty description={`已选择 ${selectedCount} 个组件，请选择单个组件进行属性编辑`} image={Empty.PRESENTED_IMAGE_SIMPLE} />;
-  }
-  if (!item) {
-    return <Empty description="请选择画布中的组件实例" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
-  }
-  if (!item.definition) {
-    return <Empty description="组件定义加载中..." image={Empty.PRESENTED_IMAGE_SIMPLE} />;
-  }
-  if (!item.definition.propsSchema || item.definition.propsSchema.length === 0) {
-    return <Empty description="该组件暂无可配置属性" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
-  }
-  const values = item.propsValues || {};
-
-  return (
-    <>
-      <Form layout="vertical" size="small">
-        {item.definition.propsSchema.map((schema) => (
-          <Form.Item key={schema.field} style={{ marginBottom: FORM_ITEM_SPACING }} tooltip={schema.description}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ flex: `0 0 ${PROPERTY_LABEL_WIDTH}px`, color: '#111827', fontSize: 13, fontWeight: 500 }}>
-                {schema.label}
-              </div>
-              <div style={{ flex: 1 }}>
-                {renderFormField(
-                  schema.type,
-                  values[schema.field] ?? schema.default,
-                  schema.options,
-                  (value) => onPropChange(schema.field, value)
-                )}
-              </div>
-            </div>
-          </Form.Item>
-        ))}
-      </Form>
-      <Collapse
-        bordered={false}
-        ghost
-        style={{ background: 'transparent', marginTop: 8 }}
-        defaultActiveKey={['size-position']}
-        expandIcon={({ isActive }) => (
-          <CaretLeftOutlined
-            style={{
-              fontSize: 12,
-              color: '#6b7280',
-              transform: isActive ? 'rotate(-90deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
-            }}
-          />
-        )}
-        expandIconPosition="end"
-        items={[
-          {
-            key: 'size-position',
-            label: (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  fontSize: 12,
-                  color: '#1f2937',
-                }}
-              >
-                <div style={{ fontSize: 13, fontWeight: 500, marginLeft: -16 }}>大小与位置</div>
-              </div>
-            ),
-            children: (
-              <div style={{ paddingTop: FORM_ITEM_SPACING }}>
-                <Form layout="vertical" size="small">
-                  {[
-                    { label: '宽度', field: 'width', fallback: item.size?.width || 0 },
-                    { label: '高度', field: 'height', fallback: item.size?.height || 0 },
-                    { label: 'X 坐标', field: 'x', fallback: item.position?.x || 0 },
-                    { label: 'Y 坐标', field: 'y', fallback: item.position?.y || 0 },
-                  ].map((control) => (
-                    <Form.Item key={control.field} style={{ marginBottom: FORM_ITEM_SPACING }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ flex: `0 0 ${PROPERTY_LABEL_WIDTH}px`, color: '#111827', fontSize: 13, fontWeight: 500 }}>
-                          {control.label}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <InputNumber
-                            size="small"
-                            style={{ width: '100%' }}
-                            value={Number(values[control.field]) || control.fallback || 0}
-                            onChange={(val) => onPropChange(control.field, val)}
-                          />
-                        </div>
-                      </div>
-                    </Form.Item>
-                  ))}
-                </Form>
-              </div>
-            ),
-          },
-        ]}
-      />
-    </>
-  );
-};
-
-function renderFormField(
-  type: string,
-  value: any,
-  options: Array<{ label: string; value: any }> | undefined,
-  onChange: (value: any) => void
-) {
-  if (type === 'boolean') {
-    return <Switch checked={Boolean(value)} onChange={(checked) => onChange(checked)} />;
-  }
-  if (type === 'number') {
-    return <InputNumber style={{ width: '100%' }} value={value} onChange={(val) => onChange(val)} />;
-  }
-  if (type === 'enum' && options) {
-    return <Select value={value} onChange={onChange} options={options} style={{ width: '100%' }} />;
-  }
-  return <Input value={value} onChange={(e) => onChange(e.target.value)} style={{ width: '100%' }} />;
-}
 
 export default CanvasWorkspace;
 

@@ -1,24 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Form, Select, Button, Modal, Input, message, Empty, Collapse } from 'antd';
-import { CaretLeftOutlined } from '@ant-design/icons';
+import { CaretRightOutlined } from '@ant-design/icons';
 import type { ComponentDefinition, DatasourceConfig, Dataset } from '../types';
 import { datasourceApi } from '../services/datasourceApi';
 
 const { TextArea } = Input;
-const LABEL_WIDTH = 72;
-const FORM_SPACING = 12;
-const COLLAPSE_LABEL_STYLE: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  fontSize: 12,
-  color: '#1f2937',
-};
-const COLLAPSE_TITLE_STYLE: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 500,
-  marginLeft: -16,
-};
 
 interface DatasourceConfigPanelProps {
   componentId?: string;
@@ -44,28 +30,6 @@ const DatasourceConfigPanel: React.FC<DatasourceConfigPanelProps> = ({
   const [pendingDatasetId, setPendingDatasetId] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const hasLoadedStaticConfigRef = useRef(false);
-  const collapseExpandIcon = useCallback(
-    ({ isActive }: { isActive: boolean }) => (
-      <CaretLeftOutlined
-        style={{
-          fontSize: 12,
-          color: '#6b7280',
-          transform: isActive ? 'rotate(-90deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s ease',
-        }}
-      />
-    ),
-    []
-  );
-
-  const renderSectionLabel = useCallback(
-    (title: string) => (
-      <div style={COLLAPSE_LABEL_STYLE}>
-        <div style={COLLAPSE_TITLE_STYLE}>{title}</div>
-      </div>
-    ),
-    []
-  );
 
   // 加载数据集列表
   useEffect(() => {
@@ -293,125 +257,103 @@ const DatasourceConfigPanel: React.FC<DatasourceConfigPanelProps> = ({
       <Form layout="vertical" size="small">
         <Collapse
           bordered={false}
-          ghost
-          style={{ background: 'transparent', marginTop: 8 }}
-          expandIcon={collapseExpandIcon}
-          expandIconPosition="end"
-          items={[
-            {
-              key: 'source',
-              label: renderSectionLabel('数据来源'),
-              children: (
-                <div style={{ padding: '8px 0' }}>
-                  <Form.Item style={{ marginBottom: FORM_SPACING }} required>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: `0 0 ${LABEL_WIDTH}px`, fontSize: 13, color: '#111827', fontWeight: 500 }}>
-                        绑定方式
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <Select
-                          value={bindingType}
-                          onChange={handleBindingTypeChange}
-                          size="small"
-                          options={[
-                            { label: '数据集', value: 'dataset' },
-                            { label: '静态配置', value: 'static' },
-                          ]}
-                        />
-                      </div>
-                    </div>
-                  </Form.Item>
-                </div>
-              ),
-            },
-          ]}
           defaultActiveKey={['source']}
-        />
+          expandIcon={({ isActive }) => (
+            <CaretRightOutlined
+              style={{
+                transform: isActive ? 'rotate(90deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+              }}
+            />
+          )}
+          className="config-collapse"
+        >
+          <Collapse.Panel header="数据来源" key="source">
+            <Form.Item label="绑定方式" className="config-item" required>
+              <Select
+                value={bindingType}
+                onChange={handleBindingTypeChange}
+                options={[
+                  { label: '数据集', value: 'dataset' },
+                  { label: '静态配置', value: 'static' },
+                ]}
+              />
+              <div className="config-item-description">选择数据绑定方式：数据集或静态配置</div>
+            </Form.Item>
+          </Collapse.Panel>
+        </Collapse>
 
         {bindingType === 'dataset' && (
           <Collapse
             bordered={false}
-            ghost
-            style={{ background: 'transparent', marginTop: 8 }}
-            expandIcon={collapseExpandIcon}
-            expandIconPosition="end"
-            items={[
-              {
-                key: 'dataset',
-                label: renderSectionLabel('数据集'),
-                children: (
-                  <div style={{ padding: '8px 0' }}>
-                    <Form.Item required style={{ marginBottom: FORM_SPACING }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ flex: `0 0 ${LABEL_WIDTH}px`, fontSize: 13, color: '#111827', fontWeight: 500 }}>
-                          数据集
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <Input
-                              placeholder="请选择数据集"
-                              value={selectedDatasetName}
-                              status={!selectedDatasetId ? 'error' : undefined}
-                              readOnly
-                            />
-                            <Button type="primary" onClick={openDatasetSelector}>
-                              选择
-                            </Button>
-                          </div>
-                          {!selectedDatasetId && (
-                            <div style={{ color: '#f5222d', fontSize: 12, marginTop: 4 }}>请选择数据集</div>
-                          )}
-                        </div>
-                      </div>
-                    </Form.Item>
-                  </div>
-                ),
-              },
-            ]}
             defaultActiveKey={['dataset']}
-          />
+            expandIcon={({ isActive }) => (
+              <CaretRightOutlined
+                style={{
+                  transform: isActive ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                }}
+              />
+            )}
+            className="config-collapse"
+          >
+            <Collapse.Panel header="数据集" key="dataset">
+              <Form.Item label="数据集" className="config-item" required>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Input
+                    placeholder="请选择数据集"
+                    value={selectedDatasetName}
+                    status={!selectedDatasetId ? 'error' : undefined}
+                    readOnly
+                    style={{ flex: 1 }}
+                  />
+                  <Button type="primary" onClick={openDatasetSelector}>
+                    选择
+                  </Button>
+                </div>
+                {!selectedDatasetId && (
+                  <div className="config-item-description" style={{ color: '#f5222d' }}>请选择数据集</div>
+                )}
+                {selectedDatasetId && (
+                  <div className="config-item-description">已选择数据集：{selectedDatasetName}</div>
+                )}
+              </Form.Item>
+            </Collapse.Panel>
+          </Collapse>
         )}
 
         {bindingType === 'static' && (
           <Collapse
             bordered={false}
-            ghost
-            style={{ background: 'transparent', marginTop: 8 }}
-            expandIcon={collapseExpandIcon}
-            expandIconPosition="end"
-            items={[
-              {
-                key: 'static',
-                label: renderSectionLabel('静态配置'),
-                children: (
-                  <div style={{ padding: '8px 0' }}>
-                    <Form.Item required style={{ marginBottom: FORM_SPACING }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div style={{ flex: `0 0 ${LABEL_WIDTH}px`, fontSize: 13, color: '#111827', fontWeight: 500 }}>
-                          值
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <Input value={staticValueSummary} readOnly />
-                            <Button
-                              type="primary"
-                              onClick={() => {
-                                ensureStaticJsonInitialized();
-                                setJsonModalVisible(true);
-                              }}
-                            >
-                              配置
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </Form.Item>
-                  </div>
-                ),
-              },
-            ]}
             defaultActiveKey={['static']}
-          />
+            expandIcon={({ isActive }) => (
+              <CaretRightOutlined
+                style={{
+                  transform: isActive ? 'rotate(90deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s ease',
+                }}
+              />
+            )}
+            className="config-collapse"
+          >
+            <Collapse.Panel header="静态配置" key="static">
+              <Form.Item label="值" className="config-item" required>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Input value={staticValueSummary} readOnly style={{ flex: 1 }} />
+                  <Button
+                    type="primary"
+                    onClick={() => {
+                      ensureStaticJsonInitialized();
+                      setJsonModalVisible(true);
+                    }}
+                  >
+                    配置
+                  </Button>
+                </div>
+                <div className="config-item-description">{staticValueSummary}</div>
+              </Form.Item>
+            </Collapse.Panel>
+          </Collapse>
         )}
       </Form>
 
