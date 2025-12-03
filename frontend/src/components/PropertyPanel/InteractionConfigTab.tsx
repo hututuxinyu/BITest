@@ -1,20 +1,34 @@
 import React from 'react';
-import { Empty } from 'antd';
-import InteractionConfigPanel from '../InteractionConfigPanel';
+import EnhancedInteractionConfigTab from './EnhancedInteractionConfigTab';
 import './InteractionConfigTab.css';
 
 interface InteractionConfigTabProps {
   componentId: string;
+  availableComponents?: Array<{ id: string; name: string }>; // 画布中所有组件列表
+  initialConfig?: any; // 从schema加载的交互配置
+  onConfigChange?: (config: any) => void;
 }
 
-const InteractionConfigTab: React.FC<InteractionConfigTabProps> = ({ componentId }) => {
+/**
+ * 交互配置标签页组件
+ * 直接使用增强配置，支持单个或多个事件的配置
+ */
+const InteractionConfigTab: React.FC<InteractionConfigTabProps> = ({
+  componentId,
+  availableComponents = [],
+  initialConfig,
+  onConfigChange,
+}) => {
   return (
     <div className="interaction-config-tab">
-      <InteractionConfigPanel
+      <EnhancedInteractionConfigTab
         componentId={componentId}
-        onConfigChange={() => {
-          // 配置变更处理
-          console.log('交互配置变更');
+        availableComponents={availableComponents}
+        initialConfig={initialConfig}
+        onChange={(config) => {
+          if (onConfigChange) {
+            onConfigChange(config);
+          }
         }}
       />
     </div>

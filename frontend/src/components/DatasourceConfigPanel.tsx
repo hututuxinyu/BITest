@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Form, Select, Button, Modal, Input, message, Empty, Collapse } from 'antd';
-import { CaretRightOutlined } from '@ant-design/icons';
+import { Form, Select, Button, Modal, Input, message, Empty } from 'antd';
 import type { ComponentDefinition, DatasourceConfig, Dataset } from '../types';
 import { datasourceApi } from '../services/datasourceApi';
 
@@ -255,105 +254,57 @@ const DatasourceConfigPanel: React.FC<DatasourceConfigPanelProps> = ({
   return (
     <>
       <Form layout="vertical" size="small">
-        <Collapse
-          bordered={false}
-          defaultActiveKey={['source']}
-          expandIcon={({ isActive }) => (
-            <CaretRightOutlined
-              style={{
-                transform: isActive ? 'rotate(90deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s ease',
-              }}
-            />
-          )}
-          className="config-collapse"
-        >
-          <Collapse.Panel header="数据来源" key="source">
-            <Form.Item label="绑定方式" className="config-item" required>
-              <Select
-                value={bindingType}
-                onChange={handleBindingTypeChange}
-                options={[
-                  { label: '数据集', value: 'dataset' },
-                  { label: '静态配置', value: 'static' },
-                ]}
-              />
-              <div className="config-item-description">选择数据绑定方式：数据集或静态配置</div>
-            </Form.Item>
-          </Collapse.Panel>
-        </Collapse>
+        <Form.Item label="绑定方式" className="config-item" required>
+          <Select
+            value={bindingType}
+            onChange={handleBindingTypeChange}
+            options={[
+              { label: '数据集', value: 'dataset' },
+              { label: '静态配置', value: 'static' },
+            ]}
+          />
+          <div className="config-item-description">选择数据绑定方式：数据集或静态配置</div>
+        </Form.Item>
 
         {bindingType === 'dataset' && (
-          <Collapse
-            bordered={false}
-            defaultActiveKey={['dataset']}
-            expandIcon={({ isActive }) => (
-              <CaretRightOutlined
-                style={{
-                  transform: isActive ? 'rotate(90deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease',
-                }}
+          <Form.Item label="数据集" className="config-item" required>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input
+                placeholder="请选择数据集"
+                value={selectedDatasetName}
+                status={!selectedDatasetId ? 'error' : undefined}
+                readOnly
+                style={{ flex: 1 }}
               />
+              <Button type="primary" onClick={openDatasetSelector}>
+                选择
+              </Button>
+            </div>
+            {!selectedDatasetId && (
+              <div className="config-item-description" style={{ color: '#f5222d' }}>请选择数据集</div>
             )}
-            className="config-collapse"
-          >
-            <Collapse.Panel header="数据集" key="dataset">
-              <Form.Item label="数据集" className="config-item" required>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Input
-                    placeholder="请选择数据集"
-                    value={selectedDatasetName}
-                    status={!selectedDatasetId ? 'error' : undefined}
-                    readOnly
-                    style={{ flex: 1 }}
-                  />
-                  <Button type="primary" onClick={openDatasetSelector}>
-                    选择
-                  </Button>
-                </div>
-                {!selectedDatasetId && (
-                  <div className="config-item-description" style={{ color: '#f5222d' }}>请选择数据集</div>
-                )}
-                {selectedDatasetId && (
-                  <div className="config-item-description">已选择数据集：{selectedDatasetName}</div>
-                )}
-              </Form.Item>
-            </Collapse.Panel>
-          </Collapse>
+            {selectedDatasetId && (
+              <div className="config-item-description">已选择数据集：{selectedDatasetName}</div>
+            )}
+          </Form.Item>
         )}
 
         {bindingType === 'static' && (
-          <Collapse
-            bordered={false}
-            defaultActiveKey={['static']}
-            expandIcon={({ isActive }) => (
-              <CaretRightOutlined
-                style={{
-                  transform: isActive ? 'rotate(90deg)' : 'rotate(0deg)',
-                  transition: 'transform 0.2s ease',
+          <Form.Item label="值" className="config-item" required>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Input value={staticValueSummary} readOnly style={{ flex: 1 }} />
+              <Button
+                type="primary"
+                onClick={() => {
+                  ensureStaticJsonInitialized();
+                  setJsonModalVisible(true);
                 }}
-              />
-            )}
-            className="config-collapse"
-          >
-            <Collapse.Panel header="静态配置" key="static">
-              <Form.Item label="值" className="config-item" required>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Input value={staticValueSummary} readOnly style={{ flex: 1 }} />
-                  <Button
-                    type="primary"
-                    onClick={() => {
-                      ensureStaticJsonInitialized();
-                      setJsonModalVisible(true);
-                    }}
-                  >
-                    配置
-                  </Button>
-                </div>
-                <div className="config-item-description">{staticValueSummary}</div>
-              </Form.Item>
-            </Collapse.Panel>
-          </Collapse>
+              >
+                配置
+              </Button>
+            </div>
+            <div className="config-item-description">{staticValueSummary}</div>
+          </Form.Item>
         )}
       </Form>
 

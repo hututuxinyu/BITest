@@ -7,20 +7,109 @@ import './ComponentPropertyTab.css';
 interface ComponentPropertyTabProps {
   item: CanvasItem;
   property?: ComponentProperty;
+  componentDefinition?: any; // 组件定义，包含 propsSchema
   onChange: (field: string, value: any) => void;
 }
 
-const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, property, onChange }) => {
+const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, property, componentDefinition, onChange }) => {
   if (!property) {
     return <div>加载中...</div>;
   }
+
+  // 获取组件特有属性值
+  const getComponentPropValue = (field: string) => {
+    const props = item.propsValues || {};
+    const defaultValue = componentDefinition?.defaultProps?.[field];
+    return props[field] !== undefined ? props[field] : defaultValue;
+  };
+
+  // 渲染组件特有属性
+  const renderComponentSpecificProps = () => {
+    if (!componentDefinition?.propsSchema || componentDefinition.propsSchema.length === 0) {
+      return null;
+    }
+
+    return (
+      <Collapse.Panel header="组件特有属性" key="componentProps">
+        {componentDefinition.propsSchema.map((prop: any) => {
+          const value = getComponentPropValue(prop.field);
+          
+          // 根据类型渲染不同的控件
+          if (prop.type === 'boolean') {
+            return (
+              <Form.Item key={prop.field} label={prop.label} className="config-item">
+                <Switch
+                  checked={value !== undefined ? value : prop.default}
+                  onChange={(checked) => onChange(prop.field, checked)}
+                />
+                {prop.description && (
+                  <div className="config-item-description">{prop.description}</div>
+                )}
+              </Form.Item>
+            );
+          }
+
+          if (prop.type === 'enum' && prop.options) {
+            return (
+              <Form.Item key={prop.field} label={prop.label} className="config-item">
+                <Select
+                  value={value !== undefined ? value : prop.default}
+                  onChange={(val) => onChange(prop.field, val)}
+                  options={prop.options.map((opt: any) => ({
+                    label: opt.label,
+                    value: opt.value,
+                  }))}
+                />
+                {prop.description && (
+                  <div className="config-item-description">{prop.description}</div>
+                )}
+              </Form.Item>
+            );
+          }
+
+          if (prop.type === 'number') {
+            return (
+              <Form.Item key={prop.field} label={prop.label} className="config-item">
+                <InputNumber
+                  value={value !== undefined ? value : prop.default}
+                  onChange={(val) => onChange(prop.field, val ?? prop.default)}
+                  style={{ width: '100%' }}
+                  min={prop.min}
+                  max={prop.max}
+                  step={prop.step}
+                />
+                {prop.description && (
+                  <div className="config-item-description">{prop.description}</div>
+                )}
+              </Form.Item>
+            );
+          }
+
+          // 默认字符串类型
+          return (
+            <Form.Item key={prop.field} label={prop.label} className="config-item">
+              <Input
+                value={value !== undefined ? value : prop.default || ''}
+                onChange={(e) => onChange(prop.field, e.target.value)}
+                placeholder={prop.description}
+                maxLength={prop.maxLength}
+              />
+              {prop.description && (
+                <div className="config-item-description">{prop.description}</div>
+              )}
+            </Form.Item>
+          );
+        })}
+      </Collapse.Panel>
+    );
+  };
 
   return (
     <div className="component-property-tab">
       {/* 基础信息 */}
       <Collapse
         bordered={false}
-        defaultActiveKey={['basic', 'position', 'style', 'title']}
+        defaultActiveKey={['basic', 'componentProps', 'position', 'style', 'title']}
         expandIcon={({ isActive }) => (
           <CaretRightOutlined
             style={{
@@ -89,6 +178,9 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
             <div className="config-item-description">数值越大越靠上（范围：1~100）</div>
           </Form.Item>
         </Collapse.Panel>
+
+        {/* 组件特有属性 */}
+        {renderComponentSpecificProps()}
 
         {/* 位置尺寸 */}
         <Collapse.Panel header="位置尺寸" key="position">

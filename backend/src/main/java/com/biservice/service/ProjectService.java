@@ -224,6 +224,7 @@ public class ProjectService {
 
     private Sort buildSort(String sortField, String sortOrder) {
         String resolvedSortField = resolveSortField(sortField);
+        // 如果没有指定排序方向，默认使用降序（DESC）
         Sort.Direction direction = "ASC".equalsIgnoreCase(sortOrder)
             ? Sort.Direction.ASC : Sort.Direction.DESC;
         return Sort.by(direction, resolvedSortField);
@@ -233,7 +234,8 @@ public class ProjectService {
         if (StringUtils.hasText(sortField) && SORT_FIELD_MAPPING.containsKey(sortField)) {
             return SORT_FIELD_MAPPING.get(sortField);
         }
-        return "createTime";
+        // 默认按更新时间降序排序（最近更新的在前）
+        return "updateTime";
     }
 
     /**

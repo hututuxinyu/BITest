@@ -17,9 +17,13 @@
       "description": "报表唯一标识符"
     },
     "historyArray": {
+      "type": "array",
+      "description": "报表历史版本ID数组，用于记录报表的所有历史版本标识",
+      "items": {
         "type": "string",
-        "description": "报表唯一标识符"
-      },
+        "description": "历史版本ID"
+      }
+    },
     "reportName": {
       "type": "string",
       "description": "报表名称"
@@ -72,7 +76,8 @@
         "backgroundColor": {
           "type": "string",
           "description": "画布背景颜色，支持十六进制颜色值或CSS颜色名称",
-          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$|^[a-zA-Z]+$"
+          "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$|^[a-zA-Z]+$",
+          "default": "#FFFFFF"
         },
         "grid": {
           "type": "boolean",
@@ -100,7 +105,37 @@
           },
           "componentType": {
             "type": "string",
-            "description": "组件类型，如：barChart, lineChart, pieChart, table, image, video, text, button, filter等"
+            "enum": [
+              "barChart",
+              "lineChart",
+              "pieChart",
+              "scatterChart",
+              "radarChart",
+              "gaugeChart",
+              "gauge",
+              "table",
+              "treeTable",
+              "image",
+              "video",
+              "text",
+              "richText",
+              "line",
+              "border",
+              "group",
+              "tabs",
+              "button",
+              "filter",
+              "input",
+              "switch",
+              "radio",
+              "checkbox",
+              "select",
+              "textarea",
+              "form",
+              "timeperiod",
+              "daterange"
+            ],
+            "description": "组件类型：barChart-柱状图，lineChart-折线图，pieChart-饼图，scatterChart-散点图，radarChart-雷达图，gaugeChart/gauge-仪表盘，table-表格，treeTable-树形表格，image-图片，video-视频，text-文本，richText-富文本，line-线条，border-边框，group-分组，tabs-选项卡，button-按钮，filter-筛选器，input-输入框，switch-开关，radio-单选框，checkbox-多选框，select-下拉框，textarea-文本域，form-表单，timeperiod-周期时间，daterange-日期范围"
           },
           "componentName": {
             "type": "string",

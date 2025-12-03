@@ -251,6 +251,25 @@ export const reportApi = {
     const result: ApiResponse<any> = await response.json();
     return result;
   },
+
+  /**
+   * 保存报表Schema
+   */
+  saveReportSchema: async (
+    projectId: string,
+    reportId: string,
+    schema: any
+  ): Promise<ApiResponse<void>> => {
+    const response = await fetch(`${API_BASE_URL}/reports/project/${projectId}/${reportId}/schema`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(schema),
+    });
+    const result: ApiResponse<void> = await response.json();
+    return result;
+  },
 };
 
 /**

@@ -9,6 +9,39 @@
 export type ReportType = 'report' | 'dashboard';
 
 /**
+ * 组件类型
+ */
+export type ComponentType =
+  | 'barChart'
+  | 'lineChart'
+  | 'pieChart'
+  | 'scatterChart'
+  | 'radarChart'
+  | 'gaugeChart'
+  | 'gauge'
+  | 'table'
+  | 'treeTable'
+  | 'image'
+  | 'video'
+  | 'text'
+  | 'richText'
+  | 'line'
+  | 'border'
+  | 'group'
+  | 'tabs'
+  | 'button'
+  | 'filter'
+  | 'input'
+  | 'switch'
+  | 'radio'
+  | 'checkbox'
+  | 'select'
+  | 'textarea'
+  | 'form'
+  | 'timeperiod'
+  | 'daterange';
+
+/**
  * 数据源类型
  */
 export type DatasourceType =
@@ -98,11 +131,11 @@ export interface CanvasConfig {
   width: number;
   /** 画布高度（像素） */
   height: number;
-  /** 画布背景颜色 */
+  /** 画布背景颜色，默认值为 #FFFFFF（白色） */
   backgroundColor?: string;
-  /** 是否显示网格 */
+  /** 是否显示网格，默认值为 false */
   grid?: boolean;
-  /** 网格大小（像素） */
+  /** 网格大小（像素），默认值为 10 */
   gridSize?: number;
 }
 
@@ -275,7 +308,7 @@ export interface Component {
   /** 组件唯一标识符 */
   componentId: string;
   /** 组件类型 */
-  componentType: string;
+  componentType: ComponentType;
   /** 组件名称 */
   componentName?: string;
   /** 组件位置 */
@@ -559,6 +592,8 @@ export interface ReportSchema {
   version: string;
   /** 报表唯一标识符 */
   reportId: string;
+  /** 报表历史版本ID数组，用于记录报表的所有历史版本标识 */
+  historyArray?: string[];
   /** 报表名称 */
   reportName: string;
   /** 报表类型 */

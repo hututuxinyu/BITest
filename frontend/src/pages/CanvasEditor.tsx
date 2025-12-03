@@ -38,6 +38,8 @@ import DatasourceConfigPanel from '../components/DatasourceConfigPanel';
 import InteractionConfigPanel from '../components/InteractionConfigPanel';
 import PropertyPanel, { type CanvasConfig, type CanvasItem as PropertyPanelCanvasItem } from '../components/PropertyPanel';
 import { useEditorContext } from '../contexts/EditorContext';
+import { generateReportSchema, validateSchema } from '../utils/schemaGenerator';
+// import type { ReportSchema } from '../schema/report-schema'; // 暂时注释，类型定义在schema目录
 
 interface CanvasItem {
   id: string;
@@ -50,6 +52,8 @@ interface CanvasItem {
   size?: { width: number; height: number };
   zIndex?: number;
   datasourceConfig?: DatasourceConfig;
+  queryConfig?: any; // 查询配置（SQL、参数等）
+  interactionConfig?: any; // 交互配置（events数组）
   parentId?: string; // 父组件ID，用于嵌套
   children?: string[]; // 子组件ID列表
 }
@@ -703,6 +707,86 @@ const handleDatasourceConfigChange = useCallback(
   [selectedItemIds]
 );
 
+  const handleQueryConfigChange = useCallback(
+    (componentId: string, config: any) => {
+      setCanvasItems((prev) =>
+        prev.map((item) =>
+          item.id === componentId
+            ? {
+                ...item,
+                queryConfig: config,
+              }
+            : item
+        )
+      );
+    },
+    []
+  );
+
+  const handleInteractionConfigChange = useCallback(
+    (componentId: string, config: any) => {
+      setCanvasItems((prev) =>
+        prev.map((item) =>
+          item.id === componentId
+            ? {
+                ...item,
+                interactionConfig: config,
+              }
+            : item
+        )
+      );
+    },
+    []
+  );
+
+  // 生成并保存Schema
+  const handleSaveSchema = useCallback(async () => {
+    if (!projectId || !reportId || !reportContext) {
+      message.warning('请先创建或选择报表');
+      return;
+    }
+
+    try {
+      const reportName = reportContext.reportName || '未命名报表';
+      const schema = generateReportSchema(
+        canvasItems,
+        canvasConfig,
+        reportId,
+        reportName,
+        projectId
+      );
+
+      // 验证Schema
+      const validation = validateSchema(schema);
+      if (!validation.valid) {
+        Modal.error({
+          title: 'Schema验证失败',
+          content: (
+            <div>
+              <p>以下字段存在问题：</p>
+              <ul>
+                {validation.errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          ),
+        });
+        return;
+      }
+
+      // 保存Schema
+      const response = await reportApi.saveReportSchema(projectId, reportId, schema);
+      if (response.success) {
+        message.success('Schema保存成功');
+      } else {
+        message.error(response.message || 'Schema保存失败');
+      }
+    } catch (error: any) {
+      message.error('保存Schema失败: ' + (error.message || '未知错误'));
+    }
+  }, [canvasItems, canvasConfig, projectId, reportId, reportContext]);
+
   const selectedItem = canvasItems.find((item) => selectedItemIds.includes(item.id));
 
   // 画布增强功能处理函数
@@ -735,13 +819,49 @@ const handleDatasourceConfigChange = useCallback(
 
   // 发布报表处理函数
   const handlePublish = useCallback(async () => {
-    if (!projectId || !reportId) {
+    if (!projectId || !reportId || !reportContext) {
       message.warning('请先创建或选择报表');
       return;
     }
 
     try {
-      // 先验证Schema
+      // 先生成并保存Schema
+      const reportName = reportContext.reportName || '未命名报表';
+      const schema = generateReportSchema(
+        canvasItems,
+        canvasConfig,
+        reportId,
+        reportName,
+        projectId
+      );
+
+      // 验证Schema
+      const validation = validateSchema(schema);
+      if (!validation.valid) {
+        Modal.error({
+          title: 'Schema验证失败',
+          content: (
+            <div>
+              <p>以下字段存在问题：</p>
+              <ul>
+                {validation.errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          ),
+        });
+        return;
+      }
+
+      // 保存Schema
+      const saveResponse = await reportApi.saveReportSchema(projectId, reportId, schema);
+      if (!saveResponse.success) {
+        message.error(saveResponse.message || 'Schema保存失败');
+        return;
+      }
+
+      // 验证Schema（后端验证）
       const validateResponse = await reportApi.validateReportSchema(projectId, reportId);
       if (!validateResponse.success) {
         message.error(validateResponse.message || 'Schema验证失败');
@@ -1067,6 +1187,7 @@ const handleDatasourceConfigChange = useCallback(
                 canRedo={historyManagerRef.current.canRedo()}
                 onUndo={handleUndo}
                 onRedo={handleRedo}
+                onSaveSchema={handleSaveSchema}
                 selectedCount={selectedItemIds.length}
                 onAlignLeft={handleAlignLeft}
                 onAlignCenter={handleAlignCenter}
@@ -1292,30 +1413,36 @@ const handleDatasourceConfigChange = useCallback(
                           <PropertyPanel
                             item={selectedItem}
                             selectedCount={selectedItemIds.length}
-                  canvasConfig={canvasConfig}
-                  onCanvasConfigChange={(config) => {
-                    setCanvasConfig(config);
-                    setShowGrid(config.gridVisible);
-                    // 更新画布尺寸等配置
-                    if (editorContext) {
-                      editorContext.setCanvasWidth(config.width);
-                      editorContext.setCanvasHeight(config.height);
-                      editorContext.setCanvasBackgroundColor(config.backgroundColor);
-                    }
-                  }}
-                  onPropChange={handlePropChange}
-                  onItemChange={(updatedItem) => {
-                    setCanvasItems((prev) =>
-                      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
-                    );
-                  }}
-                  onApply={() => {
-                    message.success('配置已应用');
-                  }}
-                  onReset={() => {
-                    message.info('配置已重置');
-                  }}
-                />
+                            canvasConfig={canvasConfig}
+                            availableComponents={canvasItems.map((item) => ({
+                              id: item.id,
+                              name: item.component.componentName || item.id,
+                            }))}
+                            onCanvasConfigChange={(config) => {
+                              setCanvasConfig(config);
+                              setShowGrid(config.gridVisible);
+                              // 更新画布尺寸等配置
+                              if (editorContext) {
+                                editorContext.setCanvasWidth(config.width);
+                                editorContext.setCanvasHeight(config.height);
+                                editorContext.setCanvasBackgroundColor(config.backgroundColor);
+                              }
+                            }}
+                            onPropChange={handlePropChange}
+                            onItemChange={(updatedItem) => {
+                              setCanvasItems((prev) =>
+                                prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+                              );
+                            }}
+                            onQueryConfigChange={handleQueryConfigChange}
+                            onInteractionConfigChange={handleInteractionConfigChange}
+                            onApply={() => {
+                              message.success('配置已应用');
+                            }}
+                            onReset={() => {
+                              message.info('配置已重置');
+                            }}
+                          />
             )}
             </Layout.Sider>
             <Button

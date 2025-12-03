@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Tabs, Button, message, Modal } from 'antd';
 import { CheckOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { ComponentDefinition } from '../types';
@@ -22,6 +22,8 @@ export interface CanvasItem {
   loading?: boolean;
   error?: string;
   datasourceConfig?: any;
+  queryConfig?: any;
+  interactionConfig?: any;
   parentId?: string;
   children?: string[];
 }
@@ -97,9 +99,12 @@ interface PropertyPanelProps {
   item?: CanvasItem;
   selectedCount?: number;
   canvasConfig?: CanvasConfig;
+  availableComponents?: Array<{ id: string; name: string }>; // 画布中所有组件列表
   onCanvasConfigChange?: (config: CanvasConfig) => void;
   onPropChange?: (field: string, value: any) => void;
   onItemChange?: (item: CanvasItem) => void;
+  onQueryConfigChange?: (componentId: string, config: any) => void;
+  onInteractionConfigChange?: (componentId: string, config: any) => void;
   onApply?: () => void;
   onReset?: () => void;
 }
@@ -107,10 +112,13 @@ interface PropertyPanelProps {
 const PropertyPanel: React.FC<PropertyPanelProps> = ({
   item,
   selectedCount = 0,
+  availableComponents = [],
   canvasConfig,
   onCanvasConfigChange,
   onPropChange,
   onItemChange,
+  onQueryConfigChange,
+  onInteractionConfigChange,
   onApply,
   onReset,
 }) => {
@@ -119,12 +127,20 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
   const [componentPropertyState, setComponentPropertyState] = useState<ComponentProperty | undefined>();
   const [hasChanges, setHasChanges] = useState(false);
 
-  // 根据选中状态自动切换Tab
+  // 根据选中状态自动切换Tab（只在选中数量变化时切换，避免编辑时自动跳转）
+  const prevSelectedCountRef = useRef(selectedCount);
   useEffect(() => {
-    if (selectedCount === 0) {
-      setActiveTab('canvas');
-    } else if (selectedCount === 1 && item) {
-      setActiveTab('component');
+    // 只在选中数量真正变化时才切换Tab，而不是在item内容变化时切换
+    if (prevSelectedCountRef.current !== selectedCount) {
+      if (selectedCount === 0) {
+        setActiveTab('canvas');
+      } else if (selectedCount === 1 && item) {
+        // 只在从0个选中变为1个选中时才切换到component，避免编辑时跳转
+        if (prevSelectedCountRef.current === 0) {
+          setActiveTab('component');
+        }
+      }
+      prevSelectedCountRef.current = selectedCount;
     }
   }, [selectedCount, item]);
 
@@ -470,6 +486,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
                 <ComponentPropertyTab
                   item={item}
                   property={componentPropertyState}
+                  componentDefinition={item.definition}
                   onChange={handleComponentPropertyChange}
                 />
               </div>
@@ -477,12 +494,18 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           },
           {
             key: 'datasource',
-            label: '数据源配置',
+            label: '数据源',
             children: (
               <div className="property-panel-content">
                 <DatasourceConfigTab
                   componentId={item.id}
                   componentDefinition={item.definition}
+                  availableComponents={availableComponents}
+                  onQueryConfigChange={(config) => {
+                    if (onQueryConfigChange) {
+                      onQueryConfigChange(item.id, config);
+                    }
+                  }}
                 />
               </div>
             ),
@@ -494,6 +517,13 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
               <div className="property-panel-content">
                 <InteractionConfigTab
                   componentId={item.id}
+                  availableComponents={availableComponents}
+                  initialConfig={item.interactionConfig}
+                  onConfigChange={(config) => {
+                    if (onInteractionConfigChange) {
+                      onInteractionConfigChange(item.id, config);
+                    }
+                  }}
                 />
               </div>
             ),

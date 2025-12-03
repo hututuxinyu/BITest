@@ -73,5 +73,27 @@ export const datasourceApi = {
     });
     return response.json();
   },
+
+  /**
+   * 验证SQL语句
+   */
+  validateSql: async (sql: string, datasourceType: string = 'mysql'): Promise<ApiResponse<{ valid: boolean; errors: string[]; warnings: string[] }>> => {
+    // 暂时使用前端验证，后续可以调用后端API进行更严格的验证
+    // 真实API调用示例：
+    // const response = await fetch('/api/datasources/validate-sql', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ sql, datasourceType }),
+    // });
+    // return response.json();
+    
+    // 使用前端验证
+    const { validateSqlSyntax } = await import('../utils/sqlValidator');
+    const result = validateSqlSyntax(sql);
+    return {
+      success: true,
+      data: result,
+    };
+  },
 };
 
