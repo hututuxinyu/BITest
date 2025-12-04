@@ -391,8 +391,8 @@
           },
           "datasourceType": {
             "type": "string",
-            "enum": ["mysql", "postgresql", "oracle", "hive", "clickhouse", "elasticsearch", "api", "file"],
-            "description": "数据源类型"
+            "enum": ["mysql", "postgresql", "oracle", "hive", "clickhouse", "elasticsearch", "api", "file", "dataset"],
+            "description": "数据源类型：mysql-MySQL数据库，postgresql-PostgreSQL数据库，oracle-Oracle数据库，hive-Hive数据仓库，clickhouse-ClickHouse数据库，elasticsearch-Elasticsearch搜索引擎，api-API接口，file-文件数据源，dataset-数据集绑定"
           },
           "connectionConfig": {
             "type": "object",
@@ -499,6 +499,106 @@
                 "type": "object"
               }
             }
+          },
+          "datasetConfig": {
+            "type": "object",
+            "description": "数据集配置（当数据源类型为dataset时）",
+            "properties": {
+              "datasetId": {
+                "type": "string",
+                "description": "数据集唯一标识符"
+              },
+              "datasetName": {
+                "type": "string",
+                "description": "数据集名称"
+              },
+              "description": {
+                "type": "string",
+                "description": "数据集描述"
+              },
+              "fields": {
+                "type": "array",
+                "description": "数据集字段列表，用于组件选择x轴和y轴字段",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "fieldName": {
+                      "type": "string",
+                      "description": "字段名称，用于组件绑定（如xAxisField、yAxisField）"
+                    },
+                    "fieldType": {
+                      "type": "string",
+                      "enum": ["string", "number", "date", "boolean"],
+                      "description": "字段类型：string-字符串，number-数值，date-日期，boolean-布尔值"
+                    },
+                    "fieldLabel": {
+                      "type": "string",
+                      "description": "字段显示标签"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "字段描述"
+                    }
+                  },
+                  "required": ["fieldName", "fieldType"]
+                }
+              },
+              "parameters": {
+                "type": "array",
+                "description": "数据集参数配置列表，用于动态过滤数据",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "参数名称"
+                    },
+                    "type": {
+                      "type": "string",
+                      "enum": ["string", "number", "date", "boolean"],
+                      "description": "参数类型"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": ["static", "control", "url", "user"],
+                      "description": "参数来源：static-静态值，control-控制类组件，url-URL参数，user-用户信息"
+                    },
+                    "sourceId": {
+                      "type": "string",
+                      "description": "参数来源ID（当source为control时，为控制类组件ID）"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "参数描述"
+                    }
+                  },
+                  "required": ["name", "type"]
+                }
+              },
+              "filters": {
+                "type": "array",
+                "description": "数据集过滤条件列表",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "description": "过滤字段名（必须是fields中定义的字段）"
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": ["eq", "ne", "gt", "gte", "lt", "lte", "like", "in", "notIn", "between"],
+                      "description": "过滤操作符：eq-等于，ne-不等于，gt-大于，gte-大于等于，lt-小于，lte-小于等于，like-模糊匹配，in-包含，notIn-不包含，between-范围"
+                    },
+                    "value": {
+                      "description": "过滤值，可以是静态值或表达式"
+                    }
+                  },
+                  "required": ["field", "operator"]
+                }
+              }
+            },
+            "required": ["datasetId", "fields"]
           }
         }
       }

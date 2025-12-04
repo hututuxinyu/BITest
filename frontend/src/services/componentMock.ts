@@ -229,20 +229,6 @@ export const mockComponents: ComponentSummary[] = [
     releaseTime: '2024-01-01 00:00:00',
   },
   {
-    componentId: 'form-time-period',
-    componentName: '周期时间',
-    alias: 'TimePeriod',
-    version: '1.0.0',
-    type: 'control',
-    icon: '',
-    previewUrl: '',
-    description: '用于选择时间周期，支持年、月、周、日等周期选择',
-    categories: ['form'],
-    tags: ['form'],
-    author: 'BI-Form-Team',
-    releaseTime: '2024-01-01 00:00:00',
-  },
-  {
     componentId: 'form-text',
     componentName: '文本框',
     alias: 'Text',
@@ -1124,36 +1110,6 @@ export const mockComponentDefinitions: Record<string, ComponentDefinition> = {
       control: {
         emits: ['submit', 'reset'],
         debounce: false,
-      },
-    },
-  },
-  'form-time-period': {
-    componentId: 'form-time-period',
-    version: '1.0.0',
-    propsSchema: [
-      { field: 'format', label: '时间格式', type: 'string', default: 'HH:mm', description: '时间显示格式' },
-      { field: 'placeholder', label: '占位符', type: 'string', default: '请选择时间周期' },
-    ],
-    defaultProps: {
-      format: 'HH:mm',
-      placeholder: '请选择时间周期',
-    },
-    dataSchema: [],
-    defaultData: null,
-    eventSchema: [
-      {
-        event: 'change',
-        label: '值变化',
-        params: [{ name: 'value', type: 'string[]', description: '时间范围' }],
-      },
-    ],
-    defaultEvents: {
-      change: null,
-    },
-    supportFeatures: {
-      control: {
-        emits: ['change'],
-        debounce: true,
       },
     },
   },

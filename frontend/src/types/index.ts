@@ -200,11 +200,26 @@ export type DatasourceSourceType = 'dataset' | 'static';
 export type DatasourceBindingType = 'dataset' | 'static';
 
 /**
+ * 表格列配置
+ */
+export interface TableColumn {
+  fieldName: string;
+  fieldLabel: string;
+  columnName?: string; // 列名（可编辑）
+  align?: 'left' | 'center' | 'right'; // 对齐方式
+  width?: number; // 列宽
+}
+
+/**
  * 数据集配置
  */
 export interface DatasetConfig {
+  datasetId?: string;
   datasourceId: string;
-  query: string;
+  query?: string;
+  xAxisField?: string;
+  yAxisField?: string;
+  tableColumns?: TableColumn[]; // 表格列配置（用于表格组件）
   params?: Record<string, any>;
 }
 
@@ -226,15 +241,31 @@ export interface DatasourceConfig {
 }
 
 /**
+ * 数据集字段信息
+ */
+export interface DatasetField {
+  fieldId: string;
+  datasetId: string;
+  fieldName: string;
+  fieldType: 'string' | 'number' | 'date' | 'boolean';
+  fieldLabel: string;
+  tag: 'dimension' | 'measure';
+  description?: string;
+  sortOrder: number;
+}
+
+/**
  * 数据集信息
  */
 export interface Dataset {
   datasetId: string;
   datasetName: string;
-  datasourceId: string;
-  datasourceName: string;
   description?: string;
-  query?: string;
+  datasourceId?: string;
+  datasourceType?: string;
+  status?: string;
+  creatorId?: string;
+  fields?: DatasetField[];
 }
 
 /**

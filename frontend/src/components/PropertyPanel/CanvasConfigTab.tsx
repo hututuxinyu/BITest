@@ -48,6 +48,16 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
       >
         {/* 基础设置 */}
         <Collapse.Panel header="基础设置" key="basic">
+          <Form.Item label="报表名称" className="config-item">
+            <Input
+              value={config.title}
+              onChange={(e) => handleChange('title', e.target.value)}
+              maxLength={20}
+              placeholder="未命名报表"
+            />
+            <div className="config-item-description">最多20字</div>
+          </Form.Item>
+
           <Form.Item label="画布宽度" className="config-item">
           <div className="unit-selector">
             <InputNumber
@@ -117,16 +127,6 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
             </Select>
           </Form.Item>
         )}
-
-        <Form.Item label="画布标题" className="config-item">
-          <Input
-            value={config.title}
-            onChange={(e) => handleChange('title', e.target.value)}
-            maxLength={20}
-            placeholder="未命名报表"
-          />
-          <div className="config-item-description">最多20字</div>
-        </Form.Item>
 
         <Form.Item label="报表描述" className="config-item">
           <Input.TextArea

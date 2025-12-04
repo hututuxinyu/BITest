@@ -98,7 +98,6 @@ const TemplatePreview: React.FC<TemplatePreviewProps> = ({
       filter: 'control-filter',
       input: 'control-input',
       form: 'form-form',
-      timeperiod: 'form-time-period',
       textarea: 'form-text',
       select: 'form-select',
       checkbox: 'form-checkbox',

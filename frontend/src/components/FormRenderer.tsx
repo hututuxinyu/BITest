@@ -7,7 +7,6 @@ import {
   Radio,
   Checkbox,
   Switch,
-  TimePicker,
 } from 'antd';
 import { Empty } from 'antd';
 import type { ComponentDefinition } from '../types';
@@ -22,6 +21,7 @@ interface FormRendererProps {
   width?: number | string;
   propsValues?: Record<string, any>;
   children?: React.ReactNode; // 子组件
+  componentName?: string; // 组件名称，用于显示标签
 }
 
 const FormRenderer: React.FC<FormRendererProps> = ({
@@ -31,6 +31,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
   width = '100%',
   propsValues = {},
   children,
+  componentName,
 }) => {
   if (!definition) {
     return (
@@ -83,14 +84,6 @@ const FormRenderer: React.FC<FormRendererProps> = ({
               </div>
             )}
           </div>
-        );
-      case 'form-time-period':
-        return (
-          <TimePicker.RangePicker
-            style={{ width: '100%' }}
-            placeholder={['开始时间', '结束时间']}
-            format="HH:mm"
-          />
         );
       case 'form-text':
         return (
@@ -223,6 +216,36 @@ const FormRenderer: React.FC<FormRendererProps> = ({
 
   // 表单组件不需要 padding，直接使用定义的大小
   const isFormComponent = componentId === 'form-form';
+  
+  // 判断是否是表单类型的组件（除了表单容器）
+  const isFormTypeComponent = (componentId.startsWith('form-') || componentId.startsWith('control-')) && componentId !== 'form-form';
+  
+  // 获取组件标签文本的默认值
+  const getDefaultLabelText = () => {
+    if (componentName) {
+      return componentName;
+    }
+    // 根据 componentId 映射中文名称
+    const labelMap: Record<string, string> = {
+      'form-text': '文本框',
+      'form-select': '下拉框',
+      'form-checkbox': '多选框',
+      'form-date-range': '日期段选择',
+      'form-radio': '单选框',
+      'form-switch': '开关切换',
+      'control-filter': '过滤器',
+      'control-button': '按钮',
+      'control-input': '输入框',
+    };
+    return labelMap[componentId] || '表单组件';
+  };
+
+  // 获取当前标签文本（优先使用 propsValues.formLabel，否则使用默认值）
+  // 支持空字符串，只有当 formLabel 为 undefined 时才使用默认值
+  const getLabelText = () => {
+    return propsValues?.formLabel !== undefined ? propsValues.formLabel : getDefaultLabelText();
+  };
+
   const containerStyle: React.CSSProperties = isFormComponent
     ? {
         height,
@@ -233,14 +256,31 @@ const FormRenderer: React.FC<FormRendererProps> = ({
         height,
         width,
         display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-start',
         padding: '4px 8px',
+        gap: 8,
       };
 
   return (
     <div style={containerStyle}>
-      {renderComponent()}
+      {isFormTypeComponent && (
+        <div
+          style={{
+            fontSize: 12,
+            color: '#666',
+            fontWeight: 500,
+            lineHeight: '20px',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
+          }}
+        >
+          {getLabelText()}：
+        </div>
+      )}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minWidth: 0 }}>
+        {renderComponent()}
+      </div>
     </div>
   );
 };

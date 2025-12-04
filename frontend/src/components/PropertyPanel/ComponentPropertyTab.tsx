@@ -16,11 +16,43 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
     return <div>加载中...</div>;
   }
 
+  // 判断是否是表单类型的组件（除了表单容器）
+  const isFormTypeComponent = 
+    (item.component.componentId.startsWith('form-') || 
+     item.component.componentId.startsWith('control-')) && 
+    item.component.componentId !== 'form-form';
+
+  // 获取标签文本的默认值
+  const getDefaultLabelText = () => {
+    if (item.component.componentName) {
+      return item.component.componentName;
+    }
+    const labelMap: Record<string, string> = {
+      'form-text': '文本框',
+      'form-select': '下拉框',
+      'form-checkbox': '多选框',
+      'form-date-range': '日期段选择',
+      'form-radio': '单选框',
+      'form-switch': '开关切换',
+      'control-filter': '过滤器',
+      'control-button': '按钮',
+      'control-input': '输入框',
+    };
+    return labelMap[item.component.componentId] || '表单组件';
+  };
+
   // 获取组件特有属性值
   const getComponentPropValue = (field: string) => {
     const props = item.propsValues || {};
     const defaultValue = componentDefinition?.defaultProps?.[field];
     return props[field] !== undefined ? props[field] : defaultValue;
+  };
+
+  // 获取标签文本值
+  const getLabelText = () => {
+    const props = item.propsValues || {};
+    // 支持空字符串，只有当 formLabel 为 undefined 时才使用默认值
+    return props.formLabel !== undefined ? props.formLabel : getDefaultLabelText();
   };
 
   // 渲染组件特有属性
@@ -106,10 +138,9 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
 
   return (
     <div className="component-property-tab">
-      {/* 基础信息 */}
       <Collapse
         bordered={false}
-        defaultActiveKey={['basic', 'componentProps', 'position', 'style', 'title']}
+        defaultActiveKey={isFormTypeComponent ? ['label', 'componentProps', 'position', 'style'] : ['componentProps', 'position', 'style']}
         expandIcon={({ isActive }) => (
           <CaretRightOutlined
             style={{
@@ -120,64 +151,19 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
         )}
         className="config-collapse"
       >
-        <Collapse.Panel header="基础信息" key="basic">
-          <Form.Item label="组件名称" className="config-item">
-            <Input
-              value={property.name}
-              onChange={(e) => onChange('name', e.target.value)}
-              maxLength={20}
-              placeholder={`${item.component.componentName} - ${item.id}`}
-            />
-            <div className="config-item-description">最多20字</div>
-          </Form.Item>
-
-          <Form.Item label="组件描述" className="config-item">
-            <Input.TextArea
-              value={property.description}
-              onChange={(e) => onChange('description', e.target.value)}
-              rows={2}
-              maxLength={100}
-              placeholder="请输入组件描述"
-            />
-            <div className="config-item-description">最多100字</div>
-          </Form.Item>
-
-          <Form.Item label="组件ID" className="config-item">
-            <Input
-              value={property.id}
-              disabled
-              placeholder="自动生成"
-            />
-            <div className="config-item-description">唯一标识，不可修改</div>
-          </Form.Item>
-
-          <Form.Item label="可见性" className="config-item">
-            <Switch
-              checked={property.visible}
-              onChange={(checked) => onChange('visible', checked)}
-            />
-            <div className="config-item-description">关闭后组件在画布和预览中隐藏</div>
-          </Form.Item>
-
-          <Form.Item label="锁定状态" className="config-item">
-            <Switch
-              checked={property.locked}
-              onChange={(checked) => onChange('locked', checked)}
-            />
-            <div className="config-item-description">开启后组件无法拖动、修改尺寸</div>
-          </Form.Item>
-
-          <Form.Item label="层级（zIndex）" className="config-item">
-            <InputNumber
-              value={property.zIndex}
-              onChange={(val) => onChange('zIndex', val || 1)}
-              min={1}
-              max={100}
-              style={{ width: '100%' }}
-            />
-            <div className="config-item-description">数值越大越靠上（范围：1~100）</div>
-          </Form.Item>
-        </Collapse.Panel>
+        {/* 表单组件标签文本编辑 */}
+        {isFormTypeComponent && (
+          <Collapse.Panel header="标签设置" key="label">
+            <Form.Item label="标签文本" className="config-item">
+              <Input
+                value={getLabelText()}
+                onChange={(e) => onChange('formLabel', e.target.value)}
+                placeholder="请输入标签文本"
+              />
+              <div className="config-item-description">表单组件前显示的文本标签</div>
+            </Form.Item>
+          </Collapse.Panel>
+        )}
 
         {/* 组件特有属性 */}
         {renderComponentSpecificProps()}
@@ -394,90 +380,6 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
               />
             </div>
           </Form.Item>
-        </Collapse.Panel>
-
-        {/* 标题设置 */}
-        <Collapse.Panel header="标题设置" key="title">
-          <Form.Item label="标题显示" className="config-item">
-            <Switch
-              checked={property.title?.visible}
-              onChange={(checked) => onChange('title.visible', checked)}
-            />
-          </Form.Item>
-
-          {property.title?.visible && (
-            <>
-              <Form.Item label="标题文本" className="config-item">
-                <Input
-                  value={property.title.text}
-                  onChange={(e) => onChange('title.text', e.target.value)}
-                  maxLength={30}
-                  placeholder={item.component.componentName}
-                />
-                <div className="config-item-description">最多30字</div>
-              </Form.Item>
-
-              <Form.Item label="标题字体" className="config-item">
-                <Select
-                  value={property.title.font}
-                  onChange={(val) => onChange('title.font', val)}
-                >
-                  <Select.Option value="inherit">全局字体</Select.Option>
-                  <Select.Option value="微软雅黑">微软雅黑</Select.Option>
-                  <Select.Option value="思源黑体">思源黑体</Select.Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item label="标题字号" className="config-item">
-                <InputNumber
-                  value={property.title.fontSize}
-                  onChange={(val) => onChange('title.fontSize', val || 16)}
-                  min={12}
-                  max={24}
-                  style={{ width: '100%' }}
-                />
-                <div className="config-item-description">范围：12~24px</div>
-              </Form.Item>
-
-              <Form.Item label="标题颜色" className="config-item">
-                <div className="color-picker-wrapper">
-                  <div
-                    className="color-picker-preview"
-                    style={{ backgroundColor: property.title.color }}
-                  />
-                  <Input
-                    className="color-picker-input"
-                    value={property.title.color}
-                    onChange={(e) => onChange('title.color', e.target.value)}
-                    placeholder="#333333"
-                  />
-                </div>
-              </Form.Item>
-
-              <Form.Item label="标题对齐" className="config-item">
-                <Select
-                  value={property.title.align}
-                  onChange={(val) => onChange('title.align', val)}
-                >
-                  <Select.Option value="left">左对齐</Select.Option>
-                  <Select.Option value="center">居中</Select.Option>
-                  <Select.Option value="right">右对齐</Select.Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item label="标题位置" className="config-item">
-                <Select
-                  value={property.title.position}
-                  onChange={(val) => onChange('title.position', val)}
-                >
-                  <Select.Option value="top">顶部</Select.Option>
-                  <Select.Option value="bottom">底部</Select.Option>
-                  <Select.Option value="left">左侧</Select.Option>
-                  <Select.Option value="right">右侧</Select.Option>
-                </Select>
-              </Form.Item>
-            </>
-          )}
         </Collapse.Panel>
       </Collapse>
     </div>

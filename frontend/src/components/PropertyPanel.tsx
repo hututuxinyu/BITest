@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Tabs, Button, message, Modal } from 'antd';
-import { CheckOutlined, ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined } from '@ant-design/icons';
 import type { ComponentDefinition } from '../types';
 import CanvasConfigTab from './PropertyPanel/CanvasConfigTab';
 import ComponentPropertyTab from './PropertyPanel/ComponentPropertyTab';
@@ -13,6 +13,8 @@ export interface CanvasItem {
   component: {
     componentId: string;
     componentName: string;
+    type?: string;
+    categories?: string[];
   };
   definition?: ComponentDefinition | null;
   propsValues?: Record<string, any>;
@@ -99,13 +101,14 @@ interface PropertyPanelProps {
   item?: CanvasItem;
   selectedCount?: number;
   canvasConfig?: CanvasConfig;
+  datasets?: Array<import('../types').Dataset>; // 数据集列表
   availableComponents?: Array<{ id: string; name: string }>; // 画布中所有组件列表
   onCanvasConfigChange?: (config: CanvasConfig) => void;
   onPropChange?: (field: string, value: any) => void;
   onItemChange?: (item: CanvasItem) => void;
   onQueryConfigChange?: (componentId: string, config: any) => void;
   onInteractionConfigChange?: (componentId: string, config: any) => void;
-  onApply?: () => void;
+  onDatasourceConfigChange?: (componentId: string, config: any) => void;
   onReset?: () => void;
 }
 
@@ -114,18 +117,19 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
   selectedCount = 0,
   availableComponents = [],
   canvasConfig,
+  datasets = [],
   onCanvasConfigChange,
   onPropChange,
   onItemChange,
   onQueryConfigChange,
   onInteractionConfigChange,
-  onApply,
+  onDatasourceConfigChange,
   onReset,
 }) => {
   const [activeTab, setActiveTab] = useState<string>('canvas');
   const [canvasConfigState, setCanvasConfigState] = useState<CanvasConfig | undefined>(canvasConfig);
   const [componentPropertyState, setComponentPropertyState] = useState<ComponentProperty | undefined>();
-  const [hasChanges, setHasChanges] = useState(false);
+  const [datasourceConfigState, setDatasourceConfigState] = useState<any>(null);
 
   // 根据选中状态自动切换Tab（只在选中数量变化时切换，避免编辑时自动跳转）
   const prevSelectedCountRef = useRef(selectedCount);
@@ -214,21 +218,79 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           position: 'top',
         },
       });
-      setHasChanges(false);
+      
+      // 初始化数据源配置（从 item 中获取，如果没有则从后端加载）
+      // 只对图表类组件加载数据源配置
+      const loadDatasourceConfig = async () => {
+        // 判断是否是图表类组件
+        const isChart = item.component.type === 'chart' 
+          || (item.component.categories && item.component.categories.includes('chart'))
+          || ['chart-bar', 'chart-line', 'chart-pie', 'chart-radar',
+              'custom-bar-chart', 'custom-area-chart', 'custom-donut-chart',
+              'custom-pictorial-chart', 'custom-scatter-chart', 'custom-bar-line-chart',
+              'custom-dashboard', 'chart-table', 'chart-tree-table'].includes(item.component.componentId);
+        
+        if (!isChart) {
+          // 非图表类组件不需要数据源配置
+          setDatasourceConfigState(null);
+          return;
+        }
+        
+        // 优先使用 item 中的配置（如果存在）
+        if (item.datasourceConfig) {
+          // 如果 item 中已有配置，直接使用
+          setDatasourceConfigState(item.datasourceConfig);
+          return;
+        }
+        
+        // 如果 item 中没有配置，判断是否是组件库场景
+        // 组件库中的 item.id 通常包含时间戳，格式为 componentId-timestamp
+        // 编辑报表界面中的 item.id 通常是 UUID 格式
+        const isComponentLibrary = /^[^-]+-\d+$/.test(item.id);
+        
+        if (isComponentLibrary) {
+          // 组件库场景：如果没有配置，保持为 null，不尝试从后端加载
+          setDatasourceConfigState(null);
+        } else {
+          // 编辑报表界面：尝试从后端加载
+          try {
+            const { datasourceApi } = await import('../services/datasourceApi');
+            const response = await datasourceApi.getComponentDatasourceConfig(item.id);
+            if (response.success && response.data) {
+              setDatasourceConfigState(response.data);
+            } else {
+              setDatasourceConfigState(null);
+            }
+          } catch (error) {
+            setDatasourceConfigState(null);
+          }
+        }
+      };
+      loadDatasourceConfig();
+      
     }
   }, [item]);
 
-  // 画布配置变更
+  // 当 item.datasourceConfig 变化时，同步更新内部状态（用于组件库场景）
+  useEffect(() => {
+    if (item?.datasourceConfig) {
+      setDatasourceConfigState(item.datasourceConfig);
+    } else if (item && !item.datasourceConfig) {
+      // 如果 item 存在但没有 datasourceConfig，清空状态
+      setDatasourceConfigState(null);
+    }
+  }, [item?.datasourceConfig, item?.id]);
+
+  // 画布配置变更 - 立即应用
   const handleCanvasConfigChange = useCallback((config: CanvasConfig) => {
     setCanvasConfigState(config);
-    setHasChanges(true);
-    // 实时预览：基础属性实时同步
+    // 立即应用配置
     if (onCanvasConfigChange) {
       onCanvasConfigChange(config);
     }
   }, [onCanvasConfigChange]);
 
-  // 组件属性变更
+  // 组件属性变更 - 立即应用
   const handleComponentPropertyChange = useCallback((field: string, value: any) => {
     if (!componentPropertyState) return;
     
@@ -244,9 +306,8 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     }
     
     setComponentPropertyState(updated);
-    setHasChanges(true);
     
-    // 实时预览：基础属性实时同步
+    // 立即应用配置
     if (onPropChange) {
       onPropChange(field, value);
     }
@@ -263,49 +324,24 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     }
   }, [componentPropertyState, item, onPropChange, onItemChange]);
 
-  // 应用配置
-  const handleApply = useCallback(() => {
-    if (activeTab === 'canvas' && canvasConfigState && onCanvasConfigChange) {
-      onCanvasConfigChange(canvasConfigState);
-      message.success('画布配置已应用');
-    } else if (activeTab === 'component' && componentPropertyState && item && onItemChange) {
-      const updatedItem = { ...item };
-      updatedItem.position = { x: componentPropertyState.x, y: componentPropertyState.y };
-      updatedItem.size = { width: componentPropertyState.width, height: componentPropertyState.height };
-      updatedItem.zIndex = componentPropertyState.zIndex;
-      updatedItem.propsValues = {
-        ...updatedItem.propsValues,
-        name: componentPropertyState.name,
-        description: componentPropertyState.description,
-        visible: componentPropertyState.visible,
-        locked: componentPropertyState.locked,
-        keepAspectRatio: componentPropertyState.keepAspectRatio,
-        backgroundColor: componentPropertyState.backgroundColor,
-        border: componentPropertyState.border,
-        shadow: componentPropertyState.shadow,
-        padding: componentPropertyState.padding,
-        title: componentPropertyState.title,
-      };
-      onItemChange(updatedItem);
-      message.success('组件属性已应用');
-    }
-    setHasChanges(false);
-    if (onApply) {
-      onApply();
-    }
-  }, [activeTab, canvasConfigState, componentPropertyState, item, onCanvasConfigChange, onItemChange, onApply]);
-
-  // 重置配置
+  // 应用配置 - 保存所有当前配置
+  // 重置配置 - 重置所有配置到初始状态
   const handleReset = useCallback(() => {
     Modal.confirm({
       title: '确认重置',
-      content: '确定要重置当前配置吗？未保存的更改将丢失。',
-      onOk: () => {
-        if (activeTab === 'canvas' && canvasConfig) {
-          setCanvasConfigState(canvasConfig);
-          message.success('画布配置已重置');
-        } else if (activeTab === 'component' && item) {
-          // 重新初始化组件属性
+      content: '确定要重置该组件的所有配置吗？未保存的更改将丢失。',
+      onOk: async () => {
+        if (!item) {
+          return;
+        }
+
+        try {
+          // 重置画布配置
+          if (canvasConfig) {
+            setCanvasConfigState(canvasConfig);
+          }
+
+          // 重置组件属性
           const props = item.propsValues || {};
           setComponentPropertyState({
             id: item.id,
@@ -351,25 +387,48 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
               position: 'top',
             },
           });
-          message.success('组件属性已重置');
-        }
-        setHasChanges(false);
-        if (onReset) {
-          onReset();
+
+          // 重置数据源配置（只对图表类组件处理）
+          // 判断是否是图表类组件
+          const isChart = item.component.type === 'chart' 
+            || (item.component.categories && item.component.categories.includes('chart'))
+            || ['chart-bar', 'chart-line', 'chart-pie', 'chart-radar',
+                'custom-bar-chart', 'custom-area-chart', 'custom-donut-chart',
+                'custom-pictorial-chart', 'custom-scatter-chart', 'custom-bar-line-chart',
+                'custom-dashboard', 'chart-table', 'chart-tree-table'].includes(item.component.componentId);
+          
+          if (!isChart) {
+            // 非图表类组件不需要数据源配置
+            setDatasourceConfigState(null);
+          } else if (item.datasourceConfig) {
+            // 如果 item 中有配置，使用 item 中的配置
+            setDatasourceConfigState(item.datasourceConfig);
+          } else {
+            // 否则从后端重新加载
+            const { datasourceApi } = await import('../services/datasourceApi');
+            const response = await datasourceApi.getComponentDatasourceConfig(item.id);
+            if (response.success && response.data) {
+              setDatasourceConfigState(response.data);
+            } else {
+              setDatasourceConfigState(null);
+            }
+          }
+
+          message.success('所有配置已重置');
+          if (onReset) {
+            onReset();
+          }
+        } catch (error) {
+          message.error('重置配置失败');
+          console.error('重置配置失败:', error);
         }
       },
     });
-  }, [activeTab, canvasConfig, item, onReset]);
+  }, [canvasConfig, item, onReset]);
 
-  // 快捷键支持
+  // 快捷键支持 - 仅保留重置功能
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        if (hasChanges) {
-          handleApply();
-        }
-      }
       if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
         e.preventDefault();
         handleReset();
@@ -377,58 +436,147 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [hasChanges, handleApply, handleReset]);
+  }, [handleReset]);
+
+  // 判断是否是基础图表组件（必须在所有条件返回之前调用）
+  const isBasicChart = useMemo(() => {
+    if (!item || !item.component) {
+      return false;
+    }
+    // 通过 type 字段判断
+    if (item.component.type === 'chart') {
+      return true;
+    }
+    // 通过 categories 字段判断
+    if (item.component.categories && item.component.categories.includes('chart')) {
+      return true;
+    }
+    // 通过 componentId 判断（兼容性处理）
+    const chartComponentIds = [
+      'chart-bar', 'chart-line', 'chart-pie', 'chart-radar',
+      'custom-bar-chart', 'custom-area-chart', 'custom-donut-chart',
+      'custom-pictorial-chart', 'custom-scatter-chart', 'custom-bar-line-chart',
+      'custom-dashboard', 'chart-table', 'chart-tree-table'
+    ];
+    if (chartComponentIds.includes(item.component.componentId)) {
+      return true;
+    }
+    return false;
+  }, [item?.component]);
+
+  // 构建 Tab items，根据组件类型决定显示哪些页签
+  // 规则：
+  // 1. 未选中组件：只显示画布配置
+  // 2. 图表类组件：显示组件属性、数据来源、交互设置
+  // 3. 表单类组件：显示组件属性、交互设置（不显示数据来源）
+  const tabItems = useMemo(() => {
+    const items: Array<{ key: string; label: string; children: React.ReactNode }> = [];
+
+    // 未选中组件时，只显示画布配置（这个情况在下面单独处理，这里不添加）
+    if (selectedCount === 0) {
+      return [
+        {
+          key: 'canvas',
+          label: '画布配置',
+          children: (
+            <div className="property-panel-content">
+              <CanvasConfigTab
+                config={canvasConfigState}
+                onChange={handleCanvasConfigChange}
+              />
+            </div>
+          ),
+        },
+      ];
+    }
+
+    // 选中组件时，始终显示组件属性
+    if (item) {
+      items.push({
+        key: 'component',
+        label: '组件属性',
+        children: (
+          <div className="property-panel-content">
+            <ComponentPropertyTab
+              item={item}
+              property={componentPropertyState}
+              componentDefinition={item.definition}
+              onChange={handleComponentPropertyChange}
+            />
+          </div>
+        ),
+      });
+
+      // 图表类组件显示数据来源
+      if (isBasicChart) {
+        items.push({
+          key: 'datasource',
+          label: '数据来源',
+          children: (
+            <div className="property-panel-content">
+              <DatasourceConfigTab
+                componentId={item.id}
+                componentTypeId={item.component.componentId}
+                componentDefinition={item.definition}
+                availableComponents={availableComponents}
+                datasets={datasets}
+                initialConfig={datasourceConfigState || item.datasourceConfig}
+                onQueryConfigChange={(config) => {
+                  if (onQueryConfigChange) {
+                    onQueryConfigChange(item.id, config);
+                  }
+                }}
+                onConfigChange={(config) => {
+                  setDatasourceConfigState(config);
+                  // 配置立即应用
+                  if (onDatasourceConfigChange && item) {
+                    onDatasourceConfigChange(item.id, config);
+                  }
+                }}
+              />
+            </div>
+          ),
+        });
+      }
+
+      // 所有组件都显示交互设置
+      items.push({
+        key: 'interaction',
+        label: '交互设置',
+        children: (
+          <div className="property-panel-content">
+            <InteractionConfigTab
+              componentId={item.id}
+              availableComponents={availableComponents}
+              initialConfig={item.interactionConfig}
+              onConfigChange={(config) => {
+                if (onInteractionConfigChange && item) {
+                  onInteractionConfigChange(item.id, config);
+                }
+              }}
+            />
+          </div>
+        ),
+      });
+    }
+
+    return items;
+  }, [selectedCount, isBasicChart, item, canvasConfigState, componentPropertyState, datasourceConfigState, availableComponents, datasets, handleCanvasConfigChange, handleComponentPropertyChange, onQueryConfigChange, onInteractionConfigChange, onDatasourceConfigChange]);
 
   // 未选中组件时显示画布配置
   if (selectedCount === 0) {
     return (
       <div className="property-panel">
         <Tabs
-          activeKey={activeTab}
+          activeKey="canvas"
           onChange={setActiveTab}
-          items={[
-            {
-              key: 'canvas',
-              label: '画布配置',
-              children: (
-                <div className="property-panel-content">
-                  <CanvasConfigTab
-                    config={canvasConfigState}
-                    onChange={handleCanvasConfigChange}
-                  />
-                </div>
-              ),
-            },
-            {
-              key: 'datasource',
-              label: '数据源配置',
-              disabled: true,
-              children: null,
-            },
-            {
-              key: 'interaction',
-              label: '交互设置',
-              disabled: true,
-              children: null,
-            },
-          ]}
+          items={tabItems}
         />
         <div className="property-panel-actions">
           <Button
-            type="primary"
-            icon={<CheckOutlined />}
-            onClick={handleApply}
-            disabled={!hasChanges}
-            block
-          >
-            应用
-          </Button>
-          <Button
             icon={<ReloadOutlined />}
             onClick={handleReset}
-            disabled={!hasChanges}
             block
-            style={{ marginTop: 8 }}
           >
             重置
           </Button>
@@ -465,91 +613,17 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
       <Tabs
         activeKey={activeTab}
         onChange={setActiveTab}
-        items={[
-          {
-            key: 'canvas',
-            label: '画布配置',
-            children: (
-              <div className="property-panel-content">
-                <CanvasConfigTab
-                  config={canvasConfigState}
-                  onChange={handleCanvasConfigChange}
-                />
-              </div>
-            ),
-          },
-          {
-            key: 'component',
-            label: '组件属性',
-            children: (
-              <div className="property-panel-content">
-                <ComponentPropertyTab
-                  item={item}
-                  property={componentPropertyState}
-                  componentDefinition={item.definition}
-                  onChange={handleComponentPropertyChange}
-                />
-              </div>
-            ),
-          },
-          {
-            key: 'datasource',
-            label: '数据源',
-            children: (
-              <div className="property-panel-content">
-                <DatasourceConfigTab
-                  componentId={item.id}
-                  componentDefinition={item.definition}
-                  availableComponents={availableComponents}
-                  onQueryConfigChange={(config) => {
-                    if (onQueryConfigChange) {
-                      onQueryConfigChange(item.id, config);
-                    }
-                  }}
-                />
-              </div>
-            ),
-          },
-          {
-            key: 'interaction',
-            label: '交互设置',
-            children: (
-              <div className="property-panel-content">
-                <InteractionConfigTab
-                  componentId={item.id}
-                  availableComponents={availableComponents}
-                  initialConfig={item.interactionConfig}
-                  onConfigChange={(config) => {
-                    if (onInteractionConfigChange) {
-                      onInteractionConfigChange(item.id, config);
-                    }
-                  }}
-                />
-              </div>
-            ),
-          },
-        ]}
+        items={tabItems}
       />
-      <div className="property-panel-actions">
-        <Button
-          type="primary"
-          icon={<CheckOutlined />}
-          onClick={handleApply}
-          disabled={!hasChanges}
-          block
-        >
-          应用
-        </Button>
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={handleReset}
-          disabled={!hasChanges}
-          block
-          style={{ marginTop: 8 }}
-        >
-          重置
-        </Button>
-      </div>
+        <div className="property-panel-actions">
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={handleReset}
+            block
+          >
+            重置
+          </Button>
+        </div>
     </div>
   );
 };

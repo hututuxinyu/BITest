@@ -1,4 +1,4 @@
-import type { DatasourceConfig, Dataset, ApiResponse } from '../types';
+import type { DatasourceConfig, Dataset, DatasetField, ApiResponse } from '../types';
 import {
   getMockComponentDatasourceConfig,
   saveMockComponentDatasourceConfig,
@@ -9,7 +9,7 @@ import {
 /**
  * 使用模拟数据
  */
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 /**
  * 数据源配置API
@@ -59,41 +59,66 @@ export const datasourceApi = {
   },
 
   /**
-   * 预览数据
+   * 根据数据集ID获取字段列表
    */
-  previewData: async (datasourceId: string, query: string): Promise<ApiResponse<any[]>> => {
-    if (USE_MOCK_DATA) {
-      return await previewMockData(datasourceId, query);
-    }
-    // 真实API调用
-    const response = await fetch('/api/datasources/preview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ datasourceId, query }),
-    });
+  getDatasetFields: async (datasetId: string): Promise<ApiResponse<DatasetField[]>> => {
+    const response = await fetch(`/api/datasets/${datasetId}/fields`);
     return response.json();
   },
 
   /**
-   * 验证SQL语句
+   * 根据数据集ID和标签获取字段列表
    */
-  validateSql: async (sql: string, datasourceType: string = 'mysql'): Promise<ApiResponse<{ valid: boolean; errors: string[]; warnings: string[] }>> => {
-    // 暂时使用前端验证，后续可以调用后端API进行更严格的验证
-    // 真实API调用示例：
-    // const response = await fetch('/api/datasources/validate-sql', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ sql, datasourceType }),
-    // });
-    // return response.json();
-    
-    // 使用前端验证
-    const { validateSqlSyntax } = await import('../utils/sqlValidator');
-    const result = validateSqlSyntax(sql);
-    return {
-      success: true,
-      data: result,
-    };
+  getDatasetFieldsByTag: async (datasetId: string, tag: 'dimension' | 'measure'): Promise<ApiResponse<DatasetField[]>> => {
+    const response = await fetch(`/api/datasets/${datasetId}/fields/${tag}`);
+    return response.json();
+  },
+
+  /**
+   * 执行数据集查询
+   * @param datasetConfig 数据集配置
+   * @returns 查询结果数据
+   */
+  queryDataset: async (datasetConfig: {
+    datasetId: string;
+    datasourceId: string;
+    query?: string;
+    xAxisField?: string;
+    yAxisField?: string;
+    tableColumns?: Array<{ fieldName: string; fieldLabel: string }>;
+    params?: Record<string, any>;
+  }): Promise<ApiResponse<any[]>> => {
+    try {
+      // 构建查询请求
+      const requestBody = {
+        datasetId: datasetConfig.datasetId,
+        datasourceId: datasetConfig.datasourceId,
+        query: datasetConfig.query || '',
+        xAxisField: datasetConfig.xAxisField,
+        yAxisField: datasetConfig.yAxisField,
+        tableColumns: datasetConfig.tableColumns,
+        params: datasetConfig.params || {},
+      };
+
+      const response = await fetch('/api/datasets/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(`查询失败: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('数据集查询失败:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '查询失败',
+        data: [],
+      };
+    }
   },
 };
 

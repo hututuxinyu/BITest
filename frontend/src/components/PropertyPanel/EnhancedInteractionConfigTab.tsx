@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Select, Input, Button, Table, Space, Modal, message, Collapse, InputNumber } from 'antd';
+import { Form, Select, Button, Table, Space, Modal, Collapse } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined, CaretRightOutlined } from '@ant-design/icons';
-
-const { TextArea } = Input;
 
 interface InteractionCondition {
   field: string;
@@ -12,7 +10,7 @@ interface InteractionCondition {
 
 interface InteractionAction {
   actionType: 'drillDown' | 'associate' | 'jump' | 'filter' | 'popup' | 'refresh' | 'dynamicEvent';
-  target?: string;
+  target?: string | string[];
   params?: Record<string, any>;
   config?: any;
 }
@@ -47,6 +45,7 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
   const [editingEventIndex, setEditingEventIndex] = useState<number | null>(null);
   const [editingActionIndex, setEditingActionIndex] = useState<number | null>(null);
   const [currentEventIndex, setCurrentEventIndex] = useState<number>(0);
+  const [activePanelKeys, setActivePanelKeys] = useState<string[]>([]);
   const [eventForm] = Form.useForm();
   const [actionForm] = Form.useForm();
 
@@ -102,6 +101,9 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
         const newEvents = [...events, newEvent];
         setEvents(newEvents);
         notifyChange({ componentId, events: newEvents });
+        // 添加事件后，自动打开新添加的面板
+        const newPanelKey = String(newEvents.length - 1);
+        setActivePanelKeys([...activePanelKeys, newPanelKey]);
       }
 
       setEventModalVisible(false);
@@ -123,11 +125,15 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
     setCurrentEventIndex(eventIndex);
     setEditingActionIndex(actionIndex);
     const action = events[eventIndex].actions[actionIndex];
+    // 兼容旧格式：如果是字符串，转换为数组
+    const targetValue = action.target
+      ? Array.isArray(action.target)
+        ? action.target
+        : [action.target]
+      : undefined;
     actionForm.setFieldsValue({
       actionType: action.actionType,
-      target: action.target,
-      params: action.params ? JSON.stringify(action.params, null, 2) : '',
-      config: action.config ? JSON.stringify(action.config, null, 2) : '',
+      target: targetValue,
     });
     setActionModalVisible(true);
   };
@@ -141,32 +147,16 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
 
   const handleActionSave = () => {
     actionForm.validateFields().then((values) => {
-      let params: Record<string, any> = {};
-      let config: any = {};
-
-      try {
-        if (values.params) {
-          params = JSON.parse(values.params);
-        }
-      } catch (e) {
-        message.error('参数JSON格式错误');
-        return;
-      }
-
-      try {
-        if (values.config) {
-          config = JSON.parse(values.config);
-        }
-      } catch (e) {
-        message.error('配置JSON格式错误');
-        return;
-      }
+      // target始终为数组格式
+      const target: string[] | undefined = values.target
+        ? Array.isArray(values.target)
+          ? values.target
+          : [values.target]
+        : undefined;
 
       const newAction: InteractionAction = {
         actionType: values.actionType,
-        target: values.target,
-        params: Object.keys(params).length > 0 ? params : undefined,
-        config: Object.keys(config).length > 0 ? config : undefined,
+        target: target,
       };
 
       const newEvents = [...events];
@@ -196,6 +186,7 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
       title: '动作类型',
       dataIndex: 'actionType',
       key: 'actionType',
+      width: 120,
       render: (type: string) => {
         const labels: Record<string, string> = {
           drillDown: '下钻',
@@ -213,10 +204,21 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
       title: '目标组件',
       dataIndex: 'target',
       key: 'target',
+      width: 200,
+      render: (target: string | string[] | undefined) => {
+        if (!target) return '-';
+        // 兼容旧格式：如果是字符串，直接显示；如果是数组，用逗号分隔
+        if (Array.isArray(target)) {
+          return target.length > 0 ? target.join(', ') : '-';
+        }
+        return target;
+      },
     },
     {
       title: '操作',
       key: 'action',
+      width: 80,
+      align: 'center' as const,
       render: (_: any, record: InteractionAction, actionIndex: number) => (
         <Space>
           <Button
@@ -224,18 +226,16 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEditAction(eventIndex, actionIndex)}
-          >
-            编辑
-          </Button>
+            title="编辑"
+          />
           <Button
             type="link"
             size="small"
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDeleteAction(eventIndex, actionIndex)}
-          >
-            删除
-          </Button>
+            title="删除"
+          />
         </Space>
       ),
     },
@@ -257,6 +257,8 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
 
       <Collapse
         bordered={false}
+        activeKey={activePanelKeys}
+        onChange={(keys) => setActivePanelKeys(Array.isArray(keys) ? keys : [keys])}
         expandIcon={({ isActive }) => (
           <CaretRightOutlined
             style={{
@@ -278,13 +280,13 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
 
           return (
             <Collapse.Panel
-              key={eventIndex}
+              key={String(eventIndex)}
               header={
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                   <span>
                     {eventTypeLabels[event.eventType] || event.eventType} ({event.actions.length} 个动作)
                   </span>
-                  <Space>
+                  <Space style={{ marginLeft: 'auto' }}>
                     <Button
                       type="link"
                       size="small"
@@ -419,9 +421,14 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
           <Form.Item
             name="target"
             label="目标组件ID"
-            tooltip="选择要执行动作的目标组件"
+            tooltip="选择要执行动作的目标组件（可多选）"
+            rules={[{ required: true, message: '请选择目标组件' }]}
           >
-            <Select placeholder="请选择目标组件" allowClear>
+            <Select
+              placeholder="请选择目标组件（可多选）"
+              allowClear
+              mode="multiple"
+            >
               {availableComponents
                 .filter((comp) => comp.id !== componentId)
                 .map((comp) => (
@@ -430,30 +437,6 @@ const EnhancedInteractionConfigTab: React.FC<EnhancedInteractionConfigTabProps> 
                   </Select.Option>
                 ))}
             </Select>
-          </Form.Item>
-
-          <Form.Item
-            name="params"
-            label="参数（JSON格式）"
-            tooltip="使用表达式，如：${value[0]}, ${data.field}, ${context.param}"
-          >
-            <TextArea
-              rows={4}
-              placeholder='例如：{"startDate": "${value[0]}", "endDate": "${value[1]}"}'
-              style={{ fontFamily: 'monospace' }}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="config"
-            label="动作配置（JSON格式，可选）"
-            tooltip="根据动作类型配置，如下钻配置、跳转配置等"
-          >
-            <TextArea
-              rows={4}
-              placeholder='例如：{"drillDownField": "month", "targetField": "date"}'
-              style={{ fontFamily: 'monospace' }}
-            />
           </Form.Item>
         </Form>
       </Modal>

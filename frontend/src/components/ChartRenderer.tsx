@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Empty } from 'antd';
 import type { EChartsOption } from 'echarts';
@@ -17,6 +17,28 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({
   height = '100%',
   width = '100%',
 }) => {
+  const chartRef = useRef<ReactECharts>(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+      // 安全地清理 ECharts 实例
+      if (chartRef.current) {
+        try {
+          const echartsInstance = chartRef.current.getEchartsInstance();
+          if (echartsInstance && !echartsInstance.isDisposed()) {
+            echartsInstance.dispose();
+          }
+        } catch (error) {
+          // 忽略清理时的错误
+          console.warn('ECharts cleanup error:', error);
+        }
+      }
+    };
+  }, []);
+
   const option = useMemo(() => {
     if (componentId === 'chart-bar') {
       return buildBarOption(definition);
@@ -61,7 +83,16 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({
     );
   }
 
-  return <ReactECharts option={option} style={{ height, width }} />;
+  return (
+    <ReactECharts
+      ref={chartRef}
+      option={option}
+      style={{ height, width }}
+      opts={{ renderer: 'canvas' }}
+      notMerge={false}
+      lazyUpdate={false}
+    />
+  );
 };
 
 function buildBarOption(definition: ComponentDefinition): EChartsOption {

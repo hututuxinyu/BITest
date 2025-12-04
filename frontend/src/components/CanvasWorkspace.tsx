@@ -30,6 +30,7 @@ import EnhancedCanvas, { EnhancedCanvasItem } from './EnhancedCanvas';
 import CanvasToolbar from './CanvasToolbar';
 import { HistoryManager } from '../utils/historyManager';
 import PropertyPanel, { type CanvasConfig } from './PropertyPanel';
+import { useEditorContext } from '../contexts/EditorContext';
 
 const PANEL_HEIGHT = '100%';
 const PROPERTY_PANEL_WIDTH = 420;
@@ -62,6 +63,15 @@ interface CanvasWorkspaceProps {
  * 用于组件库和模板的预览和编辑
  */
 const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onComponentDragStart }) => {
+  // 从 EditorContext 获取数据集列表
+  let editorContext: ReturnType<typeof useEditorContext> | null = null;
+  try {
+    editorContext = useEditorContext();
+  } catch (e) {
+    // 如果不在 EditorContextProvider 中，editorContext 为 null
+  }
+  const datasets = editorContext?.datasets || [];
+
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(false);
@@ -127,7 +137,6 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
       filter: 'control-filter',
       input: 'control-input',
       form: 'form-form',
-      timeperiod: 'form-time-period',
       textarea: 'form-text',
       select: 'form-select',
       checkbox: 'form-checkbox',
@@ -777,7 +786,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
                             position: 'relative',
                           }}
                         >
-                          {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems)}
+                          {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems, handlePropChange)}
                         </div>
                       );
                     }}
@@ -828,6 +837,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({ components = [], onCo
                 item={selectedItem}
                 selectedCount={selectedItemIds.length}
                 canvasConfig={canvasConfig}
+                datasets={datasets}
                 onCanvasConfigChange={handleCanvasConfigChange}
                 onPropChange={handlePropChange}
                 onItemChange={handleItemChange}
@@ -866,7 +876,8 @@ function renderCanvasContent(
   item: CanvasItem,
   definition?: ComponentDefinition | null,
   propsValues?: Record<string, any>,
-  childItems: CanvasItem[] = []
+  childItems: CanvasItem[] = [],
+  onPropChange?: (field: string, value: any) => void
 ) {
   // 对于 border 组件，即使有 error 或没有 definition，也尝试直接渲染
   if (item.component.componentId === 'media-border') {
@@ -945,6 +956,7 @@ function renderCanvasContent(
           height={item.size?.height || '100%'}
           width={item.size?.width || '100%'}
           propsValues={propsValues || item.propsValues}
+          componentName={item.component.componentName}
         />
       );
     }
@@ -959,6 +971,7 @@ function renderCanvasContent(
           height={item.size?.height || '100%'}
           width={item.size?.width || '100%'}
           propsValues={propsValues || item.propsValues}
+          componentName={item.component.componentName}
         />
       );
     }
@@ -997,7 +1010,7 @@ function renderCanvasContent(
                   pointerEvents: 'auto',
                 }}
               >
-                {renderCanvasContent(child, childEffectiveDefinition, child.propsValues)}
+                {renderCanvasContent(child, childEffectiveDefinition, child.propsValues, [], onPropChange)}
               </div>
             );
           })}
@@ -1011,6 +1024,7 @@ function renderCanvasContent(
           height={item.size?.height || '100%'}
           width={item.size?.width || '100%'}
           propsValues={propsValues || item.propsValues}
+          componentName={item.component.componentName}
         >
           {children}
         </FormRenderer>

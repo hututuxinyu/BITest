@@ -294,10 +294,6 @@ function renderThumbnailContent(component: ComponentSummary) {
   if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
     return <AppstoreOutlined style={thumbnailIconStyle} />;
   }
-  // 周期时间
-  if (lowerName.includes('周期时间') || lowerName.includes('timeperiod')) {
-    return <ClockCircleOutlined style={thumbnailIconStyle} />;
-  }
   // 文本框
   if (lowerName.includes('文本框') || (lowerName.includes('文本') && !lowerName.includes('输入'))) {
     return <FileTextOutlined style={thumbnailIconStyle} />;
@@ -411,9 +407,6 @@ function getPlaceholderIcon(component: ComponentSummary) {
   if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
     return <AppstoreOutlined style={thumbnailIconStyle} />;
   }
-  if (lowerName.includes('周期时间') || lowerName.includes('timeperiod')) {
-    return <ClockCircleOutlined style={thumbnailIconStyle} />;
-  }
   if (lowerName.includes('文本框') || (lowerName.includes('文本') && !lowerName.includes('输入'))) {
     return <FileTextOutlined style={thumbnailIconStyle} />;
   }
@@ -521,8 +514,8 @@ function categorizeComponent(component: ComponentSummary): 'basicChart' | 'form'
     }
   }
   
-  // 表单组件：周期时间、文本框、下拉框、多选框、日期段选择、单选框、开关切换、过滤器、按钮、输入框、表单组件
-  const formKeywords = ['表单组件', 'form', '周期时间', 'timeperiod', '文本框', 'text', '下拉框', 'select', '多选框', 'checkbox', '日期段', 'daterange', '单选框', 'radio', '开关', 'switch', '过滤器', 'filter', '按钮', 'button', '输入框', 'input'];
+  // 表单组件：文本框、下拉框、多选框、日期段选择、单选框、开关切换、过滤器、按钮、输入框、表单组件
+  const formKeywords = ['表单组件', 'form', '文本框', 'text', '下拉框', 'select', '多选框', 'checkbox', '日期段', 'daterange', '单选框', 'radio', '开关', 'switch', '过滤器', 'filter', '按钮', 'button', '输入框', 'input'];
   if (formKeywords.some((kw) => component.componentName.includes(kw) || name.includes(kw))) {
     return 'form';
   }

@@ -13,6 +13,7 @@ import {
   EyeOutlined,
   SendOutlined,
   CloseOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons';
 import ComponentPanel from './ComponentPanel';
 import TemplatePanel from './TemplatePanel';
@@ -20,6 +21,8 @@ import CanvasWorkspace from './CanvasWorkspace';
 import ReportPreview from './ReportPreview';
 import { useEditorContext } from '../contexts/EditorContext';
 import { projectApi, reportApi } from '../services/api';
+import { datasourceApi } from '../services/datasourceApi';
+import { generateReportSchema, validateSchema } from '../utils/schemaGenerator';
 
 const { Header, Content, Sider } = Layout;
 
@@ -108,6 +111,124 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
     }
   }, [isEditorPage, params.projectId, params.reportId, editorContext]);
 
+  // 页面加载时获取数据集列表（只获取一次，全局共享）
+  useEffect(() => {
+    if (editorContext && editorContext.datasets.length === 0) {
+      const loadDatasets = async () => {
+        try {
+          const response = await datasourceApi.getDatasetList();
+          if (response.success && response.data) {
+            editorContext.setDatasets(response.data);
+          } else {
+            console.error('加载数据集列表失败:', response.message);
+          }
+        } catch (error) {
+          console.error('加载数据集列表失败:', error);
+        }
+      };
+      loadDatasets();
+    }
+  }, [editorContext]);
+
+  // 导出Schema处理函数
+  const handleExportSchema = useCallback(() => {
+    try {
+      // 从 EditorContext 获取数据
+      if (!editorContext) {
+        message.warning('当前不在编辑模式，无法导出Schema');
+        return;
+      }
+
+      // 获取报表信息
+      const projectId = params.projectId || editorContext.projectContext?.projectId || 'default-project';
+      const reportId = params.reportId || editorContext.reportContext?.reportId || 'default-report';
+      const reportName = editorContext.reportContext?.reportName || editorContext.reportTitle || '未命名报表';
+
+      // 构建 CanvasConfig
+      const canvasConfig = {
+        width: editorContext.canvasWidth || 1920,
+        height: editorContext.canvasHeight || 1080,
+        adaptMode: 'scale' as const,
+        gridVisible: true,
+        gridSize: 10,
+        title: reportName,
+        description: '',
+        backgroundType: 'solid' as const,
+        backgroundColor: editorContext.canvasBackgroundColor || '#F5F5F5',
+        borderEnabled: false,
+        globalFont: '微软雅黑',
+      };
+
+      // 转换 EnhancedCanvasItem[] 为 CanvasItem[]
+      const canvasItems = editorContext.canvasItems.map((item) => ({
+        id: item.id,
+        component: item.component,
+        definition: item.definition || null,
+        loading: item.loading || false,
+        error: item.error,
+        propsValues: item.propsValues || {},
+        position: item.position || { x: 0, y: 0 },
+        size: item.size || { width: 400, height: 300 },
+        zIndex: item.zIndex || 1,
+        datasourceConfig: item.datasourceConfig,
+        queryConfig: item.queryConfig,
+        interactionConfig: item.interactionConfig,
+        visible: item.visible,
+        locked: item.locked,
+        parentId: undefined,
+        children: undefined,
+      }));
+
+      // 生成Schema
+      const schema = generateReportSchema(
+        canvasItems,
+        canvasConfig,
+        reportId,
+        reportName,
+        projectId,
+        editorContext.datasets,
+        user.userId
+      );
+
+      // 验证Schema
+      const validation = validateSchema(schema);
+      if (!validation.valid) {
+        Modal.warning({
+          title: 'Schema验证失败',
+          content: (
+            <div>
+              <p>以下字段存在问题：</p>
+              <ul>
+                {validation.errors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          ),
+        });
+        return;
+      }
+
+      // 将Schema转换为JSON字符串
+      const jsonString = JSON.stringify(schema, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      
+      // 创建下载链接
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportName}_${reportId}_schema.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      message.success('Schema导出成功');
+    } catch (error: any) {
+      message.error('导出Schema失败: ' + (error.message || '未知错误'));
+    }
+  }, [params.projectId, params.reportId, editorContext]);
+
   // 发布报表处理函数
   const handlePublish = useCallback(async () => {
     if (!params.projectId || !params.reportId || !editorContext) {
@@ -158,16 +279,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
     }
   }, [params.projectId, params.reportId, effectiveUserId, editorContext]);
 
-  // 返回工程管理
-  const handleBackToProject = useCallback(() => {
-    if (editorContext?.projectContext) {
-      navigate(`/projects/${editorContext.projectContext.projectId}/workspace`, { 
-        state: { project: editorContext.projectContext } 
-      });
-    } else {
-      navigate('/projects');
-    }
-  }, [editorContext, navigate]);
 
   // 根据路径确定当前选中的菜单项
   const currentMenuKey = useMemo(() => {
@@ -280,39 +391,25 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
       return null;
     }
 
-    // 优先使用 reportContext 中的 reportName，如果没有则使用 reportTitle，最后才使用默认值
-    const canvasTitle = editorContext.reportContext?.reportName || editorContext.reportTitle || '未命名报表';
-
     return (
       <>
-        {/* 左侧：BI系统 + 返回按钮和上下文信息 */}
+        {/* 左侧：BI系统 + 上下文信息 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: '0 0 auto' }}>
-          <div className="dtc-header-left">BI系统 - 设计态</div>
-          <div style={{ width: 1, height: 20, background: '#e8e8e8', margin: '0 8px' }}></div>
-          <Space size="middle" wrap>
-            <Button icon={<CaretLeftOutlined />} onClick={handleBackToProject} size="small">
-              返回工程管理
-            </Button>
-            {(editorContext.projectContext || editorContext.reportContext) && (
-              <>
-                {editorContext.projectContext && (
-                  <Tag color={editorContext.projectContext.projectType === 'private' ? 'gold' : 'green'}>
-                    {editorContext.projectContext.projectType === 'private' ? '个人工程' : '公共工程'}
-                  </Tag>
-                )}
-                {editorContext.reportContext && (
-                  <Tag color={editorContext.reportContext.status === 'published' ? 'green' : 'gold'}>
-                    {editorContext.reportContext.status === 'published' ? '已发布' : '草稿'}
-                  </Tag>
-                )}
-                <span style={{ color: 'rgba(0, 0, 0, 0.65)' }}>当前报表：{canvasTitle}</span>
-              </>
-            )}
-          </Space>
-        </div>
-        {/* 中间：报表名称 */}
-        <div className="dtc-header-center" style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          {canvasTitle}
+          <div className="dtc-header-left">BI Studio</div>
+          {(editorContext.projectContext || editorContext.reportContext) && (
+            <>
+              {editorContext.projectContext && (
+                <Tag color={editorContext.projectContext.projectType === 'private' ? 'gold' : 'green'}>
+                  {editorContext.projectContext.projectType === 'private' ? '个人工程' : '公共工程'}
+                </Tag>
+              )}
+              {editorContext.reportContext && (
+                <Tag color={editorContext.reportContext.status === 'published' ? 'green' : 'gold'}>
+                  {editorContext.reportContext.status === 'published' ? '已发布' : '草稿'}
+                </Tag>
+              )}
+            </>
+          )}
         </div>
         {/* 右侧：操作按钮组、语言切换和用户信息 */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16, flex: '0 0 auto' }}>
@@ -323,6 +420,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
                 shape="circle"
                 icon={<SaveOutlined />}
                 aria-label="保存"
+                disabled
               />
             </Tooltip>
             <Tooltip title="预览">
@@ -331,6 +429,15 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
                 icon={<EyeOutlined />}
                 aria-label="预览"
                 onClick={() => setPreviewVisible(true)}
+                disabled
+              />
+            </Tooltip>
+            <Tooltip title="导出Schema">
+              <Button
+                shape="circle"
+                icon={<DownloadOutlined />}
+                aria-label="导出Schema"
+                onClick={handleExportSchema}
               />
             </Tooltip>
             <Tooltip title={editorContext.reportContext?.status === 'published' ? '已发布' : '发布报表'}>
@@ -372,17 +479,67 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
   // 渲染普通header
   const renderNormalHeader = () => (
     <>
-      <div className="dtc-header-left">BI系统 - 设计态</div>
+      <div className="dtc-header-left">BI Studio</div>
       <div className="dtc-header-center">{pageTitle}</div>
-      <div className="dtc-header-right">
-        <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
-          <Space style={{ cursor: 'pointer' }}>
-            <Avatar style={{ backgroundColor: '#666666', color: '#fff' }}>
-              {user.username?.[0]?.toUpperCase() || 'U'}
-            </Avatar>
-            <span>{user.username || user.userId}</span>
-          </Space>
-        </Dropdown>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 16, flex: '0 0 auto' }}>
+        <Space size="middle" wrap align="center">
+          <Tooltip title="保存">
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<SaveOutlined />}
+              aria-label="保存"
+              disabled={true}
+            />
+          </Tooltip>
+          <Tooltip title="预览">
+            <Button
+              shape="circle"
+              icon={<EyeOutlined />}
+              aria-label="预览"
+              disabled={true}
+            />
+          </Tooltip>
+          <Tooltip title="导出Schema">
+            <Button
+              shape="circle"
+              icon={<DownloadOutlined />}
+              aria-label="导出Schema"
+              onClick={handleExportSchema}
+            />
+          </Tooltip>
+          <Tooltip title="发布报表">
+            <Button
+              type="dashed"
+              shape="circle"
+              icon={<SendOutlined style={{ transform: 'rotate(315deg)' }} />}
+              aria-label="发布"
+              disabled={true}
+            />
+          </Tooltip>
+          {editorContext && (
+            <Select
+              className="editor-language-select"
+              value={editorContext.language}
+              onChange={(value: 'zh-CN' | 'en-US') => editorContext.setLanguage(value)}
+              options={[
+                { label: '中文', value: 'zh-CN' },
+                { label: 'English', value: 'en-US' },
+              ]}
+            />
+          )}
+        </Space>
+        <div style={{ width: 1, height: 20, background: '#e8e8e8', margin: '0 8px' }}></div>
+        <div className="dtc-header-right">
+          <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }} placement="bottomRight">
+            <Space style={{ cursor: 'pointer' }}>
+              <Avatar style={{ backgroundColor: '#666666', color: '#fff' }}>
+                {user.username?.[0]?.toUpperCase() || 'U'}
+              </Avatar>
+              <span>{user.username || user.userId}</span>
+            </Space>
+          </Dropdown>
+        </div>
       </div>
     </>
   );

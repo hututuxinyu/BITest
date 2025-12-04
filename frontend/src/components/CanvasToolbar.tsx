@@ -16,7 +16,6 @@ import {
   ColumnWidthOutlined,
   MenuOutlined,
   DeleteOutlined,
-  SaveOutlined,
 } from '@ant-design/icons';
 
 export interface CanvasToolbarProps {
@@ -51,8 +50,6 @@ export interface CanvasToolbarProps {
   onSendToBack: () => void;
   onBringForward: () => void;
   onSendBackward: () => void;
-  // Schema保存
-  onSaveSchema?: () => void;
 }
 
 const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
@@ -80,7 +77,6 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
   onSendToBack,
   onBringForward,
   onSendBackward,
-  onSaveSchema,
 }) => {
   const hasSelection = selectedCount > 0;
   const hasMultipleSelection = selectedCount > 1;
@@ -114,23 +110,6 @@ const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
         <span style={{ fontSize: 12, color: '#666' }}>{Math.round(zoom * 100)}%</span>
 
         <Divider type="vertical" />
-
-        {/* Schema保存 */}
-        {onSaveSchema && (
-          <>
-            <Tooltip title="保存Schema (Ctrl+S)">
-              <Button
-                icon={<SaveOutlined />}
-                onClick={onSaveSchema}
-                size="small"
-                type="primary"
-              >
-                保存Schema
-              </Button>
-            </Tooltip>
-            <Divider type="vertical" />
-          </>
-        )}
 
         {/* 网格工具 */}
         <Tooltip title={showGrid ? '隐藏网格' : '显示网格'}>

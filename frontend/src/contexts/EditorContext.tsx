@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { Project, ReportSummary } from '../types';
+import type { Project, ReportSummary, Dataset } from '../types';
 import type { EnhancedCanvasItem } from '../components/EnhancedCanvas';
 
 interface EditorContextValue {
@@ -19,6 +19,8 @@ interface EditorContextValue {
   setCanvasHeight: (height: number) => void;
   canvasBackgroundColor: string;
   setCanvasBackgroundColor: (color: string) => void;
+  datasets: Dataset[];
+  setDatasets: (datasets: Dataset[]) => void;
 }
 
 const EditorContext = createContext<EditorContextValue | undefined>(undefined);
@@ -44,6 +46,7 @@ export const EditorContextProvider: React.FC<EditorContextProviderProps> = ({ ch
   const [canvasWidth, setCanvasWidth] = useState<number>(1920);
   const [canvasHeight, setCanvasHeight] = useState<number>(1080);
   const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>('#fafafa');
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
 
   return (
     <EditorContext.Provider
@@ -64,6 +67,8 @@ export const EditorContextProvider: React.FC<EditorContextProviderProps> = ({ ch
         setCanvasHeight,
         canvasBackgroundColor,
         setCanvasBackgroundColor,
+        datasets,
+        setDatasets,
       }}
     >
       {children}

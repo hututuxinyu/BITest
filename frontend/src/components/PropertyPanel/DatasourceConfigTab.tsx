@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { Empty, Collapse } from 'antd';
+import { Empty, Collapse, Alert } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
-import type { ComponentDefinition } from '../../types';
+import type { ComponentDefinition, Dataset } from '../../types';
 import DatasourceConfigPanel from '../DatasourceConfigPanel';
+import DataBindingPanel from './DataBindingPanel';
 import DatasourceQueryConfigTab from './DatasourceQueryConfigTab';
 
 interface DatasourceConfigTabProps {
-  componentId: string;
+  componentId: string; // 组件实例ID（用于API调用）
+  componentTypeId?: string; // 组件类型ID（如 chart-table，用于判断组件类型）
   componentDefinition?: ComponentDefinition | null;
   availableComponents?: Array<{ id: string; name: string }>; // 可用的控制类组件列表
+  datasets?: Dataset[]; // 数据集列表
+  initialConfig?: any; // 初始数据源配置
   onQueryConfigChange?: (config: any) => void;
+  onConfigChange?: (config: any) => void;
 }
 
 /**
@@ -18,9 +23,13 @@ interface DatasourceConfigTabProps {
  */
 const DatasourceConfigTab: React.FC<DatasourceConfigTabProps> = ({
   componentId,
+  componentTypeId,
   componentDefinition,
   availableComponents = [],
+  datasets = [],
+  initialConfig,
   onQueryConfigChange,
+  onConfigChange,
 }) => {
   const [queryConfig, setQueryConfig] = useState<any>(null);
 
@@ -32,11 +41,17 @@ const DatasourceConfigTab: React.FC<DatasourceConfigTabProps> = ({
     );
   }
 
+  // 从 initialConfig 中获取 selectedDatasetId
+  const selectedDatasetId = initialConfig?.datasetConfig?.datasetId || '';
+  
+  // 获取组件类型ID，优先使用传入的 componentTypeId，否则从 componentDefinition 中获取
+  const actualComponentTypeId = componentTypeId || componentDefinition?.componentId || '';
+
   return (
     <div className="datasource-config-tab" style={{ padding: '16px 0' }}>
       <Collapse
         bordered={false}
-        defaultActiveKey={['binding', 'query']}
+        defaultActiveKey={['source', 'binding']}
         expandIcon={({ isActive }) => (
           <CaretRightOutlined
             style={{
@@ -47,28 +62,46 @@ const DatasourceConfigTab: React.FC<DatasourceConfigTabProps> = ({
         )}
         className="config-collapse"
       >
-        <Collapse.Panel header="数据绑定" key="binding">
+        <Collapse.Panel header="数据来源" key="source">
           <DatasourceConfigPanel
             componentId={componentId}
             componentDefinition={componentDefinition}
+            datasets={datasets}
+            initialConfig={initialConfig}
             onConfigChange={(config) => {
-              console.log('数据源配置变更:', config);
+              if (onConfigChange) {
+                onConfigChange(config);
+              }
             }}
           />
         </Collapse.Panel>
 
-        <Collapse.Panel header="查询配置" key="query">
-          <DatasourceQueryConfigTab
-            componentId={componentId}
-            datasourceType="mysql"
-            queryConfig={queryConfig}
-            availableComponents={availableComponents}
-            onChange={(config) => {
-              setQueryConfig(config);
-              if (onQueryConfigChange) {
-                onQueryConfigChange(config);
+        <Collapse.Panel header="数据绑定" key="binding">
+          <DataBindingPanel
+            componentId={actualComponentTypeId}
+            componentDefinition={componentDefinition}
+            selectedDatasetId={selectedDatasetId}
+            datasets={datasets}
+            initialConfig={initialConfig}
+            onConfigChange={(config) => {
+              if (onConfigChange) {
+                onConfigChange(config);
               }
             }}
+          />
+        </Collapse.Panel>
+
+        <Collapse.Panel 
+          header="查询配置" 
+          key="query"
+          disabled={true}
+        >
+          <Alert
+            message="暂不支持该功能"
+            description="查询配置功能正在开发中，敬请期待。"
+            type="info"
+            showIcon
+            style={{ marginTop: 16 }}
           />
         </Collapse.Panel>
       </Collapse>

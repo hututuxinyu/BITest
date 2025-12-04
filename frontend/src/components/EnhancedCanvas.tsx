@@ -28,6 +28,10 @@ export interface EnhancedCanvasItem {
   size: Size;
   zIndex: number;
   datasourceConfig?: DatasourceConfig;
+  queryConfig?: any; // 查询配置（SQL、参数等）
+  interactionConfig?: any; // 交互配置（events数组）
+  visible?: boolean; // 是否可见
+  locked?: boolean; // 是否锁定
 }
 
 export interface EnhancedCanvasProps {

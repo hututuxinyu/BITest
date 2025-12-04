@@ -1,9 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { EnhancedCanvasItem } from './EnhancedCanvas';
 import ChartRenderer from './ChartRenderer';
 import FormRenderer from './FormRenderer';
 import TableRenderer from './TableRenderer';
 import type { ComponentDefinition } from '../types';
+import { datasourceApi } from '../services/datasourceApi';
+import { Spin } from 'antd';
 
 interface ReportPreviewProps {
   items: EnhancedCanvasItem[];
@@ -11,6 +13,90 @@ interface ReportPreviewProps {
   canvasHeight?: number;
   backgroundColor?: string;
 }
+
+/**
+ * 预览项组件，处理单个组件的数据加载
+ */
+interface PreviewItemProps {
+  item: EnhancedCanvasItem;
+  renderItem: (item: EnhancedCanvasItem, data?: any[]) => React.ReactNode;
+}
+
+const PreviewItem: React.FC<PreviewItemProps> = ({ item, renderItem }) => {
+  const [data, setData] = useState<any[] | undefined>(undefined);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // 如果是静态数据，直接使用
+    if (item.datasourceConfig?.bindingType === 'static' && item.datasourceConfig.staticConfig) {
+      setData(item.datasourceConfig.staticConfig.data);
+      return;
+    }
+
+    // 如果是数据集配置，需要查询数据
+    if (item.datasourceConfig?.bindingType === 'dataset' && item.datasourceConfig.datasetConfig) {
+      const datasetConfig = item.datasourceConfig.datasetConfig;
+      
+      // 检查是否有必要的数据配置
+      if (!datasetConfig.datasetId) {
+        setData(undefined);
+        return;
+      }
+
+      setLoading(true);
+      setError(undefined);
+
+      datasourceApi
+        .queryDataset({
+          datasetId: datasetConfig.datasetId,
+          datasourceId: datasetConfig.datasourceId,
+          query: datasetConfig.query,
+          xAxisField: datasetConfig.xAxisField,
+          yAxisField: datasetConfig.yAxisField,
+          tableColumns: datasetConfig.tableColumns,
+          params: datasetConfig.params,
+        })
+        .then((response) => {
+          if (response.success) {
+            setData(response.data || []);
+          } else {
+            setError(response.message || '数据加载失败');
+            setData([]);
+          }
+        })
+        .catch((err) => {
+          setError(err.message || '数据加载失败');
+          setData([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      // 没有数据源配置，使用默认数据
+      setData(undefined);
+    }
+  }, [item.datasourceConfig]);
+
+  if (loading) {
+    return (
+      <div style={{ padding: 16, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+        <Spin size="small" />
+        <span style={{ marginLeft: 8 }}>加载数据中...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: 16, color: '#ff4d4f' }}>
+        数据加载失败: {error}
+      </div>
+    );
+  }
+
+  return <>{renderItem(item, data)}</>;
+};
 
 /**
  * 报表预览组件
@@ -23,7 +109,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
   backgroundColor = '#fafafa',
 }) => {
   // 渲染组件内容
-  const renderItem = (item: EnhancedCanvasItem): React.ReactNode => {
+  const renderItem = (item: EnhancedCanvasItem, previewData?: any[]): React.ReactNode => {
     if (item.loading) {
       return <div style={{ padding: 16 }}>加载中...</div>;
     }
@@ -60,7 +146,14 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           defaultProps: { ...(mergedDefinition.defaultProps || {}), ...item.propsValues },
         };
       }
-      if (item.datasourceConfig?.bindingType === 'static' && item.datasourceConfig.staticConfig) {
+      
+      // 优先使用预览数据（从数据集查询得到），其次使用静态数据，最后使用默认数据
+      if (previewData !== undefined) {
+        mergedDefinition = {
+          ...mergedDefinition,
+          defaultData: previewData,
+        };
+      } else if (item.datasourceConfig?.bindingType === 'static' && item.datasourceConfig.staticConfig) {
         mergedDefinition = {
           ...mergedDefinition,
           defaultData: item.datasourceConfig.staticConfig.data,
@@ -165,7 +258,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
                 pointerEvents: 'auto',
               }}
             >
-              {renderItem(item)}
+              <PreviewItem item={item} renderItem={renderItem} />
             </div>
           );
         })}

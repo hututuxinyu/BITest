@@ -1,0 +1,360 @@
+/* 表格列配置弹窗样式 */
+.table-column-config-modal .ant-modal-content {
+  border-radius: 8px;
+  border: 1px solid #E5E6EB;
+  box-shadow: rgba(0, 0, 0, 0.08) 0px 2px 8px;
+  padding: 0;
+}
+
+.table-column-config-modal .ant-modal-close {
+  top: 16px;
+  right: 16px;
+  width: 24px;
+  height: 24px;
+}
+
+.table-column-config-modal .ant-modal-close:hover {
+  color: #FF4D4F;
+}
+
+.table-column-config-content {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+}
+
+/* 步骤条区域 */
+.steps-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 60px;
+  padding: 0 24px;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #E5E6EB;
+  background: #FFFFFF;
+  color: #999999;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.step-item.active .step-number {
+  background: #165DFF;
+  border-color: #165DFF;
+  color: #FFFFFF;
+}
+
+.step-item.completed .step-number {
+  border-color: #165DFF;
+  color: #165DFF;
+}
+
+.step-text {
+  font-size: 14px;
+  font-weight: 400;
+  color: #999999;
+  transition: color 0.2s;
+}
+
+.step-item.active .step-text {
+  color: #165DFF;
+}
+
+.step-item.completed .step-text {
+  color: #165DFF;
+}
+
+.step-connector {
+  width: 80px;
+  height: 1px;
+  background-color: #E5E6EB;
+  margin: 0 8px;
+  transition: background-color 0.2s;
+}
+
+/* 核心配置区域 */
+.config-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  height: 420px;
+  gap: 20px;
+}
+
+/* 字段卡片 */
+.field-card {
+  width: 300px;
+  height: 400px;
+  border: 1px solid #E5E6EB;
+  border-radius: 6px;
+  background: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.field-card-header {
+  height: 48px;
+  line-height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid #F0F0F0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333333;
+}
+
+.field-card-content {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.field-card-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.field-card-content::-webkit-scrollbar-track {
+  background: #F0F0F0;
+  border-radius: 3px;
+}
+
+.field-card-content::-webkit-scrollbar-thumb {
+  background: #CCCCCC;
+  border-radius: 3px;
+}
+
+.field-card-content::-webkit-scrollbar-thumb:hover {
+  background: #999999;
+}
+
+.field-item {
+  height: 36px;
+  line-height: 36px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #333333;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+}
+
+.field-item:hover {
+  background: #F5F7FA;
+}
+
+.field-item.selected {
+  background: #E6F7FF;
+  color: #165DFF;
+}
+
+.empty-hint {
+  text-align: center;
+  color: #999999;
+  font-size: 14px;
+  padding: 20px 0;
+}
+
+/* 操作按钮组 */
+.action-buttons {
+  width: 40px;
+  height: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: #F5F7FA;
+  border: 1px solid #E5E6EB;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #666666;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+
+.action-btn:hover:not(:disabled) {
+  background: #E6F7FF;
+  color: #165DFF;
+  border-color: #165DFF;
+}
+
+.action-btn:disabled {
+  background: #F0F0F0;
+  color: #999999;
+  cursor: not-allowed;
+}
+
+.action-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* 列配置容器 */
+.column-config-container {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.column-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.column-config-item {
+  padding: 16px;
+  border: 1px solid #E5E6EB;
+  border-radius: 6px;
+  background: #FFFFFF;
+}
+
+.config-item-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.config-item-row:last-child {
+  margin-bottom: 0;
+}
+
+.config-label {
+  font-size: 14px;
+  color: #333333;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.config-value {
+  font-size: 14px;
+  color: #666666;
+}
+
+/* 底部操作区 */
+.footer-actions {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px;
+  gap: 16px;
+  border-top: 1px solid #F0F0F0;
+}
+
+.cancel-btn {
+  width: 80px;
+  height: 32px;
+  background: #FFFFFF;
+  border: 1px solid #E5E6EB;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #333333;
+}
+
+.cancel-btn:hover {
+  border-color: #165DFF;
+  color: #165DFF;
+}
+
+.confirm-btn {
+  width: 80px;
+  height: 32px;
+  background: #165DFF;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #FFFFFF;
+}
+
+.confirm-btn:hover:not(:disabled) {
+  background: #4080FF;
+}
+
+.confirm-btn:disabled {
+  background: #E5E6EB;
+  color: #999999;
+  cursor: not-allowed;
+}
+
+/* 响应式适配 */
+@media (max-width: 1024px) {
+  .table-column-config-modal {
+    width: 90% !important;
+    min-width: 600px;
+  }
+
+  .field-card {
+    width: calc(50% - 30px);
+  }
+}
+
+@media (max-height: 768px) {
+  .table-column-config-content {
+    height: 90vh;
+    min-height: 500px;
+  }
+
+  .config-container {
+    height: calc(90vh - 120px);
+    min-height: 380px;
+  }
+
+  .field-item {
+    height: 32px;
+    line-height: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .action-buttons {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    margin: 16px 0;
+  }
+
+  .config-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .field-card {
+    width: 100%;
+    height: 300px;
+  }
+}
+

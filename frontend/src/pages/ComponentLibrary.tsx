@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Card,
   Tree,
@@ -18,6 +18,7 @@ import {
   Empty,
   Skeleton,
   Result,
+  Layout,
 } from 'antd';
 import {
   BlockOutlined,
@@ -28,14 +29,21 @@ import {
   PlayCircleOutlined,
   PlusOutlined,
   EyeOutlined,
+  CaretLeftOutlined,
+  CaretRightOutlined,
 } from '@ant-design/icons';
 import { componentApi } from '../services/componentApi';
+import { datasourceApi } from '../services/datasourceApi';
 import ChartRenderer from '../components/ChartRenderer';
+import PropertyPanel, { type CanvasItem as PropertyPanelCanvasItem, type CanvasConfig } from '../components/PropertyPanel';
+import { useEditorContext } from '../contexts/EditorContext';
 import type {
   ComponentCategory,
   ComponentTag,
   ComponentSummary,
   ComponentDefinition,
+  Dataset,
+  DatasourceConfig,
 } from '../types';
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -62,6 +70,13 @@ interface CanvasItem {
   definition?: ComponentDefinition | null;
   loading: boolean;
   error?: string;
+  propsValues?: Record<string, any>;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+  zIndex?: number;
+  datasourceConfig?: DatasourceConfig;
+  queryConfig?: any;
+  interactionConfig?: any;
 }
 
 const ComponentLibrary: React.FC = () => {
@@ -77,6 +92,49 @@ const ComponentLibrary: React.FC = () => {
   const [previewComponent, setPreviewComponent] = useState<ComponentSummary | null>(null);
   const [definition, setDefinition] = useState<ComponentDefinition | null>(null);
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
+  const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+  const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(false);
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>({
+    width: 1920,
+    height: 1080,
+    adaptMode: 'scale',
+    gridVisible: true,
+    gridSize: 10,
+    title: '组件库画布',
+    description: '',
+    backgroundType: 'solid',
+    backgroundColor: '#F5F5F5',
+    borderEnabled: false,
+    globalFont: '微软雅黑',
+  });
+
+  // 从 EditorContext 获取数据集列表
+  let editorContext: ReturnType<typeof useEditorContext> | null = null;
+  try {
+    editorContext = useEditorContext();
+  } catch (e) {
+    // 如果不在 EditorContextProvider 中，editorContext 为 null
+  }
+
+  // 加载数据集列表
+  useEffect(() => {
+    const loadDatasets = async () => {
+      try {
+        if (editorContext && editorContext.datasets.length > 0) {
+          setDatasets(editorContext.datasets);
+        } else {
+          const response = await datasourceApi.getDatasetList();
+          if (response.success && response.data) {
+            setDatasets(response.data);
+          }
+        }
+      } catch (error) {
+        console.error('加载数据集列表失败:', error);
+      }
+    };
+    loadDatasets();
+  }, [editorContext]);
 
   useEffect(() => {
     componentApi.getCategories().then(setCategories);
@@ -175,6 +233,127 @@ const ComponentLibrary: React.FC = () => {
     },
   ];
 
+  // 将 ComponentLibrary 的 CanvasItem 转换为 PropertyPanel 需要的格式
+  const convertToPropertyPanelItem = useCallback((item: CanvasItem): PropertyPanelCanvasItem | undefined => {
+    if (!item.definition) {
+      return undefined;
+    }
+    return {
+      id: item.id,
+      component: {
+        componentId: item.component.componentId,
+        componentName: item.component.componentName,
+        type: item.component.type,
+        categories: item.component.categories,
+      },
+      definition: item.definition,
+      propsValues: item.propsValues || {},
+      position: item.position || { x: 0, y: 0 },
+      size: item.size || { width: 200, height: 200 },
+      zIndex: item.zIndex || 0,
+      datasourceConfig: item.datasourceConfig,
+      queryConfig: item.queryConfig,
+      interactionConfig: item.interactionConfig,
+    };
+  }, []);
+
+  const selectedItem = useMemo(() => {
+    if (!selectedItemId) {
+      return undefined;
+    }
+    const item = canvasItems.find((i) => i.id === selectedItemId);
+    return item ? convertToPropertyPanelItem(item) : undefined;
+  }, [selectedItemId, canvasItems, convertToPropertyPanelItem]);
+
+  // 获取所有组件列表（用于交互配置）
+  const availableComponents = useMemo(() => {
+    return canvasItems.map((item) => ({
+      id: item.id,
+      name: item.component.componentName,
+    }));
+  }, [canvasItems]);
+
+  // 处理属性变更
+  const handlePropChange = useCallback((field: string, value: any) => {
+    if (!selectedItemId) {
+      return;
+    }
+    setCanvasItems((prev) =>
+      prev.map((item) =>
+        item.id === selectedItemId
+          ? {
+              ...item,
+              propsValues: { ...(item.propsValues || {}), [field]: value },
+            }
+          : item
+      )
+    );
+  }, [selectedItemId]);
+
+  // 处理组件项变更
+  const handleItemChange = useCallback((updatedItem: PropertyPanelCanvasItem) => {
+    setCanvasItems((prev) =>
+      prev.map((item) =>
+        item.id === updatedItem.id
+          ? {
+              ...item,
+              propsValues: updatedItem.propsValues,
+              position: updatedItem.position,
+              size: updatedItem.size,
+              zIndex: updatedItem.zIndex,
+            }
+          : item
+      )
+    );
+  }, []);
+
+  // 处理数据源配置变更
+  const handleDatasourceConfigChange = useCallback((componentId: string, config: DatasourceConfig) => {
+    setCanvasItems((prev) =>
+      prev.map((item) =>
+        item.id === componentId
+          ? {
+              ...item,
+              datasourceConfig: config,
+            }
+          : item
+      )
+    );
+  }, []);
+
+  // 处理查询配置变更
+  const handleQueryConfigChange = useCallback((componentId: string, config: any) => {
+    setCanvasItems((prev) =>
+      prev.map((item) =>
+        item.id === componentId
+          ? {
+              ...item,
+              queryConfig: config,
+            }
+          : item
+      )
+    );
+  }, []);
+
+  // 处理交互配置变更
+  const handleInteractionConfigChange = useCallback((componentId: string, config: any) => {
+    setCanvasItems((prev) =>
+      prev.map((item) =>
+        item.id === componentId
+          ? {
+              ...item,
+              interactionConfig: config,
+            }
+          : item
+      )
+    );
+  }, []);
+
+  // 处理画布配置变更
+  const handleCanvasConfigChange = useCallback((config: CanvasConfig) => {
+    setCanvasConfig(config);
+  }, []);
+
   const handleDragStart = (e: React.DragEvent, component: ComponentSummary) => {
     e.dataTransfer.setData('component', JSON.stringify(component));
     e.dataTransfer.effectAllowed = 'copy';
@@ -189,6 +368,10 @@ const ComponentLibrary: React.FC = () => {
         id: `${component.componentId}-${Date.now()}`,
         component,
         loading: true,
+        propsValues: {},
+        position: { x: 0, y: 0 },
+        size: { width: 200, height: 200 },
+        zIndex: 0,
       };
       setCanvasItems((prev) => [...prev, newItem]);
       message.success(`已将 ${component.componentName} 添加到画布`);
@@ -235,8 +418,16 @@ const ComponentLibrary: React.FC = () => {
         <BlockOutlined style={{ marginRight: 8 }} />
         组件库管理
       </h2>
-      <div style={{ display: 'flex', gap: 16 }}>
-        <Card title="组件库" style={{ width: 360 }} bodyStyle={{ padding: 16, height: 'calc(100vh - 220px)', overflow: 'auto' }}>
+      <Layout style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <Layout.Sider
+          width={360}
+          style={{
+            background: '#fff',
+            borderRight: '1px solid #f0f0f0',
+            overflow: 'auto',
+          }}
+        >
+          <Card title="组件库" bodyStyle={{ padding: 16, height: 'calc(100vh - 220px)', overflow: 'auto' }}>
           <Space direction="vertical" style={{ width: '100%' }} size="middle">
             <Input.Search
               placeholder="搜索组件名称 / 描述"
@@ -298,7 +489,8 @@ const ComponentLibrary: React.FC = () => {
             </div>
           </Space>
         </Card>
-        <div style={{ flex: 1 }}>
+        </Layout.Sider>
+        <Layout.Content>
           <Card
             title="画布区域（拖拽左侧组件到此）"
             bodyStyle={{
@@ -322,14 +514,23 @@ const ComponentLibrary: React.FC = () => {
                         <Avatar size="small" src={item.component.icon} />
                         <span>{item.component.componentName}</span>
                         <Tag color="blue">实例 {index + 1}</Tag>
+                        {selectedItemId === item.id && <Tag color="green">已选中</Tag>}
                       </Space>
                     }
                     extra={
                       <Space>
-                        <Button type="link" onClick={() => message.info('属性配置面板待与画布集成')}>
-                          配置属性
+                        <Button
+                          type={selectedItemId === item.id ? 'primary' : 'link'}
+                          onClick={() => setSelectedItemId(selectedItemId === item.id ? null : item.id)}
+                        >
+                          {selectedItemId === item.id ? '取消选择' : '选择配置'}
                         </Button>
-                        <Button danger type="link" onClick={() => setCanvasItems((prev) => prev.filter((_, i) => i !== index))}>
+                        <Button danger type="link" onClick={() => {
+                          setCanvasItems((prev) => prev.filter((_, i) => i !== index));
+                          if (selectedItemId === item.id) {
+                            setSelectedItemId(null);
+                          }
+                        }}>
                           移除
                         </Button>
                       </Space>
@@ -337,11 +538,13 @@ const ComponentLibrary: React.FC = () => {
                   >
                     <div
                       style={{
-                        border: '1px solid #f0f0f0',
+                        border: selectedItemId === item.id ? '2px solid #1890ff' : '1px solid #f0f0f0',
                         borderRadius: 4,
                         overflow: 'hidden',
                         background: '#fff',
+                        cursor: 'pointer',
                       }}
+                      onClick={() => setSelectedItemId(item.id)}
                     >
                       {renderCanvasContent(item)}
                     </div>
@@ -350,8 +553,56 @@ const ComponentLibrary: React.FC = () => {
               </Space>
             )}
           </Card>
-        </div>
-      </div>
+        </Layout.Content>
+        {!propertyPanelCollapsed && (
+          <Layout.Sider
+            width={320}
+            style={{
+              background: '#fff',
+              borderLeft: '1px solid #f0f0f0',
+              overflow: 'auto',
+            }}
+          >
+            {selectedItem && (
+              <PropertyPanel
+                item={selectedItem}
+                selectedCount={selectedItemId ? 1 : 0}
+                canvasConfig={canvasConfig}
+                datasets={datasets}
+                availableComponents={availableComponents}
+                onCanvasConfigChange={handleCanvasConfigChange}
+                onPropChange={handlePropChange}
+                onItemChange={handleItemChange}
+                onQueryConfigChange={handleQueryConfigChange}
+                onInteractionConfigChange={handleInteractionConfigChange}
+                onDatasourceConfigChange={handleDatasourceConfigChange}
+              />
+            )}
+          </Layout.Sider>
+        )}
+        <Button
+          type="text"
+          icon={propertyPanelCollapsed ? <CaretLeftOutlined /> : <CaretRightOutlined />}
+          onClick={() => setPropertyPanelCollapsed(!propertyPanelCollapsed)}
+          style={{
+            position: 'absolute',
+            right: propertyPanelCollapsed ? 0 : 320,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            zIndex: 10,
+            width: 32,
+            height: 32,
+            borderRadius: '50%',
+            background: '#fff',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid #e8e8e8',
+          }}
+          title={propertyPanelCollapsed ? '展开属性面板' : '收起属性面板'}
+        />
+      </Layout>
 
       <Modal
         title={previewComponent ? `${previewComponent.componentName} - 组件预览` : '组件预览'}

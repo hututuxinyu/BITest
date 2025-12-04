@@ -22,7 +22,7 @@ import {
   CaretLeftOutlined,
   CaretRightOutlined,
 } from '@ant-design/icons';
-import type { ComponentDefinition, ComponentSummary, DatasourceConfig, Project, ReportSummary } from '../types';
+import type { ComponentDefinition, ComponentSummary, DatasourceConfig, Project, ReportSummary, Dataset } from '../types';
 import { componentApi } from '../services/componentApi';
 import ChartRenderer from '../components/ChartRenderer';
 import FormRenderer from '../components/FormRenderer';
@@ -54,6 +54,8 @@ interface CanvasItem {
   datasourceConfig?: DatasourceConfig;
   queryConfig?: any; // 查询配置（SQL、参数等）
   interactionConfig?: any; // 交互配置（events数组）
+  visible?: boolean; // 是否可见
+  locked?: boolean; // 是否锁定
   parentId?: string; // 父组件ID，用于嵌套
   children?: string[]; // 子组件ID列表
 }
@@ -82,6 +84,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const [configTab, setConfigTab] = useState<'property' | 'datasource' | 'interaction'>('property');
   const [showGrid, setShowGrid] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>({
     width: 1920,
     height: 1080,
@@ -145,6 +148,13 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     }
   }, [projectId, reportContext, reportId]);
 
+  // 从 EditorContext 获取数据集列表（已在 MainLayout 中加载）
+  useEffect(() => {
+    if (editorContext && editorContext.datasets.length > 0) {
+      setDatasets(editorContext.datasets);
+    }
+  }, [editorContext?.datasets]);
+
   // 将Schema中的componentType映射到componentId
   const mapComponentTypeToId = useCallback((componentType: string): string => {
     // 转换为小写以支持大小写不敏感的匹配
@@ -166,7 +176,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       filter: 'control-filter',
       input: 'control-input',
       form: 'form-form',
-      timeperiod: 'form-time-period',
       textarea: 'form-text',
       select: 'form-select',
       checkbox: 'form-checkbox',
@@ -190,7 +199,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       position: item.position || { x: 50, y: 50 + index * 100 },
       size: item.size || { width: 400, height: 300 },
       zIndex: item.zIndex || index + 1,
-    datasourceConfig: item.datasourceConfig,
+      datasourceConfig: item.datasourceConfig,
+      queryConfig: item.queryConfig,
+      interactionConfig: item.interactionConfig,
+      visible: item.visible,
+      locked: item.locked,
     }));
   }, []);
 
@@ -206,7 +219,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       position: item.position,
       size: item.size,
       zIndex: item.zIndex,
-    datasourceConfig: item.datasourceConfig,
+      datasourceConfig: item.datasourceConfig,
+      queryConfig: item.queryConfig,
+      interactionConfig: item.interactionConfig,
+      visible: item.visible,
+      locked: item.locked,
     }));
   }, []);
 
@@ -739,54 +756,6 @@ const handleDatasourceConfigChange = useCallback(
     []
   );
 
-  // 生成并保存Schema
-  const handleSaveSchema = useCallback(async () => {
-    if (!projectId || !reportId || !reportContext) {
-      message.warning('请先创建或选择报表');
-      return;
-    }
-
-    try {
-      const reportName = reportContext.reportName || '未命名报表';
-      const schema = generateReportSchema(
-        canvasItems,
-        canvasConfig,
-        reportId,
-        reportName,
-        projectId
-      );
-
-      // 验证Schema
-      const validation = validateSchema(schema);
-      if (!validation.valid) {
-        Modal.error({
-          title: 'Schema验证失败',
-          content: (
-            <div>
-              <p>以下字段存在问题：</p>
-              <ul>
-                {validation.errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          ),
-        });
-        return;
-      }
-
-      // 保存Schema
-      const response = await reportApi.saveReportSchema(projectId, reportId, schema);
-      if (response.success) {
-        message.success('Schema保存成功');
-      } else {
-        message.error(response.message || 'Schema保存失败');
-      }
-    } catch (error: any) {
-      message.error('保存Schema失败: ' + (error.message || '未知错误'));
-    }
-  }, [canvasItems, canvasConfig, projectId, reportId, reportContext]);
-
   const selectedItem = canvasItems.find((item) => selectedItemIds.includes(item.id));
 
   // 画布增强功能处理函数
@@ -1138,6 +1107,65 @@ const handleDatasourceConfigChange = useCallback(
       },
     });
   }, [handleItemsChange]);
+
+  // renderItem 函数，用于渲染画布中的组件
+  const renderItem = useCallback((item: EnhancedCanvasItem) => {
+    const canvasItem = canvasItems.find((ci) => ci.id === item.id);
+    if (!canvasItem) {
+      return null;
+    }
+    const effectiveDefinition = (() => {
+      if (!canvasItem.definition) {
+        return null;
+      }
+      let mergedDefinition: ComponentDefinition = canvasItem.definition;
+      if (canvasItem.propsValues) {
+        mergedDefinition = {
+          ...mergedDefinition,
+          defaultProps: { ...(mergedDefinition.defaultProps || {}), ...canvasItem.propsValues },
+        };
+      }
+      if (
+        canvasItem.datasourceConfig?.bindingType === 'static' &&
+        canvasItem.datasourceConfig.staticConfig
+      ) {
+        mergedDefinition = {
+          ...mergedDefinition,
+          defaultData: canvasItem.datasourceConfig.staticConfig.data,
+        };
+      }
+      return mergedDefinition;
+    })();
+    
+    // 如果是表单组件，查找并渲染子组件
+    const childItems = canvasItem.children
+      ? canvasItem.children
+          .map((childId) => canvasItems.find((ci) => ci.id === childId))
+          .filter((ci): ci is CanvasItem => ci !== undefined)
+      : [];
+    
+    // 为表单组件添加 formId 到 propsValues
+    const formPropsValues = canvasItem.component.componentId === 'form-form'
+      ? { ...canvasItem.propsValues, formId: canvasItem.id }
+      : canvasItem.propsValues;
+    
+    return (
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+        }}
+      >
+        {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems, handlePropChange)}
+      </div>
+    );
+  }, [canvasItems]);
+
   return (
     <div
       style={{
@@ -1187,7 +1215,6 @@ const handleDatasourceConfigChange = useCallback(
                 canRedo={historyManagerRef.current.canRedo()}
                 onUndo={handleUndo}
                 onRedo={handleRedo}
-                onSaveSchema={handleSaveSchema}
                 selectedCount={selectedItemIds.length}
                 onAlignLeft={handleAlignLeft}
                 onAlignCenter={handleAlignCenter}
@@ -1311,62 +1338,7 @@ const handleDatasourceConfigChange = useCallback(
                   onItemsChange={handleItemsChange}
                   onSelectionChange={handleSelectionChange}
                   onItemSelect={handleItemSelect}
-                  renderItem={(item) => {
-                    const canvasItem = canvasItems.find((ci) => ci.id === item.id);
-                    if (!canvasItem) {
-                      return null;
-                    }
-                    const effectiveDefinition = (() => {
-                      if (!canvasItem.definition) {
-                        return null;
-                      }
-                      let mergedDefinition: ComponentDefinition = canvasItem.definition;
-                      if (canvasItem.propsValues) {
-                        mergedDefinition = {
-                          ...mergedDefinition,
-                          defaultProps: { ...(mergedDefinition.defaultProps || {}), ...canvasItem.propsValues },
-                        };
-                      }
-                      if (
-                        canvasItem.datasourceConfig?.bindingType === 'static' &&
-                        canvasItem.datasourceConfig.staticConfig
-                      ) {
-                        mergedDefinition = {
-                          ...mergedDefinition,
-                          defaultData: canvasItem.datasourceConfig.staticConfig.data,
-                        };
-                      }
-                      return mergedDefinition;
-                    })();
-                    
-                    // 如果是表单组件，查找并渲染子组件
-                    const childItems = canvasItem.children
-                      ? canvasItem.children
-                          .map((childId) => canvasItems.find((ci) => ci.id === childId))
-                          .filter((ci): ci is CanvasItem => ci !== undefined)
-                      : [];
-                    
-                    // 为表单组件添加 formId 到 propsValues
-                    const formPropsValues = canvasItem.component.componentId === 'form-form'
-                      ? { ...canvasItem.propsValues, formId: canvasItem.id }
-                      : canvasItem.propsValues;
-                    
-                    return (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          overflow: 'hidden',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          position: 'relative',
-                        }}
-                      >
-                        {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems)}
-                      </div>
-                    );
-                  }}
+                  renderItem={renderItem}
                   canvasWidth={1920}
                   canvasHeight={1080}
                   gridSize={10}
@@ -1414,6 +1386,7 @@ const handleDatasourceConfigChange = useCallback(
                             item={selectedItem}
                             selectedCount={selectedItemIds.length}
                             canvasConfig={canvasConfig}
+                            datasets={datasets}
                             availableComponents={canvasItems.map((item) => ({
                               id: item.id,
                               name: item.component.componentName || item.id,
@@ -1436,8 +1409,20 @@ const handleDatasourceConfigChange = useCallback(
                             }}
                             onQueryConfigChange={handleQueryConfigChange}
                             onInteractionConfigChange={handleInteractionConfigChange}
+                            onDatasourceConfigChange={(componentId, config) => {
+                              setCanvasItems((prev) =>
+                                prev.map((item) =>
+                                  item.id === componentId
+                                    ? {
+                                        ...item,
+                                        datasourceConfig: config,
+                                      }
+                                    : item
+                                )
+                              );
+                            }}
                             onApply={() => {
-                              message.success('配置已应用');
+                              // 提示已在 PropertyPanel 中显示，这里不需要重复提示
                             }}
                             onReset={() => {
                               message.info('配置已重置');
@@ -1479,7 +1464,8 @@ function renderCanvasContent(
   item: CanvasItem,
   definition?: ComponentDefinition | null,
   propsValues?: Record<string, any>,
-  childItems: CanvasItem[] = []
+  childItems: CanvasItem[] = [],
+  onPropChange?: (field: string, value: any) => void
 ) {
   // 对于 border 组件，即使有 error 或没有 definition，也尝试直接渲染
   if (item.component.componentId === 'media-border') {
@@ -1558,6 +1544,7 @@ function renderCanvasContent(
           height={item.size?.height || '100%'}
           width={item.size?.width || '100%'}
           propsValues={propsValues || item.propsValues}
+          componentName={item.component.componentName}
         />
       );
     }
@@ -1572,6 +1559,7 @@ function renderCanvasContent(
           height={item.size?.height || '100%'}
           width={item.size?.width || '100%'}
           propsValues={propsValues || item.propsValues}
+          componentName={item.component.componentName}
         />
       );
     }
@@ -1610,7 +1598,7 @@ function renderCanvasContent(
                   pointerEvents: 'auto',
                 }}
               >
-                {renderCanvasContent(child, childEffectiveDefinition, child.propsValues)}
+                {renderCanvasContent(child, childEffectiveDefinition, child.propsValues, [], onPropChange)}
               </div>
             );
           })}
@@ -1624,6 +1612,7 @@ function renderCanvasContent(
           height={item.size?.height || '100%'}
           width={item.size?.width || '100%'}
           propsValues={propsValues || item.propsValues}
+          componentName={item.component.componentName}
         >
           {children}
         </FormRenderer>
