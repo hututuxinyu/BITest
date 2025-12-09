@@ -34,6 +34,9 @@ export interface EnhancedCanvasItem {
   interactionConfig?: any; // 交互配置（events数组）
   visible?: boolean; // 是否可见
   locked?: boolean; // 是否锁定
+  parentId?: string;
+  children?: string[];
+  parentSlot?: string;
 }
 
 export interface EnhancedCanvasProps {
@@ -58,6 +61,45 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 3;
 const DEFAULT_ZOOM = 1;
 const ALIGNMENT_THRESHOLD = 5;
+
+interface LayoutSlot {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+const getLayoutSlots = (item: EnhancedCanvasItem): LayoutSlot[] => {
+  const width = item.size.width;
+  const height = item.size.height;
+  const props = { ...(item.definition?.defaultProps || {}), ...(item.propsValues || {}) };
+  if (item.component.componentId === 'layout-top-bottom') {
+    const gap = Number(props.gap) || 0;
+    const topRatio = Number(props.topRatio) || 1;
+    const bottomRatio = Number(props.bottomRatio) || 1;
+    const totalRatio = topRatio + bottomRatio || 1;
+    const topHeight = ((height - gap) * topRatio) / totalRatio;
+    const bottomHeight = Math.max(0, height - gap - topHeight);
+    return [
+      { id: 'top', x: 0, y: 0, width, height: topHeight },
+      { id: 'bottom', x: 0, y: topHeight + gap, width, height: bottomHeight },
+    ];
+  }
+  if (item.component.componentId === 'layout-left-right') {
+    const gap = Number(props.gap) || 0;
+    const leftRatio = Number(props.leftRatio) || 1;
+    const rightRatio = Number(props.rightRatio) || 1;
+    const totalRatio = leftRatio + rightRatio || 1;
+    const leftWidth = ((width - gap) * leftRatio) / totalRatio;
+    const rightWidth = Math.max(0, width - gap - leftWidth);
+    return [
+      { id: 'left', x: 0, y: 0, width: leftWidth, height },
+      { id: 'right', x: leftWidth + gap, y: 0, width: rightWidth, height },
+    ];
+  }
+  return [];
+};
 
 const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   items,
@@ -609,6 +651,150 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
     };
   }, [selectionStart, selectionEnd]);
 
+  const childrenMap = useMemo(() => {
+    const map = new Map<string, EnhancedCanvasItem[]>();
+    items.forEach((item) => {
+      if (item.parentId) {
+        const arr = map.get(item.parentId) || [];
+        arr.push(item);
+        map.set(item.parentId, arr);
+      }
+    });
+    // 同一层级按 zIndex 升序渲染，确保拖拽层级一致
+    map.forEach((arr, key) => {
+      map.set(
+        key,
+        [...arr].sort((a, b) => a.zIndex - b.zIndex)
+      );
+    });
+    return map;
+  }, [items]);
+
+  const renderItemNode = useCallback(
+    (item: EnhancedCanvasItem, parent?: EnhancedCanvasItem, parentOffset?: Position) => {
+      const isSelected = selectedIds.includes(item.id);
+      const isBorderComponent =
+        item.component.componentId === 'media-border' ||
+        item.component.categories?.includes('border') ||
+        item.component.type === 'border';
+      const borderStyle = isSelected ? '2px solid #1890ff' : 'none';
+      const parentPosition = parentOffset || (parent ? parent.position : { x: 0, y: 0 });
+      const children = childrenMap.get(item.id) || [];
+      const isLayoutContainer = item.component.type === 'layout';
+      const layoutSlots = isLayoutContainer ? getLayoutSlots(item) : [];
+
+      return (
+        <div
+          key={item.id}
+          style={{
+            position: 'absolute',
+            left: item.position.x - parentPosition.x,
+            top: item.position.y - parentPosition.y,
+            width: item.size.width,
+            height: item.size.height,
+            border: borderStyle,
+            background: isBorderComponent ? 'transparent' : '#fff',
+            cursor: isDragging && isSelected ? 'grabbing' : isSelected ? 'move' : 'grab',
+            zIndex: item.zIndex,
+            boxShadow: isSelected ? '0 0 0 2px rgba(24, 144, 255, 0.2)' : 'none',
+            overflow: layoutSlots.length > 0 ? 'hidden' : isLayoutContainer ? 'hidden' : 'visible',
+          }}
+          onMouseDown={(e) => handleItemMouseDown(e, item.id)}
+          onContextMenu={(e) => handleContextMenu(e, item.id)}
+        >
+          {renderItem(item)}
+          {isSelected && (
+            <>
+              {[{ pos: 'nw', cursor: 'nwse-resize', left: -4, top: -4 },
+                { pos: 'n', cursor: 'ns-resize', left: '50%', top: -4, transform: 'translateX(-50%)' },
+                { pos: 'ne', cursor: 'nesw-resize', right: -4, top: -4 },
+                { pos: 'e', cursor: 'ew-resize', right: -4, top: '50%', transform: 'translateY(-50%)' },
+                { pos: 'se', cursor: 'nwse-resize', right: -4, bottom: -4 },
+                { pos: 's', cursor: 'ns-resize', left: '50%', bottom: -4, transform: 'translateX(-50%)' },
+                { pos: 'sw', cursor: 'nesw-resize', left: -4, bottom: -4 },
+                { pos: 'w', cursor: 'ew-resize', left: -4, top: '50%', transform: 'translateY(-50%)' }].map((handle) => (
+                  <div
+                    key={handle.pos}
+                    className="resize-handle"
+                    data-handle={handle.pos}
+                    style={{
+                      position: 'absolute',
+                      ...(handle.left !== undefined && { left: handle.left }),
+                      ...(handle.right !== undefined && { right: handle.right }),
+                      ...(handle.top !== undefined && { top: handle.top }),
+                      ...(handle.bottom !== undefined && { bottom: handle.bottom }),
+                      ...(handle.transform && { transform: handle.transform }),
+                      width: 8,
+                      height: 8,
+                      background: '#1890ff',
+                      border: '1px solid #fff',
+                      cursor: handle.cursor,
+                      borderRadius: '50%',
+                      zIndex: 1000,
+                    }}
+                  />
+                ))}
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -24,
+                  left: 0,
+                  fontSize: 12,
+                  color: '#1890ff',
+                  background: 'rgba(255, 255, 255, 0.9)',
+                  padding: '2px 6px',
+                  borderRadius: 2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {Math.round(item.size.width)} × {Math.round(item.size.height)}
+              </div>
+            </>
+          )}
+          {layoutSlots.length > 0 ? (
+            layoutSlots.map((slot) => (
+              <div
+                key={slot.id}
+                style={{
+                  position: 'absolute',
+                  left: slot.x,
+                  top: slot.y,
+                  width: slot.width,
+                  height: slot.height,
+                  overflow: 'hidden',
+                  pointerEvents: 'none',
+                }}
+              >
+                <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'auto' }}>
+                  {children
+                    .filter((child) => (child.parentSlot || layoutSlots[0].id) === slot.id)
+                    .map((child) =>
+                      renderItemNode(child, item, { x: (parentOffset?.x || item.position.x) + slot.x, y: (parentOffset?.y || item.position.y) + slot.y })
+                    )}
+                </div>
+              </div>
+            ))
+          ) : (
+            children.length > 0 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  width: '100%',
+                  height: '100%',
+                }}
+              >
+                {children.map((child) => renderItemNode(child, item, parentPosition))}
+              </div>
+            )
+          )}
+        </div>
+      );
+    },
+    [childrenMap, handleContextMenu, handleItemMouseDown, isDragging, renderItem, selectedIds]
+  );
+
   return (
     <div
       ref={canvasRef}
@@ -688,89 +874,10 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
 
         {/* 组件 */}
         {items.map((item) => {
-          const isSelected = selectedIds.includes(item.id);
-          // 判断是否是 border 组件
-          const isBorderComponent = item.component.componentId === 'media-border' || 
-                                   item.component.categories?.includes('border') ||
-                                   item.component.type === 'border';
-          // 非 border 组件：未选中时不显示边框，选中时显示编辑边框
-          // border 组件：保持其自身定义的边框样式（通过 props），选中时额外显示编辑边框
-          const borderStyle = isSelected 
-            ? '2px solid #1890ff' 
-            : 'none'; // 未选中时所有组件都不显示容器边框（border 组件的边框由组件内部渲染）
-          return (
-            <div
-              key={item.id}
-              style={{
-                position: 'absolute',
-                left: item.position.x,
-                top: item.position.y,
-                width: item.size.width,
-                height: item.size.height,
-                border: borderStyle,
-                background: isBorderComponent ? 'transparent' : '#fff',
-                cursor: isDragging && isSelected ? 'grabbing' : isSelected ? 'move' : 'grab',
-                zIndex: item.zIndex,
-                boxShadow: isSelected ? '0 0 0 2px rgba(24, 144, 255, 0.2)' : 'none',
-              }}
-              onMouseDown={(e) => handleItemMouseDown(e, item.id)}
-              onContextMenu={(e) => handleContextMenu(e, item.id)}
-            >
-              {renderItem(item)}
-              {isSelected && (
-                <>
-                  {/* 8个调整大小手柄 */}
-                  {[
-                    { pos: 'nw', cursor: 'nwse-resize', left: -4, top: -4 },
-                    { pos: 'n', cursor: 'ns-resize', left: '50%', top: -4, transform: 'translateX(-50%)' },
-                    { pos: 'ne', cursor: 'nesw-resize', right: -4, top: -4 },
-                    { pos: 'e', cursor: 'ew-resize', right: -4, top: '50%', transform: 'translateY(-50%)' },
-                    { pos: 'se', cursor: 'nwse-resize', right: -4, bottom: -4 },
-                    { pos: 's', cursor: 'ns-resize', left: '50%', bottom: -4, transform: 'translateX(-50%)' },
-                    { pos: 'sw', cursor: 'nesw-resize', left: -4, bottom: -4 },
-                    { pos: 'w', cursor: 'ew-resize', left: -4, top: '50%', transform: 'translateY(-50%)' },
-                  ].map((handle) => (
-                    <div
-                      key={handle.pos}
-                      className="resize-handle"
-                      data-handle={handle.pos}
-                      style={{
-                        position: 'absolute',
-                        ...(handle.left !== undefined && { left: handle.left }),
-                        ...(handle.right !== undefined && { right: handle.right }),
-                        ...(handle.top !== undefined && { top: handle.top }),
-                        ...(handle.bottom !== undefined && { bottom: handle.bottom }),
-                        ...(handle.transform && { transform: handle.transform }),
-                        width: 8,
-                        height: 8,
-                        background: '#1890ff',
-                        border: '1px solid #fff',
-                        cursor: handle.cursor,
-                        borderRadius: '50%',
-                        zIndex: 1000,
-                      }}
-                    />
-                  ))}
-                  {/* 尺寸信息 */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: -24,
-                      left: 0,
-                      fontSize: 12,
-                      color: '#1890ff',
-                      background: 'rgba(255, 255, 255, 0.9)',
-                      padding: '2px 6px',
-                      borderRadius: 2,
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {Math.round(item.size.width)} × {Math.round(item.size.height)}
-                  </div>
-                </>
-              )}
-            </div>
-          );
+          if (item.parentId) {
+            return null;
+          }
+          return renderItemNode(item);
         })}
       </div>
 

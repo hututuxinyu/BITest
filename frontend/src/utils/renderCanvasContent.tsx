@@ -9,6 +9,7 @@ import type { ComponentDefinition, ComponentSummary, DatasourceConfig } from '..
 import ChartRenderer from '../components/common/ChartRenderer';
 import FormRenderer from '../components/common/FormRenderer';
 import TableRenderer from '../components/common/TableRenderer';
+import LayoutRenderer from '../components/common/LayoutRenderer';
 
 export interface RenderCanvasItem {
   id: string;
@@ -63,6 +64,18 @@ export function renderCanvasContent(
     if (item.component.componentId === 'chart-table' || item.component.componentId === 'chart-tree-table') {
       return (
         <TableRenderer
+          componentId={item.component.componentId}
+          definition={definition}
+          height={item.size?.height || '100%'}
+          width={item.size?.width || '100%'}
+          propsValues={propsValues || item.propsValues}
+        />
+      );
+    }
+
+    if (item.component.type === 'layout') {
+      return (
+        <LayoutRenderer
           componentId={item.component.componentId}
           definition={definition}
           height={item.size?.height || '100%'}

@@ -41,6 +41,7 @@ interface CanvasItem {
   locked?: boolean; // 是否锁定
   parentId?: string; // 父组件ID，用于嵌套
   children?: string[]; // 子组件ID列表
+  parentSlot?: string; // 布局容器内部槽位
 }
 
 const PROPERTY_COLLAPSED_WIDTH = 8;
@@ -151,6 +152,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       interactionConfig: item.interactionConfig,
       visible: item.visible,
       locked: item.locked,
+      parentId: item.parentId,
+      children: item.children,
+      parentSlot: item.parentSlot,
     }));
   }, []);
 
@@ -171,6 +175,9 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       interactionConfig: item.interactionConfig,
       visible: item.visible,
       locked: item.locked,
+      parentId: item.parentId,
+      children: item.children,
+      parentSlot: item.parentSlot,
     }));
   }, []);
 
@@ -462,49 +469,70 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     const canvasX = (e.clientX - rect.left) / zoom;
     const canvasY = (e.clientY - rect.top) / zoom;
 
-    // 检查是否拖拽到表单组件内部
+    // 检查是否拖拽到表单/布局组件内部，优先命中最高层级容器
     let parentId: string | undefined;
+    let parentSlot: string | undefined;
     let dropX = canvasX;
     let dropY = canvasY;
 
-    // 查找所有表单组件，检查拖拽位置是否在其中
-    for (const item of canvasItems) {
-      if (item.component.componentId === 'form-form' && item.position && item.size) {
-        const formX = item.position.x;
-        const formY = item.position.y;
-        const formWidth = item.size.width;
-        const formHeight = item.size.height;
-        
-        if (
-          canvasX >= formX &&
-          canvasX <= formX + formWidth &&
-          canvasY >= formY &&
-          canvasY <= formY + formHeight
-        ) {
-          parentId = item.id;
-          // 计算相对于表单组件的位置（减去表单的 padding）
-          dropX = canvasX - formX - 16; // 16px padding
-          dropY = canvasY - formY - 16; // 16px padding
-          break;
+    const containerCandidates = [...canvasItems]
+      .filter(
+        (item) =>
+          item.position &&
+          item.size &&
+          (item.component.componentId === 'form-form' || item.component.type === 'layout')
+      )
+      .sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
+
+    for (const item of containerCandidates) {
+      const containerX = item.position?.x || 0;
+      const containerY = item.position?.y || 0;
+      const containerWidth = item.size?.width || 0;
+      const containerHeight = item.size?.height || 0;
+      
+      if (
+        canvasX >= containerX &&
+        canvasX <= containerX + containerWidth &&
+        canvasY >= containerY &&
+        canvasY <= containerY + containerHeight
+      ) {
+        parentId = item.id;
+        const padding = item.component.componentId === 'form-form' ? 16 : 0;
+        dropX = canvasX - containerX - padding;
+        dropY = canvasY - containerY - padding;
+        // 判断布局槽位：针对上下布局，将溢出裁剪在对应区域内
+        if (item.component.componentId === 'layout-top-bottom') {
+          const topRatio = Number(item.propsValues?.topRatio ?? item.definition?.defaultProps?.topRatio ?? 1) || 1;
+          const bottomRatio = Number(item.propsValues?.bottomRatio ?? item.definition?.defaultProps?.bottomRatio ?? 1) || 1;
+          const gap = Number(item.propsValues?.gap ?? item.definition?.defaultProps?.gap ?? 0) || 0;
+          const totalHeight = item.size?.height || 0;
+          const topHeight = ((totalHeight - gap) * topRatio) / (topRatio + bottomRatio);
+          if (dropY <= topHeight + gap / 2) {
+            dropY = Math.max(0, dropY);
+            parentSlot = 'top';
+          } else {
+            dropY = Math.max(0, dropY - (topHeight + gap));
+            parentSlot = 'bottom';
+          }
         }
+        break;
       }
     }
 
     // 根据组件类型设置默认大小
     const getDefaultSize = (comp: ComponentSummary): { width: number; height: number } => {
-      // 表单组件使用更大的尺寸
       if (comp.componentId === 'form-form') {
         return { width: 600, height: 400 };
       }
-      // 表单控件使用较小的尺寸
+      if (comp.type === 'layout') {
+        return { width: 800, height: 500 };
+      }
       if (comp.categories?.includes('form') || comp.type === 'control') {
         return { width: 200, height: 32 };
       }
-      // 图表组件使用默认尺寸
       if (comp.type === 'chart') {
         return { width: 400, height: 300 };
       }
-      // 其他组件使用默认尺寸
       return { width: 400, height: 300 };
     };
 
@@ -518,6 +546,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       size: defaultSize,
       zIndex: canvasItems.length + 1,
       parentId,
+      parentSlot,
     };
     const updatedItems = [...canvasItems, newItem];
     

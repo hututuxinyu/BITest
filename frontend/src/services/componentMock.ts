@@ -33,6 +33,62 @@ export const mockTags: ComponentTag[] = [
  */
 export const mockComponents: ComponentSummary[] = [
   {
+    componentId: 'layout-top-bottom',
+    componentName: '上下布局',
+    alias: 'TopBottomLayout',
+    version: '1.0.0',
+    type: 'layout',
+    icon: '',
+    previewUrl: '',
+    description: '上下分区布局，支持比例和分割线配置',
+    categories: ['layout'],
+    tags: ['layout'],
+    author: 'BI-Layout-Team',
+    releaseTime: '2024-01-20 10:00:00',
+  },
+  {
+    componentId: 'layout-left-right',
+    componentName: '左右布局',
+    alias: 'LeftRightLayout',
+    version: '1.0.0',
+    type: 'layout',
+    icon: '',
+    previewUrl: '',
+    description: '左右分栏布局，支持比例和分割线配置',
+    categories: ['layout'],
+    tags: ['layout'],
+    author: 'BI-Layout-Team',
+    releaseTime: '2024-01-20 10:05:00',
+  },
+  {
+    componentId: 'layout-header-content-footer',
+    componentName: '上中下布局',
+    alias: 'HeaderContentFooter',
+    version: '1.0.0',
+    type: 'layout',
+    icon: '',
+    previewUrl: '',
+    description: '典型的页眉-内容-页脚布局，支持粘性头尾',
+    categories: ['layout'],
+    tags: ['layout'],
+    author: 'BI-Layout-Team',
+    releaseTime: '2024-01-20 10:10:00',
+  },
+  {
+    componentId: 'layout-grid',
+    componentName: '表格布局',
+    alias: 'GridLayout',
+    version: '1.0.0',
+    type: 'layout',
+    icon: '',
+    previewUrl: '',
+    description: '多行多列网格布局，可自定义行高列宽与间距',
+    categories: ['layout'],
+    tags: ['layout'],
+    author: 'BI-Layout-Team',
+    releaseTime: '2024-01-20 10:15:00',
+  },
+  {
     componentId: 'chart-bar',
     componentName: '柱状图',
     alias: 'BarChart',
@@ -424,26 +480,124 @@ export const mockComponents: ComponentSummary[] = [
     author: 'BI-Media-Team',
     releaseTime: '2024-01-01 00:00:00',
   },
-  {
-    componentId: 'container-tab',
-    componentName: '标签容器',
-    alias: 'TabContainer',
-    version: '2.0.0',
-    type: 'container',
-    icon: 'https://gw.alipayobjects.com/zos/antfincdn/7p81Rw4cQe/tabs.svg',
-    previewUrl: 'https://gw.alipayobjects.com/zos/antfincdn/y1mPGZ7HO7/tabs-preview.png',
-    description: '支持多页签切换，适合承载多个子组件，支持动态新增页签',
-    categories: ['container'],
-    tags: ['layout'],
-    author: 'BI-Layout-Team',
-    releaseTime: '2024-01-15 15:10:00',
-  },
 ];
 
 /**
  * 模拟组件定义
  */
 export const mockComponentDefinitions: Record<string, ComponentDefinition> = {
+  'layout-top-bottom': {
+    componentId: 'layout-top-bottom',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'gap', label: '间距', type: 'number', default: 8, description: '上下区域之间的空隙' },
+      { field: 'topRatio', label: '上区域比例', type: 'number', default: 6, description: 'flex 比例，影响高度分配' },
+      { field: 'bottomRatio', label: '下区域比例', type: 'number', default: 4, description: 'flex 比例，影响高度分配' },
+      { field: 'splitLine', label: '分割线', type: 'boolean', default: true, description: '是否显示上下分割线' },
+      { field: 'background', label: '背景色', type: 'string', default: '#ffffff' },
+    ],
+    defaultProps: {
+      gap: 8,
+      topRatio: 6,
+      bottomRatio: 4,
+      splitLine: true,
+      background: '#ffffff',
+    },
+    dataSchema: [],
+    defaultData: null,
+    eventSchema: [],
+    defaultEvents: {},
+    supportFeatures: {
+      slots: ['top', 'bottom'],
+      dragDrop: { accept: 'any' },
+    },
+  },
+  'layout-left-right': {
+    componentId: 'layout-left-right',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'gap', label: '间距', type: 'number', default: 12, description: '左右区域之间的空隙' },
+      { field: 'leftRatio', label: '左区域比例', type: 'number', default: 4, description: 'flex 比例，影响宽度分配' },
+      { field: 'rightRatio', label: '右区域比例', type: 'number', default: 6, description: 'flex 比例，影响宽度分配' },
+      { field: 'splitLine', label: '分割线', type: 'boolean', default: true, description: '是否显示左右分割线' },
+      { field: 'background', label: '背景色', type: 'string', default: '#ffffff' },
+    ],
+    defaultProps: {
+      gap: 12,
+      leftRatio: 4,
+      rightRatio: 6,
+      splitLine: true,
+      background: '#ffffff',
+    },
+    dataSchema: [],
+    defaultData: null,
+    eventSchema: [],
+    defaultEvents: {},
+    supportFeatures: {
+      slots: ['left', 'right'],
+      dragDrop: { accept: 'any' },
+    },
+  },
+  'layout-header-content-footer': {
+    componentId: 'layout-header-content-footer',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'gap', label: '间距', type: 'number', default: 8, description: '各区域之间的空隙' },
+      { field: 'headerRatio', label: '头部比例', type: 'number', default: 2 },
+      { field: 'contentRatio', label: '内容比例', type: 'number', default: 6 },
+      { field: 'footerRatio', label: '底部比例', type: 'number', default: 2 },
+      { field: 'stickyHeader', label: '头部吸顶', type: 'boolean', default: false },
+      { field: 'stickyFooter', label: '底部吸底', type: 'boolean', default: false },
+      { field: 'background', label: '背景色', type: 'string', default: '#ffffff' },
+    ],
+    defaultProps: {
+      gap: 8,
+      headerRatio: 2,
+      contentRatio: 6,
+      footerRatio: 2,
+      stickyHeader: false,
+      stickyFooter: false,
+      background: '#ffffff',
+    },
+    dataSchema: [],
+    defaultData: null,
+    eventSchema: [],
+    defaultEvents: {},
+    supportFeatures: {
+      slots: ['header', 'content', 'footer'],
+      dragDrop: { accept: 'any' },
+    },
+  },
+  'layout-grid': {
+    componentId: 'layout-grid',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'rows', label: '行数', type: 'number', default: 2, description: '网格行数' },
+      { field: 'cols', label: '列数', type: 'number', default: 2, description: '网格列数' },
+      { field: 'gutter', label: '栅格间距', type: 'number', default: 8, description: '单元格间距' },
+      { field: 'rowHeights', label: '行高数组', type: 'array', default: [], description: '自定义每行高度，px 或比例' },
+      { field: 'colWidths', label: '列宽数组', type: 'array', default: [], description: '自定义每列宽度，px 或比例' },
+      { field: 'autoFill', label: '自动填充剩余', type: 'boolean', default: true },
+      { field: 'background', label: '背景色', type: 'string', default: '#ffffff' },
+    ],
+    defaultProps: {
+      rows: 2,
+      cols: 2,
+      gutter: 8,
+      rowHeights: [],
+      colWidths: [],
+      autoFill: true,
+      background: '#ffffff',
+    },
+    dataSchema: [],
+    defaultData: null,
+    eventSchema: [],
+    defaultEvents: {},
+    supportFeatures: {
+      slots: ['cell-0-0', 'cell-0-1', 'cell-1-0', 'cell-1-1'],
+      dragDrop: { accept: 'any' },
+    },
+  },
   'chart-bar': {
     componentId: 'chart-bar',
     version: '1.1.0',
@@ -1611,20 +1765,20 @@ export const mockComponentDefinitions: Record<string, ComponentDefinition> = {
 /**
  * 模拟API延迟
  */
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+// const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function fetchComponentCategories(): Promise<ComponentCategory[]> {
-  await delay(200);
+  // await delay(200);
   return mockCategories;
 }
 
 export async function fetchComponentTags(): Promise<ComponentTag[]> {
-  await delay(200);
+  // await delay(200);
   return mockTags;
 }
 
 export async function fetchComponentList(filter: ComponentFilter): Promise<ComponentSummary[]> {
-  await delay(300);
+  // await delay(300);
   let list = [...mockComponents];
   if (filter.categoryId) {
     list = list.filter((item) => item.categories.includes(filter.categoryId!));
@@ -1645,7 +1799,7 @@ export async function fetchComponentList(filter: ComponentFilter): Promise<Compo
 }
 
 export async function fetchComponentDefinition(componentId: string): Promise<ComponentDefinition | null> {
-  await delay(200);
+  // await delay(200);
   return mockComponentDefinitions[componentId] || null;
 }
 

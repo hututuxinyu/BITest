@@ -65,11 +65,11 @@ const ComponentPanel: React.FC = () => {
   }, [keyword]);
 
   const groupedComponents = useMemo(() => {
-    const groups: Record<'basicChart' | 'form' | 'multimedia' | 'container' | 'control', ComponentSummary[]> = {
+    const groups: Record<'basicChart' | 'form' | 'multimedia' | 'layout' | 'control', ComponentSummary[]> = {
       basicChart: [],
       form: [],
       multimedia: [],
-      container: [],
+      layout: [],
       control: [],
     };
     components.forEach((component) => {
@@ -126,7 +126,7 @@ const ComponentPanel: React.FC = () => {
                         label: `基础图表 (${groupedComponents.basicChart.length})`,
                         children: (
                           <div style={{ padding: '8px 0' }}>
-                            {renderComponentGrid(groupedComponents.basicChart, loading, handleDragStart, 'chart')}
+                            {renderComponentGrid(groupedComponents.basicChart, loading, handleDragStart)}
                           </div>
                         ),
                       },
@@ -135,7 +135,7 @@ const ComponentPanel: React.FC = () => {
                         label: `表单组件 (${groupedComponents.form.length})`,
                         children: (
                           <div style={{ padding: '8px 0' }}>
-                            {renderComponentGrid(groupedComponents.form, loading, handleDragStart, 'form')}
+                            {renderComponentGrid(groupedComponents.form, loading, handleDragStart)}
                           </div>
                         ),
                       },
@@ -144,25 +144,16 @@ const ComponentPanel: React.FC = () => {
                         label: `多媒体 (${groupedComponents.multimedia.length})`,
                         children: (
                           <div style={{ padding: '8px 0' }}>
-                            {renderComponentGrid(groupedComponents.multimedia, loading, handleDragStart, 'multimedia')}
+                            {renderComponentGrid(groupedComponents.multimedia, loading, handleDragStart)}
                           </div>
                         ),
                       },
                       {
-                        key: 'container',
-                        label: `容器组件 (${groupedComponents.container.length})`,
+                        key: 'layout',
+                        label: `布局 (${groupedComponents.layout.length})`,
                         children: (
                           <div style={{ padding: '8px 0' }}>
-                            {renderComponentGrid(groupedComponents.container, loading, handleDragStart, 'layout')}
-                          </div>
-                        ),
-                      },
-                      {
-                        key: 'control',
-                        label: `控制类组件 (${groupedComponents.control.length})`,
-                        children: (
-                          <div style={{ padding: '8px 0' }}>
-                            {renderComponentGrid(groupedComponents.control, loading, handleDragStart, 'form')}
+                            {renderComponentGrid(groupedComponents.layout, loading, handleDragStart)}
                           </div>
                         ),
                       },
@@ -188,10 +179,7 @@ const ComponentPanel: React.FC = () => {
 };
 
 function renderComponentGrid(
-  items: ComponentSummary[],
-  loading: boolean,
-  handleDragStart: (e: React.DragEvent, component: ComponentSummary) => void,
-  category?: 'chart' | 'form' | 'multimedia' | 'layout' | 'other'
+    items: ComponentSummary[], loading: boolean, handleDragStart: (e: React.DragEvent, component: ComponentSummary) => void,
 ) {
   if (items.length === 0) {
     if (loading) {
@@ -200,7 +188,7 @@ function renderComponentGrid(
     return <Empty description="暂无组件" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
   }
   // 图表、表单和多媒体分类使用2列，其他分类使用3列
-  const columnCount = category === 'chart' || category === 'form' || category === 'multimedia' ? 2 : 3;
+  const columnCount = 2;
   return (
     <List
       loading={loading}
@@ -290,6 +278,10 @@ function renderThumbnailContent(component: ComponentSummary) {
   // 表单组件
   if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
     return <AppstoreOutlined style={thumbnailIconStyle} />;
+  }
+  // 布局
+  if (lowerName.includes('布局') || lowerName.includes('layout') || lowerName.includes('grid') || lowerName.includes('栅格')) {
+    return <BorderInnerOutlined style={thumbnailIconStyle} />;
   }
   // 文本框
   if (lowerName.includes('文本框') || (lowerName.includes('文本') && !lowerName.includes('输入'))) {
@@ -404,6 +396,9 @@ function getPlaceholderIcon(component: ComponentSummary) {
   if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
     return <AppstoreOutlined style={thumbnailIconStyle} />;
   }
+  if (lowerName.includes('布局') || lowerName.includes('layout') || lowerName.includes('grid') || lowerName.includes('栅格')) {
+    return <BorderInnerOutlined style={thumbnailIconStyle} />;
+  }
   if (lowerName.includes('文本框') || (lowerName.includes('文本') && !lowerName.includes('输入'))) {
     return <FileTextOutlined style={thumbnailIconStyle} />;
   }
@@ -489,9 +484,13 @@ function getPlaceholderIcon(component: ComponentSummary) {
   return <AppstoreOutlined style={thumbnailIconStyle} />;
 }
 
-function categorizeComponent(component: ComponentSummary): 'basicChart' | 'form' | 'multimedia' | 'container' | 'control' {
+function categorizeComponent(component: ComponentSummary): 'basicChart' | 'form' | 'multimedia' | 'layout' | 'control' {
   const name = `${component.componentName}${component.alias || ''}`.toLowerCase();
   
+  // 显式类型：layout 归到布局组
+  if (component.type === 'layout') {
+    return 'layout';
+  }
   // 优先检查 categories 字段
   if (component.categories && component.categories.length > 0) {
     if (component.categories.includes('form')) {
@@ -500,8 +499,8 @@ function categorizeComponent(component: ComponentSummary): 'basicChart' | 'form'
     if (component.categories.includes('media')) {
       return 'multimedia';
     }
-    if (component.categories.includes('container')) {
-      return 'container';
+    if (component.categories.includes('layout')) {
+      return 'layout';
     }
     if (component.categories.includes('chart')) {
       return 'basicChart';
@@ -529,10 +528,10 @@ function categorizeComponent(component: ComponentSummary): 'basicChart' | 'form'
     return 'basicChart';
   }
   
-  // 容器组件：容器、布局、分组、选项卡等
-  const containerKeywords = ['容器', 'container', '布局', 'layout', 'grid', '栅格', 'flex', '卡片', 'card', 'panel', 'section', '分组', 'group', '选项卡', 'tab'];
-  if (containerKeywords.some((kw) => name.includes(kw))) {
-    return 'container';
+  // 布局组件：布局、栅格、分组、选项卡等（排除“容器”关键词，避免混入容器组件）
+  const layoutKeywords = ['布局', 'layout', 'grid', '栅格', 'flex', '卡片', 'card', 'panel', 'section', '分组', 'group', '选项卡', 'tab'];
+  if (layoutKeywords.some((kw) => name.includes(kw))) {
+    return 'layout';
   }
   
   // 控制类组件：按钮、筛选框、输入框等（不在form分类中的）
