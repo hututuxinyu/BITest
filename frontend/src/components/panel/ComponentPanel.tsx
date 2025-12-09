@@ -34,10 +34,10 @@ import {
   BorderInnerOutlined,
   PlayCircleOutlined,
 } from '@ant-design/icons';
-import { componentApi } from '../services/componentApi';
+import { componentApi } from '../../services/componentApi';
 import type {
   ComponentSummary,
-} from '../types';
+} from '../../types';
 
 const thumbnailIconStyle: React.CSSProperties = { fontSize: 32, color: '#3b76f6', transform: 'none' };
 

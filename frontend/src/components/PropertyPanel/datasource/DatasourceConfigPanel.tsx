@@ -1,7 +1,10 @@
+/**
+ * 数据源配置面板组件
+ */
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { Form, Select, Button, Modal, Input, message, Empty, Tree, Table, Tag } from 'antd';
-import type { ComponentDefinition, DatasourceConfig, Dataset, DatasetField } from '../types';
-import { datasourceApi } from '../services/datasourceApi';
+import { Form, Select, Button, Modal, Input, message, Empty, Tree, Table} from 'antd';
+import type { ComponentDefinition, DatasourceConfig, Dataset, DatasetField } from '../../../types';
+import { datasourceApi } from '../../../services/datasourceApi';
 import type { DataNode } from 'antd/es/tree';
 
 const { TextArea } = Input;
@@ -14,9 +17,6 @@ interface DatasourceConfigPanelProps {
   onConfigChange?: (config: DatasourceConfig) => void;
 }
 
-/**
- * 数据源配置面板组件
- */
 const DatasourceConfigPanel: React.FC<DatasourceConfigPanelProps> = ({
   componentId,
   componentDefinition,
@@ -201,35 +201,12 @@ const DatasourceConfigPanel: React.FC<DatasourceConfigPanelProps> = ({
     }
   };
 
-  // 数据来源选择
-  const handleSourceTypeChange = (value: 'dataset' | 'static') => {
-    setSourceType(value);
-    setBindingType(value);
-    if (value === 'static') {
-      ensureStaticJsonInitialized();
-    }
-    const newConfig: DatasourceConfig = {
-      sourceType: value,
-      bindingType: value,
-      ...(value === 'static' ? { staticConfig: { data: getParsedStaticData() } } : {}),
-    };
-    if (onConfigChange) {
-      onConfigChange(newConfig);
-    }
-    // 不自动保存，等待应用按钮
-    // if (componentId) {
-    //   datasourceApi.saveComponentDatasourceConfig(componentId, newConfig);
-    // }
-  };
 
   // 绑定方式选择
   const handleBindingTypeChange = async (value: 'dataset' | 'static') => {
     setBindingType(value);
     if (value === 'static') {
       ensureStaticJsonInitialized();
-    } else if (value === 'dataset') {
-      // 选择数据集时，调用后端接口查询数据集列表
-      await loadDatasets();
     }
     const newConfig: DatasourceConfig = {
       sourceType,
@@ -239,10 +216,6 @@ const DatasourceConfigPanel: React.FC<DatasourceConfigPanelProps> = ({
     if (onConfigChange) {
       onConfigChange(newConfig);
     }
-    // 不自动保存，等待应用按钮
-    // if (componentId) {
-    //   datasourceApi.saveComponentDatasourceConfig(componentId, newConfig);
-    // }
   };
 
   // 数据集选择

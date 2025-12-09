@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Radio, Space, Button, Table } from 'antd';
-import type { DynamicEventConfig } from '../types';
+import type { DynamicEventConfig } from '../../../types';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const { TextArea } = Input;

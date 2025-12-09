@@ -1,8 +1,8 @@
 import React from 'react';
 import { Form, Input, InputNumber, Select, Switch, Upload, Collapse } from 'antd';
 import { PictureOutlined, CaretRightOutlined } from '@ant-design/icons';
-import type { CanvasConfig } from '../PropertyPanel';
-import './CanvasConfigTab.css';
+import type { CanvasConfig } from '../../PropertyPanel';
+import '../styles/CanvasConfigTab.css';
 
 interface CanvasConfigTabProps {
   config?: CanvasConfig;
@@ -18,16 +18,6 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
     onChange({
       ...config,
       [field]: value,
-    });
-  };
-
-  const handleNestedChange = (parent: string, field: string, value: any) => {
-    onChange({
-      ...config,
-      [parent]: {
-        ...(config as any)[parent],
-        [field]: value,
-      },
     });
   };
 

@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import type { EnhancedCanvasItem } from './Canvas/EnhancedCanvas';
-import ChartRenderer from './ChartRenderer';
-import FormRenderer from './FormRenderer';
-import TableRenderer from './TableRenderer';
-import type { ComponentDefinition } from '../types';
-import { datasourceApi } from '../services/datasourceApi';
+import type { EnhancedCanvasItem } from '../Canvas/EnhancedCanvas';
+import ChartRenderer from '../common/ChartRenderer';
+import FormRenderer from '../common/FormRenderer';
+import TableRenderer from '../common/TableRenderer';
+import type { ComponentDefinition } from '../../types';
+import { datasourceApi } from '../../services/datasourceApi';
 import { Spin } from 'antd';
 
 interface ReportPreviewProps {

@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Modal, Button, Input, Select, InputNumber, Radio } from 'antd';
+import React, { useState, useEffect, } from 'react';
+import { Modal, Button, Input, InputNumber, Radio } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
-import type { DatasetField } from '../../types';
-import './TableColumnConfigModal.css';
-
-const { TextArea } = Input;
+import type { DatasetField } from '../../../types';
+import '../styles/TableColumnConfigModal.css';
 
 interface TableColumn {
   fieldName: string;

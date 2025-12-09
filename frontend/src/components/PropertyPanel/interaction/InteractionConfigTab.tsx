@@ -1,6 +1,6 @@
 import React from 'react';
 import EnhancedInteractionConfigTab from './EnhancedInteractionConfigTab';
-import './InteractionConfigTab.css';
+import '../styles/InteractionConfigTab.css';
 
 interface InteractionConfigTabProps {
   componentId: string;

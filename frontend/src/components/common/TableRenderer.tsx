@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Table } from 'antd';
 import { Empty } from 'antd';
-import type { ComponentDefinition } from '../types';
+import type { ComponentDefinition } from '../../types';
 
 interface TableRendererProps {
   componentId: string;
@@ -110,7 +110,6 @@ const TableRenderer: React.FC<TableRendererProps> = ({
           columns={columns}
           dataSource={treeData}
           pagination={pagination}
-          defaultExpandAllRows={props.defaultExpandAll || false}
         />
       </div>
     );

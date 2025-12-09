@@ -1,8 +1,12 @@
+/**
+ * 数据源配置标签页组件
+ * 将数据绑定和查询配置合并到一个页面中
+ */
 import React from 'react';
 import { Empty, Collapse, Alert } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
-import type { ComponentDefinition, Dataset } from '../../types';
-import DatasourceConfigPanel from '../DatasourceConfigPanel';
+import type { ComponentDefinition, Dataset } from '../../../types';
+import DatasourceConfigPanel from './DatasourceConfigPanel';
 import DataBindingPanel from './DataBindingPanel';
 
 interface DatasourceConfigTabProps {
@@ -16,10 +20,6 @@ interface DatasourceConfigTabProps {
   onConfigChange?: (config: any) => void;
 }
 
-/**
- * 数据源配置标签页组件
- * 将数据绑定和查询配置合并到一个页面中
- */
 const DatasourceConfigTab: React.FC<DatasourceConfigTabProps> = ({
   componentId,
   componentTypeId,

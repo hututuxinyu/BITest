@@ -1,8 +1,8 @@
 import React from 'react';
 import { Form, Input, InputNumber, Select, Switch, Collapse } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
-import type { CanvasItem, ComponentProperty } from '../PropertyPanel';
-import './ComponentPropertyTab.css';
+import type { CanvasItem, ComponentProperty } from '../../PropertyPanel';
+import '../styles/ComponentPropertyTab.css';
 
 interface ComponentPropertyTabProps {
   item: CanvasItem;

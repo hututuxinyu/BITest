@@ -31,7 +31,7 @@ import {
   CaretRightOutlined,
 } from '@ant-design/icons';
 import { componentApi } from '../services/componentApi';
-import ChartRenderer from '../components/ChartRenderer';
+import ChartRenderer from '../components/common/ChartRenderer';
 import PropertyPanel, { type CanvasItem as PropertyPanelCanvasItem, type CanvasConfig } from '../components/PropertyPanel';
 import type {
   ComponentCategory,

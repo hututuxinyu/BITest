@@ -1,8 +1,12 @@
+/**
+ * 数据绑定面板组件
+ * 用于配置X轴和Y轴字段（图表组件）或表格列（表格组件）
+ */
 import React, { useState, useEffect } from 'react';
 import { Form, Select, message, Button, Card } from 'antd';
 import { SettingOutlined, DeleteOutlined } from '@ant-design/icons';
-import type { DatasourceConfig, Dataset, DatasetField, ComponentDefinition, TableColumn } from '../../types';
-import { datasourceApi } from '../../services/datasourceApi';
+import type { DatasourceConfig, Dataset, DatasetField, ComponentDefinition, TableColumn } from '../../../types';
+import { datasourceApi } from '../../../services/datasourceApi';
 import TableColumnConfigModal from './TableColumnConfigModal';
 
 interface DataBindingPanelProps {
@@ -14,13 +18,8 @@ interface DataBindingPanelProps {
   onConfigChange?: (config: DatasourceConfig) => void;
 }
 
-/**
- * 数据绑定面板组件
- * 用于配置X轴和Y轴字段（图表组件）或表格列（表格组件）
- */
 const DataBindingPanel: React.FC<DataBindingPanelProps> = ({
   componentId,
-  componentDefinition,
   selectedDatasetId: selectedDatasetIdProp,
   datasets,
   initialConfig,

@@ -1,13 +1,12 @@
+/*
+ TODO SQL查询配置组件 - 支持SQL语法验证
+*/
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Form, Input, Select, Button, Table, Space, Modal, message, Alert } from 'antd';
+import { Form, Input, Select, Button, Table, Space, Modal, Alert } from 'antd';
 import { PlusOutlined, DeleteOutlined, EditOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import type { ComponentDefinition } from '../../types';
-import { datasourceApi } from '../../services/datasourceApi';
-import { validateSqlSyntax, type SqlValidationResult } from '../../utils/sqlValidator';
+import { validateSqlSyntax, type SqlValidationResult } from '../../../utils/sqlValidator';
 
 const { TextArea } = Input;
-
-// SQL查询配置组件 - 支持SQL语法验证
 
 interface QueryParameter {
   name: string;
@@ -43,7 +42,6 @@ interface DatasourceQueryConfigTabProps {
 }
 
 const DatasourceQueryConfigTab: React.FC<DatasourceQueryConfigTabProps> = ({
-  componentId,
   datasourceType = 'mysql',
   queryConfig,
   availableComponents = [],
@@ -51,7 +49,6 @@ const DatasourceQueryConfigTab: React.FC<DatasourceQueryConfigTabProps> = ({
 }) => {
   const [sql, setSql] = useState<string>(queryConfig?.sql || '');
   const [parameters, setParameters] = useState<QueryParameter[]>(queryConfig?.parameters || []);
-  const [fieldMapping, setFieldMapping] = useState<Record<string, string>>(queryConfig?.fieldMapping || {});
   const [parameterModalVisible, setParameterModalVisible] = useState(false);
   const [editingParameter, setEditingParameter] = useState<QueryParameter | null>(null);
   const [parameterForm] = Form.useForm();
@@ -106,7 +103,6 @@ const DatasourceQueryConfigTab: React.FC<DatasourceQueryConfigTabProps> = ({
     if (queryConfig) {
       setSql(queryConfig.sql || '');
       setParameters(queryConfig.parameters || []);
-      setFieldMapping(queryConfig.fieldMapping || {});
       // 初始化时验证SQL
       if (queryConfig.sql) {
         validateSql(queryConfig.sql);
@@ -173,12 +169,6 @@ const DatasourceQueryConfigTab: React.FC<DatasourceQueryConfigTabProps> = ({
       setParameterModalVisible(false);
       parameterForm.resetFields();
     });
-  };
-
-  const handleFieldMappingChange = (field: string, mappedField: string) => {
-    const newMapping = { ...fieldMapping, [field]: mappedField };
-    setFieldMapping(newMapping);
-    notifyChange({ ...queryConfig, fieldMapping: newMapping });
   };
 
   const notifyChange = (config: DatasourceQueryConfig) => {

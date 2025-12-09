@@ -9,7 +9,7 @@ import {
   Switch,
 } from 'antd';
 import { Empty } from 'antd';
-import type { ComponentDefinition } from '../types';
+import type { ComponentDefinition } from '../../types';
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;

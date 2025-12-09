@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Form, Select, Input, Button, message, Empty, Space, InputNumber, Radio, Collapse } from 'antd';
+import { Form, Select, Input, message, Empty,Collapse } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
-import type { InteractionConfig, InteractionEventType, InteractionActionType } from '../types';
-import { interactionApi } from '../services/interactionApi';
+import type { InteractionConfig, InteractionEventType, InteractionActionType } from '../../../types';
+import { interactionApi } from '../../../services/interactionApi';
 import DynamicEventConfig from './DynamicEventConfig';
 
 const { TextArea } = Input;

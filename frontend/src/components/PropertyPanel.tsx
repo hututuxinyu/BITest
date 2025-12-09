@@ -2,11 +2,11 @@ import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Tabs, Button, message, Modal } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import type { ComponentDefinition } from '../types';
-import CanvasConfigTab from './PropertyPanel/CanvasConfigTab';
-import ComponentPropertyTab from './PropertyPanel/ComponentPropertyTab';
-import DatasourceConfigTab from './PropertyPanel/DatasourceConfigTab';
-import InteractionConfigTab from './PropertyPanel/InteractionConfigTab';
-import './PropertyPanel/index.css';
+import CanvasConfigTab from './PropertyPanel/canvas/CanvasConfigTab';
+import ComponentPropertyTab from './PropertyPanel/component/ComponentPropertyTab';
+import DatasourceConfigTab from './PropertyPanel/datasource/DatasourceConfigTab';
+import InteractionConfigTab from './PropertyPanel/interaction/InteractionConfigTab';
+import './PropertyPanel/styles/index.css';
 
 export interface CanvasItem {
   id: string;

@@ -6,9 +6,9 @@
  */
 import { Empty, Result, Skeleton } from 'antd';
 import type { ComponentDefinition, ComponentSummary, DatasourceConfig } from '../types';
-import ChartRenderer from '../components/ChartRenderer';
-import FormRenderer from '../components/FormRenderer';
-import TableRenderer from '../components/TableRenderer';
+import ChartRenderer from '../components/common/ChartRenderer';
+import FormRenderer from '../components/common/FormRenderer';
+import TableRenderer from '../components/common/TableRenderer';
 
 export interface RenderCanvasItem {
   id: string;
