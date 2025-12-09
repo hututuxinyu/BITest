@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import type { EnhancedCanvasItem } from '../Canvas/EnhancedCanvas';
+import type { EnhancedCanvasItem } from '../canvas/EnhancedCanvas';
 import ChartRenderer from '../common/ChartRenderer';
 import FormRenderer from '../common/FormRenderer';
 import TableRenderer from '../common/TableRenderer';

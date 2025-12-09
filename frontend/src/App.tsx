@@ -1,10 +1,8 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout from './layouts/MainLayout.tsx';
+import MainLayout from './pages/MainLayout.tsx';
 import ProjectManagement from './pages/ProjectManagement';
 import ProjectWorkspace from './pages/ProjectWorkspace';
-import TemplateManagement from './pages/TemplateManagement';
-import ComponentLibrary from './pages/ComponentLibrary';
 import CanvasEditor from './pages/CanvasEditor';
 import { EditorContextProvider } from './contexts/EditorContext';
 
@@ -30,8 +28,6 @@ const App: React.FC = () => {
               path="/projects/:projectId/reports/:reportId/editor"
               element={<CanvasEditor user={mockUser} />}
             />
-            <Route path="/templates" element={<TemplateManagement />} />
-            <Route path="/components" element={<ComponentLibrary />} />
             <Route path="/" element={<Navigate to="/projects" replace />} />
           </Routes>
         </MainLayout>

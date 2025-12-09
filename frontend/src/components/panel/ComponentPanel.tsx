@@ -1,9 +1,12 @@
+
+/**
+ * 组件面板组件
+ * 显示在导航栏右侧，展示所有组件选项
+ * 与编辑报表中的组件库呈现效果保持一致
+ */
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Input,
-  Tag,
-  Space,
-  Select,
   List,
   Empty,
   Tabs,
@@ -20,7 +23,6 @@ import {
   FundOutlined,
   TableOutlined,
   ApartmentOutlined,
-  ClockCircleOutlined,
   FileTextOutlined,
   DownOutlined,
   CheckSquareOutlined,
@@ -41,11 +43,6 @@ import type {
 
 const thumbnailIconStyle: React.CSSProperties = { fontSize: 32, color: '#3b76f6', transform: 'none' };
 
-/**
- * 组件面板组件
- * 显示在导航栏右侧，展示所有组件选项
- * 与编辑报表中的组件库呈现效果保持一致
- */
 const ComponentPanel: React.FC = () => {
   const [components, setComponents] = useState<ComponentSummary[]>([]);
   const [loading, setLoading] = useState(false);

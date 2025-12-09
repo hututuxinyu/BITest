@@ -1,3 +1,8 @@
+/**
+ * 模板面板组件
+ * 显示在导航栏右侧，展示所有可选模板
+ * 支持拖拽模板到画布
+ */
 import React, { useEffect, useState } from 'react';
 import { List, Empty, Card, message } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
@@ -10,11 +15,6 @@ interface TemplatePanelProps {
   onTemplateDragStart?: (template: TemplateDefinition) => void;
 }
 
-/**
- * 模板面板组件
- * 显示在导航栏右侧，展示所有可选模板
- * 支持拖拽模板到画布
- */
 const TemplatePanel: React.FC<TemplatePanelProps> = ({ onTemplateDragStart }) => {
   const [templates, setTemplates] = useState<TemplateDefinition[]>([]);
   const [loading, setLoading] = useState(false);

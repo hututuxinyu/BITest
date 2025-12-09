@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useEffect } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Empty } from 'antd';
 import type { EChartsOption } from 'echarts';
-import type { ComponentDefinition } from '../types';
+import type { ComponentDefinition } from '../../types';
 
 interface ChartRendererProps {
   componentId: string;

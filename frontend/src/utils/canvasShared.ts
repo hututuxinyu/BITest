@@ -6,7 +6,7 @@
  * - 轻量 CanvasItem 与 EnhancedCanvasItem 的互转
  */
 import type { DatasourceConfig } from '../types';
-import type { EnhancedCanvasItem } from '../components/Canvas/EnhancedCanvas';
+import type { EnhancedCanvasItem } from '../components/canvas/EnhancedCanvas';
 import type { ComponentDefinition, ComponentSummary } from '../types';
 
 export interface BaseCanvasItem {
