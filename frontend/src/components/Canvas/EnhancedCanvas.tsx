@@ -1,8 +1,14 @@
+/**
+ * 画布核心交互层：
+ * - 选中/拖拽/缩放/平移/框选/对齐线/网格吸附
+ * - 调整大小、层级、复制粘贴、删除、右键菜单、快捷键
+ * - 将渲染职责委托给 renderItem 回调
+ */
 import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { Menu, message } from 'antd';
 import { DeleteOutlined, CopyOutlined } from '@ant-design/icons';
-import type { ComponentSummary, ComponentDefinition, DatasourceConfig } from '../types';
-import { HistoryManager } from '../utils/historyManager';
+import type { ComponentSummary, ComponentDefinition, DatasourceConfig } from '../../types';
+import { HistoryManager } from '../../utils/historyManager';
 import {
   Position,
   Size,
@@ -10,12 +16,8 @@ import {
   calculateAlignmentLines,
   snapToGrid,
   snapToAlignmentLine,
-  calculateBoundingBox,
-  distributeHorizontally,
-  distributeVertically,
-  isPointInBounds,
   isBoundsIntersecting,
-} from '../utils/canvasUtils';
+} from '../../utils/canvasUtils';
 
 export interface EnhancedCanvasItem {
   id: string;
@@ -62,7 +64,6 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   selectedIds,
   onItemsChange,
   onSelectionChange,
-  onItemSelect,
   renderItem,
   canvasWidth = 1920,
   canvasHeight = 1080,

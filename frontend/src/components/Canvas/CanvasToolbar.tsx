@@ -1,3 +1,6 @@
+/**
+ * 画布工具栏：提供缩放、网格、撤销重做、对齐/分布、层级、清空等入口，通过回调将操作上抛给上层。
+ */
 import React from 'react';
 import { Button, Space, Tooltip, Divider } from 'antd';
 import {

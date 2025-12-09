@@ -17,7 +17,7 @@ import {
 } from '@ant-design/icons';
 import ComponentPanel from '../components/ComponentPanel.tsx';
 import TemplatePanel from '../components/TemplatePanel.tsx';
-import CanvasWorkspace from '../components/CanvasWorkspace.tsx';
+import CanvasWorkspace from '../components/Canvas/CanvasWorkspace.tsx';
 import ReportPreview from '../components/ReportPreview.tsx';
 import { useEditorContext } from '../contexts/EditorContext.tsx';
 import { projectApi, reportApi } from '../services/api.ts';

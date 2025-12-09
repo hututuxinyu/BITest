@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Empty, Collapse, Alert } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
 import type { ComponentDefinition, Dataset } from '../../types';
 import DatasourceConfigPanel from '../DatasourceConfigPanel';
 import DataBindingPanel from './DataBindingPanel';
-import DatasourceQueryConfigTab from './DatasourceQueryConfigTab';
 
 interface DatasourceConfigTabProps {
   componentId: string; // 组件实例ID（用于API调用）
@@ -25,13 +24,11 @@ const DatasourceConfigTab: React.FC<DatasourceConfigTabProps> = ({
   componentId,
   componentTypeId,
   componentDefinition,
-  availableComponents = [],
   datasets = [],
   initialConfig,
-  onQueryConfigChange,
   onConfigChange,
 }) => {
-  const [queryConfig, setQueryConfig] = useState<any>(null);
+  // const [queryConfig, setQueryConfig] = useState<any>(null);
 
   if (!componentDefinition) {
     return (

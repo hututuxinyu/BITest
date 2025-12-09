@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { Project, ReportSummary, Dataset } from '../types';
-import type { EnhancedCanvasItem } from '../components/EnhancedCanvas';
+import type { EnhancedCanvasItem } from '../components/Canvas/EnhancedCanvas';
 
 interface EditorContextValue {
   projectContext: Project | undefined;

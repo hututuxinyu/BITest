@@ -1,32 +1,28 @@
+/**
+ * 画布编辑页入口：
+ * - 负责项目/报表上下文加载、Schema 自动加载
+ * - 组合工具栏 + EnhancedCanvas + 属性面板，封装对齐/分布/层级/撤销重做等上层逻辑
+ * - 同步画布状态到 EditorContext
+ */
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
-import {
-  Card,
-  Empty,
-  Button,
-  message,
-  Skeleton,
-  Result,
-  Layout,
-  Modal,
-} from 'antd';
+import { Card, Empty, Button, message, Layout, Modal } from 'antd';
 import {
   CaretLeftOutlined,
   CaretRightOutlined,
 } from '@ant-design/icons';
 import type { ComponentDefinition, ComponentSummary, DatasourceConfig, Project, ReportSummary, Dataset } from '../types';
 import { componentApi } from '../services/componentApi';
-import ChartRenderer from '../components/ChartRenderer';
-import FormRenderer from '../components/FormRenderer';
-import TableRenderer from '../components/TableRenderer';
 import { useLocation,  useParams } from 'react-router-dom';
 import { projectApi, reportApi, templateApi } from '../services/api';
 import type { TemplateDefinition } from '../types';
-import EnhancedCanvas, { EnhancedCanvasItem } from '../components/EnhancedCanvas';
-import CanvasToolbar from '../components/CanvasToolbar';
+import EnhancedCanvas, { EnhancedCanvasItem } from '../components/Canvas/EnhancedCanvas';
+import CanvasToolbar from '../components/Canvas/CanvasToolbar';
 import { HistoryManager } from '../utils/historyManager';
 import { calculateBoundingBox, distributeHorizontally, distributeVertically, Bounds } from '../utils/canvasUtils';
 import PropertyPanel, { type CanvasConfig} from '../components/PropertyPanel';
 import { useEditorContext } from '../contexts/EditorContext';
+import { buildDatasourceConfig, mapComponentTypeToId } from '../utils/canvasShared';
+import { renderCanvasContent } from '../utils/renderCanvasContent';
 
 interface CanvasItem {
   id: string;
@@ -138,38 +134,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     }
   }, [editorContext?.datasets]);
 
-  // 将Schema中的componentType映射到componentId
-  const mapComponentTypeToId = useCallback((componentType: string): string => {
-    // 转换为小写以支持大小写不敏感的匹配
-    const normalizedType = componentType.toLowerCase();
-    const typeMap: Record<string, string> = {
-      barchart: 'chart-bar',
-      linechart: 'chart-line',
-      piechart: 'chart-pie',
-      radarchart: 'chart-radar',
-      table: 'chart-table',
-      treetable: 'chart-tree-table',
-      gauge: 'chart-gauge',
-      image: 'media-image',
-      video: 'media-video',
-      line: 'media-line',
-      border: 'media-border',
-      text: 'media-text',
-      button: 'control-button',
-      filter: 'control-filter',
-      input: 'control-input',
-      form: 'form-form',
-      textarea: 'form-text',
-      select: 'form-select',
-      checkbox: 'form-checkbox',
-      daterange: 'form-date-range',
-      radio: 'form-radio',
-      switch: 'form-switch',
-    };
-    return typeMap[normalizedType] || componentType;
-  }, []);
-
-
   // 转换为EnhancedCanvasItem
   const convertToEnhancedItems = useCallback((items: CanvasItem[]): EnhancedCanvasItem[] => {
     return items.map((item, index) => ({
@@ -266,68 +230,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
           continue;
         }
 
-        // 处理数据源配置
-        // 优先级：data.datasetConfig > datasourceId (从 datasources 查找) > datasourceConfig > staticData
-        let datasourceConfig: DatasourceConfig | undefined = undefined;
-        
-        // 1. 优先使用组件中的 data 字段（数据配置）
-        if (schemaComponent.data) {
-          if (schemaComponent.data.bindingType === 'dataset' && schemaComponent.data.datasetConfig) {
-            datasourceConfig = {
-              sourceType: 'dataset',
-              bindingType: 'dataset',
-              datasetConfig: {
-                datasourceId: schemaComponent.data.datasetConfig.datasourceId || schemaComponent.datasourceId || '',
-                query: schemaComponent.data.datasetConfig.query || '',
-                params: schemaComponent.data.datasetConfig.params || {},
-              },
-            };
-          } else if (schemaComponent.data.bindingType === 'static' && schemaComponent.data.staticConfig) {
-            datasourceConfig = {
-              sourceType: 'static',
-              bindingType: 'static',
-              staticConfig: {
-                data: schemaComponent.data.staticConfig.data || [],
-              },
-            };
-          }
-        }
-        
-        // 2. 如果组件有 datasourceId 且没有 data 配置，从 datasources 中查找
-        if (!datasourceConfig && schemaComponent.datasourceId) {
-          const datasource = datasourceMap.get(schemaComponent.datasourceId);
-          if (datasource && datasource.queryConfig) {
-            // 将 schema 中的数据源格式转换为 DatasourceConfig 格式
-            datasourceConfig = {
-              sourceType: 'dataset',
-              bindingType: 'dataset',
-              datasetConfig: {
-                datasourceId: datasource.datasourceId,
-                query: datasource.queryConfig.sql || '',
-                params: datasource.queryConfig.parameters?.reduce((acc: Record<string, any>, param: any) => {
-                  acc[param.name] = param;
-                  return acc;
-                }, {}),
-              },
-            };
-          }
-        }
-        
-        // 3. 如果直接提供了 datasourceConfig，直接使用
-        if (!datasourceConfig && schemaComponent.datasourceConfig) {
-          datasourceConfig = schemaComponent.datasourceConfig;
-        }
-        
-        // 4. 如果有 staticData 字段，使用静态数据
-        if (!datasourceConfig && schemaComponent.staticData) {
-          datasourceConfig = {
-            sourceType: 'static',
-            bindingType: 'static',
-            staticConfig: {
-              data: Array.isArray(schemaComponent.staticData) ? schemaComponent.staticData : [],
-            },
-          };
-        }
+        const datasourceConfig = buildDatasourceConfig(schemaComponent, datasourceMap);
 
         // 创建CanvasItem
         const itemId = schemaComponent.componentId || `${componentId}-${Date.now()}-${parsedItems.length}`;
@@ -1334,194 +1237,3 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
 };
 
 export default CanvasEditor;
-
-function renderCanvasContent(
-  item: CanvasItem,
-  definition?: ComponentDefinition | null,
-  propsValues?: Record<string, any>,
-  childItems: CanvasItem[] = [],
-  onPropChange?: (field: string, value: any) => void
-) {
-  // 对于 border 组件，即使有 error 或没有 definition，也尝试直接渲染
-  if (item.component.componentId === 'media-border') {
-    const borderProps = propsValues || item.propsValues || {};
-    return (
-      <div
-        style={{
-          width: '100%',
-          height: '100%',
-          border: `${borderProps.width || 2}px ${borderProps.style || 'solid'} ${borderProps.color || '#165DFF'}`,
-          borderRadius: borderProps.radius ? `${borderProps.radius}px` : '0',
-          backgroundColor: borderProps.backgroundColor || 'transparent',
-        }}
-      />
-    );
-  }
-  
-  if (item.loading) {
-    return <Skeleton active style={{ padding: 16 }} />;
-  }
-  if (item.error) {
-    return (
-      <Result
-        status="warning"
-        title="渲染失败"
-        subTitle={item.error}
-        style={{ padding: '16px 0' }}
-      />
-    );
-  }
-  if (definition) {
-    // 表格组件（使用专门的 TableRenderer）
-    if (item.component.componentId === 'chart-table' || item.component.componentId === 'chart-tree-table') {
-      return (
-        <TableRenderer
-          componentId={item.component.componentId}
-          definition={definition}
-          height={item.size?.height || '100%'}
-          width={item.size?.width || '100%'}
-          propsValues={propsValues || item.propsValues}
-        />
-      );
-    }
-    // 图表组件
-    if (item.component.type === 'chart') {
-    return (
-      <ChartRenderer
-        componentId={item.component.componentId}
-        definition={definition}
-        height="100%"
-        width="100%"
-      />
-    );
-  }
-    // 媒体组件（text、border、line）
-    // 对于 border 组件，即使没有 definition 也可以直接渲染
-    if (item.component.componentId === 'media-border') {
-      if (!definition) {
-        const borderProps = propsValues || item.propsValues || {};
-        return (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              border: `${borderProps.width || 2}px ${borderProps.style || 'solid'} ${borderProps.color || '#165DFF'}`,
-              borderRadius: borderProps.radius ? `${borderProps.radius}px` : '0',
-              backgroundColor: borderProps.backgroundColor || 'transparent',
-            }}
-          />
-        );
-      }
-      return (
-        <FormRenderer
-          componentId={item.component.componentId}
-          definition={definition}
-          height={item.size?.height || '100%'}
-          width={item.size?.width || '100%'}
-          propsValues={propsValues || item.propsValues}
-          componentName={item.component.componentName}
-        />
-      );
-    }
-    
-    if (item.component.type === 'media' || 
-        item.component.componentId === 'media-text' || 
-        item.component.componentId === 'media-line') {
-      return (
-        <FormRenderer
-          componentId={item.component.componentId}
-          definition={definition}
-          height={item.size?.height || '100%'}
-          width={item.size?.width || '100%'}
-          propsValues={propsValues || item.propsValues}
-          componentName={item.component.componentName}
-        />
-      );
-    }
-    
-    // 表单组件和控制组件
-    // 检查：type 为 'control' 或 'form'，或者 categories 包含 'form'
-    const isFormOrControl = 
-      item.component.type === 'control' || 
-      item.component.type === 'form' ||
-      item.component.categories?.includes('form');
-    
-    if (isFormOrControl) {
-      // 渲染子组件（只在表单组件中渲染）
-      const children = item.component.componentId === 'form-form' && childItems.length > 0 ? (
-        <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'auto' }}>
-          {childItems.map((child) => {
-            const childDefinition = child.definition;
-            const childEffectiveDefinition = childDefinition
-              ? {
-                  ...childDefinition,
-                  defaultProps: {
-                    ...(childDefinition.defaultProps || {}),
-                    ...(child.propsValues || {}),
-                  },
-                }
-              : null;
-            return (
-              <div
-                key={child.id}
-                style={{
-                  position: 'absolute',
-                  left: (child.position?.x || 0) + 16, // 加上表单的 padding
-                  top: (child.position?.y || 0) + 32, // 加上表单的 padding 和标题高度
-                  width: child.size?.width || 200,
-                  height: child.size?.height || 32,
-                  pointerEvents: 'auto',
-                }}
-              >
-                {renderCanvasContent(child, childEffectiveDefinition, child.propsValues, [], onPropChange)}
-              </div>
-            );
-          })}
-        </div>
-      ) : null;
-      
-      return (
-        <FormRenderer
-          componentId={item.component.componentId}
-          definition={definition}
-          height={item.size?.height || '100%'}
-          width={item.size?.width || '100%'}
-          propsValues={propsValues || item.propsValues}
-          componentName={item.component.componentName}
-        >
-          {children}
-        </FormRenderer>
-      );
-    }
-  }
-  // 如果没有定义，显示错误信息
-  if (!definition) {
-    return (
-      <Empty
-        image={Empty.PRESENTED_IMAGE_SIMPLE}
-        description={`${item.component.componentName} - 组件定义未加载`}
-        style={{ margin: 0, padding: '32px 0' }}
-      />
-    );
-  }
-  // 如果没有定义或类型不匹配，显示预览图或占位符
-  if (item.component.previewUrl) {
-  return (
-    <img
-      src={item.component.previewUrl}
-      alt={item.component.componentName}
-      style={{ width: '100%', height: 240, objectFit: 'cover' }}
-      />
-    );
-  }
-  return (
-    <Empty
-      image={Empty.PRESENTED_IMAGE_SIMPLE}
-      description={`${item.component.componentName} - 暂不支持预览`}
-      style={{ margin: 0, padding: '32px 0' }}
-    />
-  );
-}
-
-
-
