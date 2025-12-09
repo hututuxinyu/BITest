@@ -26,17 +26,13 @@ import {
   PictureOutlined,
   ControlOutlined,
   ContainerOutlined,
-  PlayCircleOutlined,
-  PlusOutlined,
   EyeOutlined,
   CaretLeftOutlined,
   CaretRightOutlined,
 } from '@ant-design/icons';
 import { componentApi } from '../services/componentApi';
-import { datasourceApi } from '../services/datasourceApi';
 import ChartRenderer from '../components/ChartRenderer';
 import PropertyPanel, { type CanvasItem as PropertyPanelCanvasItem, type CanvasConfig } from '../components/PropertyPanel';
-import { useEditorContext } from '../contexts/EditorContext';
 import type {
   ComponentCategory,
   ComponentTag,
@@ -94,7 +90,7 @@ const ComponentLibrary: React.FC = () => {
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(false);
-  const [datasets, setDatasets] = useState<Dataset[]>([]);
+  const [datasets] = useState<Dataset[]>([]);
   const [canvasConfig, setCanvasConfig] = useState<CanvasConfig>({
     width: 1920,
     height: 1080,
@@ -110,31 +106,10 @@ const ComponentLibrary: React.FC = () => {
   });
 
   // 从 EditorContext 获取数据集列表
-  let editorContext: ReturnType<typeof useEditorContext> | null = null;
-  try {
-    editorContext = useEditorContext();
-  } catch (e) {
+    try {
+    } catch (e) {
     // 如果不在 EditorContextProvider 中，editorContext 为 null
   }
-
-  // 加载数据集列表
-  useEffect(() => {
-    const loadDatasets = async () => {
-      try {
-        if (editorContext && editorContext.datasets.length > 0) {
-          setDatasets(editorContext.datasets);
-        } else {
-          const response = await datasourceApi.getDatasetList();
-          if (response.success && response.data) {
-            setDatasets(response.data);
-          }
-        }
-      } catch (error) {
-        console.error('加载数据集列表失败:', error);
-      }
-    };
-    loadDatasets();
-  }, [editorContext]);
 
   useEffect(() => {
     componentApi.getCategories().then(setCategories);

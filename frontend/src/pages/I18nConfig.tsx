@@ -3,7 +3,7 @@ import { Card, Empty } from 'antd';
 import { GlobalOutlined } from '@ant-design/icons';
 
 /**
- * 国际化配置页面
+ * TODO 国际化配置页面
  */
 const I18nConfig: React.FC = () => {
   return (

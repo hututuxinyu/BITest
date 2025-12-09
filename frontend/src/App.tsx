@@ -1,12 +1,11 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout from './components/MainLayout';
+import MainLayout from './layouts/MainLayout.tsx';
 import ProjectManagement from './pages/ProjectManagement';
 import ProjectWorkspace from './pages/ProjectWorkspace';
 import TemplateManagement from './pages/TemplateManagement';
 import ComponentLibrary from './pages/ComponentLibrary';
 import CanvasEditor from './pages/CanvasEditor';
-import ReportCreationScene from './pages/ReportCreationScene';
 import { EditorContextProvider } from './contexts/EditorContext';
 
 /**
@@ -33,7 +32,6 @@ const App: React.FC = () => {
             />
             <Route path="/templates" element={<TemplateManagement />} />
             <Route path="/components" element={<ComponentLibrary />} />
-            <Route path="/scenario/report-create" element={<ReportCreationScene />} />
             <Route path="/" element={<Navigate to="/projects" replace />} />
           </Routes>
         </MainLayout>

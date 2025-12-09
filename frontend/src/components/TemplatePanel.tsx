@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { List, Empty, Card, message } from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
 import { templateApi } from '../services/api';
-import type { TemplateDefinition } from '../types/reportCreation';
+import type { TemplateDefinition } from '../types';
 // 使用相对路径导入图片（从 src 目录到 pic 目录）
-import dashboardPreviewImage from '../../pic/dashboard1.png';
+import dashboardPreviewImage from '../../assets/dashboard1.png';
 
 interface TemplatePanelProps {
   onTemplateDragStart?: (template: TemplateDefinition) => void;

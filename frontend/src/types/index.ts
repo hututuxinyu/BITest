@@ -329,4 +329,17 @@ export interface InteractionConfig {
   dynamicEvent?: DynamicEventConfig;
 }
 
+/**
+ * 创建报表场景相关类型定义
+ */
+export interface TemplateDefinition {
+    templateId: string;
+    name: string;
+    description: string;
+    category: 'dashboard' | 'report' | 'blank';
+    previewUrl?: string;
+    tags: string[];
+    recommendFor: string[];
+}
+
 

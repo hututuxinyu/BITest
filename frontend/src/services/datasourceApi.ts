@@ -1,15 +1,4 @@
 import type { DatasourceConfig, Dataset, DatasetField, ApiResponse } from '../types';
-import {
-  getMockComponentDatasourceConfig,
-  saveMockComponentDatasourceConfig,
-  getMockDatasetList,
-  previewMockData,
-} from './datasourceMock';
-
-/**
- * 使用模拟数据
- */
-const USE_MOCK_DATA = false;
 
 /**
  * 数据源配置API
@@ -19,9 +8,9 @@ export const datasourceApi = {
    * 获取组件数据源配置
    */
   getComponentDatasourceConfig: async (componentId: string): Promise<ApiResponse<DatasourceConfig | null>> => {
-    if (USE_MOCK_DATA) {
-      return await getMockComponentDatasourceConfig(componentId);
-    }
+    // if (USE_MOCK_DATA) {
+    //   return await getMockComponentDatasourceConfig(componentId);
+    // }
     // 真实API调用
     const response = await fetch(`/api/components/${componentId}/datasource`);
     return response.json();
@@ -34,10 +23,6 @@ export const datasourceApi = {
     componentId: string,
     config: DatasourceConfig
   ): Promise<ApiResponse<void>> => {
-    if (USE_MOCK_DATA) {
-      return await saveMockComponentDatasourceConfig(componentId, config);
-    }
-    // 真实API调用
     const response = await fetch(`/api/components/${componentId}/datasource`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -50,9 +35,6 @@ export const datasourceApi = {
    * 获取数据集列表
    */
   getDatasetList: async (): Promise<ApiResponse<Dataset[]>> => {
-    if (USE_MOCK_DATA) {
-      return await getMockDatasetList();
-    }
     // 真实API调用
     const response = await fetch('/api/datasets');
     return response.json();
@@ -75,7 +57,7 @@ export const datasourceApi = {
   },
 
   /**
-   * 执行数据集查询
+   * TODO 执行数据集查询
    * @param datasetConfig 数据集配置
    * @returns 查询结果数据
    */

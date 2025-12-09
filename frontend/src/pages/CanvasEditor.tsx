@@ -2,21 +2,12 @@ import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react'
 import {
   Card,
   Empty,
-  Input,
-  Space,
   Button,
   message,
   Skeleton,
   Result,
-  Form,
-  Switch,
-  InputNumber,
   Layout,
-  Tabs,
-  Select,
-  Collapse,
   Modal,
-  Tooltip,
 } from 'antd';
 import {
   CaretLeftOutlined,
@@ -27,19 +18,15 @@ import { componentApi } from '../services/componentApi';
 import ChartRenderer from '../components/ChartRenderer';
 import FormRenderer from '../components/FormRenderer';
 import TableRenderer from '../components/TableRenderer';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useLocation,  useParams } from 'react-router-dom';
 import { projectApi, reportApi, templateApi } from '../services/api';
-import type { TemplateDefinition } from '../types/reportCreation';
+import type { TemplateDefinition } from '../types';
 import EnhancedCanvas, { EnhancedCanvasItem } from '../components/EnhancedCanvas';
 import CanvasToolbar from '../components/CanvasToolbar';
 import { HistoryManager } from '../utils/historyManager';
 import { calculateBoundingBox, distributeHorizontally, distributeVertically, Bounds } from '../utils/canvasUtils';
-import DatasourceConfigPanel from '../components/DatasourceConfigPanel';
-import InteractionConfigPanel from '../components/InteractionConfigPanel';
-import PropertyPanel, { type CanvasConfig, type CanvasItem as PropertyPanelCanvasItem } from '../components/PropertyPanel';
+import PropertyPanel, { type CanvasConfig} from '../components/PropertyPanel';
 import { useEditorContext } from '../contexts/EditorContext';
-import { generateReportSchema, validateSchema } from '../utils/schemaGenerator';
-// import type { ReportSchema } from '../schema/report-schema'; // 暂时注释，类型定义在schema目录
 
 interface CanvasItem {
   id: string;
@@ -64,8 +51,6 @@ const PROPERTY_COLLAPSED_WIDTH = 8;
 const PROPERTY_PANEL_WIDTH = 420;
 const RULER_SIZE = 24;
 const RULER_INTERVAL = 100;
-const PROPERTY_LABEL_WIDTH = 72;
-const FORM_ITEM_SPACING = 12;
 
 interface CanvasEditorProps {
   user?: { userId: string; username?: string };
@@ -73,7 +58,6 @@ interface CanvasEditorProps {
 
 const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const { projectId, reportId } = useParams<{ projectId?: string; reportId?: string }>();
-  const navigate = useNavigate();
   const location = useLocation();
   const locationState = (location.state as { project?: Project; report?: ReportSummary }) || {};
   const [projectContext, setProjectContext] = useState<Project | undefined>(locationState.project);
@@ -81,7 +65,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   const [canvasItems, setCanvasItems] = useState<CanvasItem[]>([]);
   const [selectedItemIds, setSelectedItemIds] = useState<string[]>([]);
   const [propertyPanelCollapsed, setPropertyPanelCollapsed] = useState(false);
-  const [configTab, setConfigTab] = useState<'property' | 'datasource' | 'interaction'>('property');
   const [showGrid, setShowGrid] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [datasets, setDatasets] = useState<Dataset[]>([]);
@@ -705,25 +688,6 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     );
   };
 
-const handleDatasourceConfigChange = useCallback(
-  (config: DatasourceConfig) => {
-    if (selectedItemIds.length === 0) {
-      return;
-    }
-    setCanvasItems((prev) =>
-      prev.map((item) =>
-        selectedItemIds.includes(item.id)
-          ? {
-              ...item,
-              datasourceConfig: config,
-            }
-          : item
-      )
-    );
-  },
-  [selectedItemIds]
-);
-
   const handleQueryConfigChange = useCallback(
     (componentId: string, config: any) => {
       setCanvasItems((prev) =>
@@ -785,92 +749,6 @@ const handleDatasourceConfigChange = useCallback(
   const handleItemSelect = useCallback((id: string) => {
     setSelectedItemIds([id]);
   }, []);
-
-  // 发布报表处理函数
-  const handlePublish = useCallback(async () => {
-    if (!projectId || !reportId || !reportContext) {
-      message.warning('请先创建或选择报表');
-      return;
-    }
-
-    try {
-      // 先生成并保存Schema
-      const reportName = reportContext.reportName || '未命名报表';
-      const schema = generateReportSchema(
-        canvasItems,
-        canvasConfig,
-        reportId,
-        reportName,
-        projectId
-      );
-
-      // 验证Schema
-      const validation = validateSchema(schema);
-      if (!validation.valid) {
-        Modal.error({
-          title: 'Schema验证失败',
-          content: (
-            <div>
-              <p>以下字段存在问题：</p>
-              <ul>
-                {validation.errors.map((error, index) => (
-                  <li key={index}>{error}</li>
-                ))}
-              </ul>
-            </div>
-          ),
-        });
-        return;
-      }
-
-      // 保存Schema
-      const saveResponse = await reportApi.saveReportSchema(projectId, reportId, schema);
-      if (!saveResponse.success) {
-        message.error(saveResponse.message || 'Schema保存失败');
-        return;
-      }
-
-      // 验证Schema（后端验证）
-      const validateResponse = await reportApi.validateReportSchema(projectId, reportId);
-      if (!validateResponse.success) {
-        message.error(validateResponse.message || 'Schema验证失败');
-        return;
-      }
-
-      if (!validateResponse.data.valid) {
-        Modal.warning({
-          title: 'Schema验证失败',
-          content: validateResponse.data.errorMessage || 'Schema格式不正确，无法发布',
-        });
-        return;
-      }
-
-      // 确认发布
-      Modal.confirm({
-        title: '确认发布',
-        content: '发布后报表将在运行态可见，是否确认发布？',
-        onOk: async () => {
-          try {
-            const response = await reportApi.publishReport(effectiveUserId, projectId, reportId);
-            if (response.success && response.data) {
-              message.success('发布成功');
-              // 更新报表上下文状态
-              setReportContext({
-                ...reportContext!,
-                status: 'published',
-              });
-            } else {
-              message.error(response.message || '发布失败');
-            }
-          } catch (error: any) {
-            message.error(error.message || '发布失败');
-          }
-        },
-      });
-    } catch (error: any) {
-      message.error(error.message || '发布失败');
-    }
-  }, [projectId, reportId, effectiveUserId, reportContext]);
 
   // 对齐功能
   const handleAlignLeft = useCallback(() => {
@@ -1402,11 +1280,11 @@ const handleDatasourceConfigChange = useCallback(
                               }
                             }}
                             onPropChange={handlePropChange}
-                            onItemChange={(updatedItem) => {
-                              setCanvasItems((prev) =>
-                                prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
-                              );
-                            }}
+                            // onItemChange={(updatedItem) => {
+                            //   setCanvasItems((prev) =>
+                            //     prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+                            //   );
+                            // }}
                             onQueryConfigChange={handleQueryConfigChange}
                             onInteractionConfigChange={handleInteractionConfigChange}
                             onDatasourceConfigChange={(componentId, config) => {
@@ -1420,9 +1298,6 @@ const handleDatasourceConfigChange = useCallback(
                                     : item
                                 )
                               );
-                            }}
-                            onApply={() => {
-                              // 提示已在 PropertyPanel 中显示，这里不需要重复提示
                             }}
                             onReset={() => {
                               message.info('配置已重置');

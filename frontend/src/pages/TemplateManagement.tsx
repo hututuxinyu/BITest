@@ -1,9 +1,9 @@
 import React from 'react';
-import { Card, Empty, message } from 'antd';
+import { Card, Empty} from 'antd';
 import { AppstoreOutlined } from '@ant-design/icons';
 
 /**
- * 模板管理页面
+ * TODO 模板管理页面
  */
 const TemplateManagement: React.FC = () => {
   return (

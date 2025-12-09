@@ -15,14 +15,14 @@ import {
   CloseOutlined,
   DownloadOutlined,
 } from '@ant-design/icons';
-import ComponentPanel from './ComponentPanel';
-import TemplatePanel from './TemplatePanel';
-import CanvasWorkspace from './CanvasWorkspace';
-import ReportPreview from './ReportPreview';
-import { useEditorContext } from '../contexts/EditorContext';
-import { projectApi, reportApi } from '../services/api';
-import { datasourceApi } from '../services/datasourceApi';
-import { generateReportSchema, validateSchema } from '../utils/schemaGenerator';
+import ComponentPanel from '../components/ComponentPanel.tsx';
+import TemplatePanel from '../components/TemplatePanel.tsx';
+import CanvasWorkspace from '../components/CanvasWorkspace.tsx';
+import ReportPreview from '../components/ReportPreview.tsx';
+import { useEditorContext } from '../contexts/EditorContext.tsx';
+import { projectApi, reportApi } from '../services/api.ts';
+import { datasourceApi } from '../services/datasourceApi.ts';
+import { generateReportSchema, validateSchema } from '../utils/schemaGenerator.ts';
 
 const { Header, Content, Sider } = Layout;
 

@@ -1,4 +1,3 @@
-import type { TemplateDefinition } from '../types/reportCreation';
 
 /**
  * 模板 Schema 数据

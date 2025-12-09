@@ -22,7 +22,7 @@ import {
 import type { ComponentSummary, ComponentDefinition, DatasourceConfig } from '../types';
 import { componentApi } from '../services/componentApi';
 import { templateApi } from '../services/api';
-import type { TemplateDefinition } from '../types/reportCreation';
+import type { TemplateDefinition } from '../types';
 import ChartRenderer from './ChartRenderer';
 import FormRenderer from './FormRenderer';
 import TableRenderer from './TableRenderer';
@@ -32,7 +32,6 @@ import { HistoryManager } from '../utils/historyManager';
 import PropertyPanel, { type CanvasConfig } from './PropertyPanel';
 import { useEditorContext } from '../contexts/EditorContext';
 
-const PANEL_HEIGHT = '100%';
 const PROPERTY_PANEL_WIDTH = 420;
 const PROPERTY_COLLAPSED_WIDTH = 8;
 const RULER_SIZE = 32;
