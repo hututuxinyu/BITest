@@ -100,9 +100,21 @@ const TableRenderer: React.FC<TableRendererProps> = ({
     }, [definition]);
 
     return (
-      <div style={{ height, width, padding: '16px', overflow: 'auto' }}>
+      <div style={{ 
+        height, 
+        width, 
+        padding: '16px', 
+        overflow: 'auto',
+        backgroundColor: props.backgroundColor,
+        color: props.color,
+      }}>
         {props.title && (
-          <div style={{ marginBottom: 16, fontWeight: 500, fontSize: 14 }}>
+          <div style={{ 
+            marginBottom: 16, 
+            fontWeight: 500, 
+            fontSize: 14,
+            color: props.color,
+          }}>
             {props.title}
           </div>
         )}
@@ -117,9 +129,21 @@ const TableRenderer: React.FC<TableRendererProps> = ({
 
   // 普通表格
   return (
-    <div style={{ height, width, padding: '16px', overflow: 'auto' }}>
+    <div style={{ 
+      height, 
+      width, 
+      padding: '16px', 
+      overflow: 'auto',
+      backgroundColor: props.backgroundColor,
+      color: props.color,
+    }}>
       {props.title && (
-        <div style={{ marginBottom: 16, fontWeight: 500, fontSize: 14 }}>
+        <div style={{ 
+          marginBottom: 16, 
+          fontWeight: 500, 
+          fontSize: 14,
+          color: props.color,
+        }}>
           {props.title}
         </div>
       )}

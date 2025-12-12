@@ -429,7 +429,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
                 icon={<EyeOutlined />}
                 aria-label="预览"
                 onClick={() => setPreviewVisible(true)}
-                disabled
               />
             </Tooltip>
             <Tooltip title="导出Schema">
@@ -497,7 +496,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
               shape="circle"
               icon={<EyeOutlined />}
               aria-label="预览"
-              disabled={true}
+              onClick={() => setPreviewVisible(true)}
             />
           </Tooltip>
           <Tooltip title="导出Schema">
@@ -699,6 +698,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
               canvasWidth={editorContext.canvasWidth}
               canvasHeight={editorContext.canvasHeight}
               backgroundColor={editorContext.canvasBackgroundColor}
+              themeId={editorContext.canvasThemeId}
             />
           </div>
         </Modal>

@@ -454,7 +454,7 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({}) => {
           <Card
             bodyStyle={{
               height: '100%',
-              background: '#fff',
+              background: canvasConfig.backgroundColor,
               border: '1px dashed #d0d0d0',
               display: 'flex',
               flexDirection: 'column',
@@ -669,7 +669,14 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({}) => {
                             position: 'relative',
                           }}
                         >
-                          {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems, handlePropChange)}
+                          {renderCanvasContent(
+                            canvasItem,
+                            effectiveDefinition,
+                            formPropsValues,
+                            childItems,
+                            handlePropChange,
+                            canvasConfig.theme?.themeId || 'light'
+                          )}
                         </div>
                       );
                     }}

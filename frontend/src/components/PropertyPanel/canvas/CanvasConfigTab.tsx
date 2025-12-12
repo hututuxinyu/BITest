@@ -1,7 +1,10 @@
-import React from 'react';
-import { Form, Input, InputNumber, Select, Switch, Upload, Collapse } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Form, Input, InputNumber, Select, Switch, Upload, Collapse, Radio, message } from 'antd';
 import { PictureOutlined, CaretRightOutlined } from '@ant-design/icons';
 import type { CanvasConfig } from '../../PropertyPanel';
+import { getAllThemes, getThemeById, getDefaultTheme, type Theme } from '../../../themes';
+import { getPalette } from '../../../themes/echartsTheme';
+import { applyThemeToCanvas } from '../../../utils/themeUtils';
 import '../styles/CanvasConfigTab.css';
 
 interface CanvasConfigTabProps {
@@ -10,6 +13,23 @@ interface CanvasConfigTabProps {
 }
 
 const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) => {
+  const defaultTheme = getDefaultTheme();
+  const [selectedThemeId, setSelectedThemeId] = useState<'light' | 'dark'>(
+    config?.theme?.themeId || defaultTheme.themeId
+  );
+  const themes = getAllThemes();
+
+  // 当外部config变化时，同步selectedThemeId
+  useEffect(() => {
+    if (config?.theme?.themeId) {
+      setSelectedThemeId(config.theme.themeId);
+    } else if (config) {
+      const themedConfig = applyThemeToCanvas(config, defaultTheme);
+      onChange(themedConfig);
+      setSelectedThemeId(defaultTheme.themeId);
+    }
+  }, [config, defaultTheme, onChange]);
+
   if (!config) {
     return <div>加载中...</div>;
   }
@@ -19,6 +39,24 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
       ...config,
       [field]: value,
     });
+  };
+
+  /**
+   * 处理主题选择变化
+   */
+  const handleThemeChange = (themeId: 'light' | 'dark') => {
+    const theme = getThemeById(themeId);
+    if (!theme) {
+      message.error('主题不存在');
+      return;
+    }
+
+    setSelectedThemeId(themeId);
+
+    // 应用主题到画布配置
+    const updatedConfig = applyThemeToCanvas(config, theme);
+    onChange(updatedConfig);
+    message.success(`已应用${theme.themeName}`);
   };
 
   return (
@@ -132,6 +170,58 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
 
         {/* 样式设置 */}
         <Collapse.Panel header="样式设置" key="style">
+          {/* 主题选择（新增，放在最前面） */}
+          <Form.Item label="主题" className="config-item">
+            <Radio.Group
+              value={selectedThemeId}
+              onChange={(e) => handleThemeChange(e.target.value)}
+              style={{ width: '100%', display: 'flex' }}
+            >
+              {themes.map((theme) => (
+                <Radio.Button
+                  key={theme.themeId}
+                  value={theme.themeId}
+                  style={{ flex: 1, textAlign: 'center' }}
+                >
+                  {theme.themeName}
+                </Radio.Button>
+              ))}
+            </Radio.Group>
+            <div className="config-item-description">
+              {themes.find((t) => t.themeId === selectedThemeId)?.description ||
+                '选择画布和组件的整体颜色风格'}
+            </div>
+          </Form.Item>
+
+          {/* 主题颜色预览（可选） */}
+          {config.theme && (
+            <Form.Item label="主题预览" className="config-item">
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 8,
+                  padding: '8px 0',
+                }}
+              >
+                {[config.theme.colors.componentBackground, ...getPalette(config.theme).slice(0, 4)].map(
+                  (color, idx) => (
+                    <div
+                      key={`${color}-${idx}`}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        backgroundColor: color,
+                        border: `1px solid ${config.theme.colors.componentBorder}`,
+                        borderRadius: 4,
+                      }}
+                      title={idx === 0 ? '组件背景' : `图表配色 ${idx}`}
+                    />
+                  )
+                )}
+              </div>
+            </Form.Item>
+          )}
+
           <Form.Item label="背景类型" className="config-item">
           <Select
             value={config.backgroundType}

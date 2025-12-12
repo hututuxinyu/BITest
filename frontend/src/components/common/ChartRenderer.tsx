@@ -3,12 +3,14 @@ import ReactECharts from 'echarts-for-react';
 import { Empty } from 'antd';
 import type { EChartsOption } from 'echarts';
 import type { ComponentDefinition } from '../../types';
+import { getEchartsThemeName, registerEchartsThemes } from '../../themes/echartsTheme';
 
 interface ChartRendererProps {
   componentId: string;
   definition: ComponentDefinition;
   height?: number | string;
   width?: number | string;
+  themeId?: 'light' | 'dark';
 }
 
 const ChartRenderer: React.FC<ChartRendererProps> = ({
@@ -16,9 +18,14 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({
   definition,
   height = '100%',
   width = '100%',
+  themeId = 'light',
 }) => {
   const chartRef = useRef<ReactECharts>(null);
   const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    registerEchartsThemes();
+  }, []);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -88,6 +95,7 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({
       ref={chartRef}
       option={option}
       style={{ height, width }}
+      theme={getEchartsThemeName(themeId)}
       opts={{ renderer: 'canvas' }}
       notMerge={false}
       lazyUpdate={false}

@@ -349,6 +349,11 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
         editorContext.setCanvasWidth(schema.canvas.width || 1920);
         editorContext.setCanvasHeight(schema.canvas.height || 1080);
         editorContext.setCanvasBackgroundColor(schema.canvas.backgroundColor || '#fafafa');
+        if (schema.canvas.theme?.themeId === 'dark' || schema.canvas.theme?.themeId === 'light') {
+          editorContext.setCanvasThemeId(schema.canvas.theme.themeId);
+        } else {
+          editorContext.setCanvasThemeId('light');
+        }
       }
       
       // 更新历史记录
@@ -971,10 +976,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
           position: 'relative',
         }}
       >
-        {renderCanvasContent(canvasItem, effectiveDefinition, formPropsValues, childItems, handlePropChange)}
+        {renderCanvasContent(
+          canvasItem,
+          effectiveDefinition,
+          formPropsValues,
+          childItems,
+          handlePropChange,
+          canvasConfig.theme?.themeId || 'light'
+        )}
       </div>
     );
-  }, [canvasItems]);
+  }, [canvasItems, canvasConfig.theme?.themeId]);
 
   return (
     <div
@@ -1209,6 +1221,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                                 editorContext.setCanvasWidth(config.width);
                                 editorContext.setCanvasHeight(config.height);
                                 editorContext.setCanvasBackgroundColor(config.backgroundColor);
+                                editorContext.setCanvasThemeId(config.theme?.themeId || 'light');
                               }
                             }}
                             onPropChange={handlePropChange}

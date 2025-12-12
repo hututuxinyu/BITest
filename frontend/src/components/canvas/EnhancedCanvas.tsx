@@ -48,6 +48,7 @@ export interface EnhancedCanvasProps {
   renderItem: (item: EnhancedCanvasItem) => React.ReactNode;
   canvasWidth?: number;
   canvasHeight?: number;
+  canvasBackgroundColor?: string;
   gridSize?: number;
   showGrid?: boolean;
   showAlignmentLines?: boolean;
@@ -109,6 +110,7 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
   renderItem,
   canvasWidth = 1920,
   canvasHeight = 1080,
+  canvasBackgroundColor = '#fafafa',
   gridSize = GRID_SIZE,
   showGrid = false,
   showAlignmentLines = true,
@@ -807,8 +809,8 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
         background: showGrid
           ? `linear-gradient(to right, #e8e8e8 1px, transparent 1px),
              linear-gradient(to bottom, #e8e8e8 1px, transparent 1px),
-             #fafafa`
-          : '#fafafa',
+             ${canvasBackgroundColor}`
+          : canvasBackgroundColor,
         backgroundSize: showGrid ? `${gridSize * effectiveZoom}px ${gridSize * effectiveZoom}px` : 'auto',
         cursor: isPanning ? 'grabbing' : isSelecting ? 'crosshair' : 'default',
       }}
@@ -823,6 +825,7 @@ const EnhancedCanvas: React.FC<EnhancedCanvasProps> = ({
           position: 'absolute',
           width: canvasWidth,
           height: canvasHeight,
+          backgroundColor: canvasBackgroundColor,
           transform: `translate(${panOffset.x * effectiveZoom}px, ${panOffset.y * effectiveZoom}px) scale(${effectiveZoom})`,
           transformOrigin: 'top left',
         }}

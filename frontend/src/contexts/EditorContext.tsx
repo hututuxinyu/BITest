@@ -19,6 +19,8 @@ interface EditorContextValue {
   setCanvasHeight: (height: number) => void;
   canvasBackgroundColor: string;
   setCanvasBackgroundColor: (color: string) => void;
+  canvasThemeId: 'light' | 'dark';
+  setCanvasThemeId: (themeId: 'light' | 'dark') => void;
   datasets: Dataset[];
   setDatasets: (datasets: Dataset[]) => void;
 }
@@ -46,6 +48,7 @@ export const EditorContextProvider: React.FC<EditorContextProviderProps> = ({ ch
   const [canvasWidth, setCanvasWidth] = useState<number>(1920);
   const [canvasHeight, setCanvasHeight] = useState<number>(1080);
   const [canvasBackgroundColor, setCanvasBackgroundColor] = useState<string>('#fafafa');
+  const [canvasThemeId, setCanvasThemeId] = useState<'light' | 'dark'>('light');
   const [datasets, setDatasets] = useState<Dataset[]>([]);
 
   return (
@@ -67,6 +70,8 @@ export const EditorContextProvider: React.FC<EditorContextProviderProps> = ({ ch
         setCanvasHeight,
         canvasBackgroundColor,
         setCanvasBackgroundColor,
+        canvasThemeId,
+        setCanvasThemeId,
         datasets,
         setDatasets,
       }}

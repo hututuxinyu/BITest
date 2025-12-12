@@ -12,6 +12,7 @@ interface ReportPreviewProps {
   canvasWidth?: number;
   canvasHeight?: number;
   backgroundColor?: string;
+  themeId?: 'light' | 'dark';
 }
 
 /**
@@ -107,6 +108,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
   canvasWidth = 1920,
   canvasHeight = 1080,
   backgroundColor = '#fafafa',
+  themeId = 'light',
 }) => {
   // 渲染组件内容
   const renderItem = (item: EnhancedCanvasItem, previewData?: any[]): React.ReactNode => {
@@ -183,6 +185,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           definition={effectiveDefinition}
           height="100%"
           width="100%"
+          themeId={themeId}
         />
       );
     }

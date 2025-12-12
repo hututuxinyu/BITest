@@ -55,10 +55,11 @@ const FormRenderer: React.FC<FormRendererProps> = ({
             style={{
               width: '100%',
               height: '100%',
-              border: '1px dashed #d9d9d9',
+              border: props.borderColor ? `1px dashed ${props.borderColor}` : '1px dashed #d9d9d9',
               borderRadius: 4,
               padding: 16,
-              background: '#fafafa',
+              background: props.backgroundColor || '#fafafa',
+              color: props.color,
               position: 'relative',
               overflow: 'auto',
             }}
@@ -71,7 +72,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
               e.stopPropagation();
             }}
           >
-            <div style={{ marginBottom: 8, fontWeight: 500, fontSize: 14 }}>
+            <div style={{ marginBottom: 8, fontWeight: 500, fontSize: 14, color: props.color }}>
               {props.title || '表单'}
             </div>
             {children ? (
@@ -79,7 +80,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
                 {children}
               </div>
             ) : (
-              <div style={{ color: '#999', fontSize: 12 }}>
+              <div style={{ color: props.color ? `${props.color}80` : '#999', fontSize: 12 }}>
                 表单容器 - 可拖拽其他表单控件到此
               </div>
             )}
@@ -164,6 +165,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
               height: '100%',
               display: 'flex',
               alignItems: 'center',
+              backgroundColor: props.backgroundColor,
             }}
           >
             {props.text || ''}
@@ -175,7 +177,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
             style={{
               width: '100%',
               height: '100%',
-              border: `${props.width || 1}px ${props.style || 'solid'} ${props.color || '#d9d9d9'}`,
+              border: `${props.width || 1}px ${props.style || 'solid'} ${props.borderColor || props.color || '#d9d9d9'}`,
               borderRadius: props.radius ? `${props.radius}px` : '0',
               backgroundColor: props.backgroundColor || 'transparent',
             }}

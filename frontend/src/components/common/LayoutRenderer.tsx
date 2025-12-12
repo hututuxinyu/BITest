@@ -10,16 +10,17 @@ interface LayoutRendererProps {
   propsValues?: Record<string, any>;
 }
 
-const baseSlotStyle: React.CSSProperties = {
-  border: '1px dashed #d9d9d9',
+// baseSlotStyle 改为函数，接收props以应用主题颜色
+const getBaseSlotStyle = (props?: Record<string, any>): React.CSSProperties => ({
+  border: props?.borderColor ? `1px dashed ${props.borderColor}` : '1px dashed #d9d9d9',
   borderRadius: 6,
-  background: '#fafafa',
+  background: props?.backgroundColor || '#fafafa',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  color: '#999',
+  color: props?.color || '#999',
   fontSize: 12,
-};
+});
 
 const LayoutRenderer: React.FC<LayoutRendererProps> = ({
   componentId,
@@ -63,6 +64,7 @@ function renderTopBottom(props: Record<string, any>, height: number | string, wi
   const gap = Number(props.gap) || 0;
   const topRatio = Number(props.topRatio) || 1;
   const bottomRatio = Number(props.bottomRatio) || 1;
+  const slotStyle = getBaseSlotStyle(props);
   return (
     <div
       style={{
@@ -71,11 +73,11 @@ function renderTopBottom(props: Record<string, any>, height: number | string, wi
         gap,
         height,
         width,
-        background: props.background || '#fff',
+        background: props.backgroundColor || props.background || '#fff',
       }}
     >
-      <div style={{ ...baseSlotStyle, flex: topRatio, borderBottom: props.splitLine ? '1px dashed #e5e6eb' : 'none' }}>上区域（拖拽组件至此）</div>
-      <div style={{ ...baseSlotStyle, flex: bottomRatio }}>下区域（拖拽组件至此）</div>
+      <div style={{ ...slotStyle, flex: topRatio, borderBottom: props.splitLine ? `1px dashed ${props.borderColor || '#e5e6eb'}` : 'none' }}>上区域（拖拽组件至此）</div>
+      <div style={{ ...slotStyle, flex: bottomRatio }}>下区域（拖拽组件至此）</div>
     </div>
   );
 }
@@ -84,6 +86,7 @@ function renderLeftRight(props: Record<string, any>, height: number | string, wi
   const gap = Number(props.gap) || 0;
   const leftRatio = Number(props.leftRatio) || 1;
   const rightRatio = Number(props.rightRatio) || 1;
+  const slotStyle = getBaseSlotStyle(props);
   return (
     <div
       style={{
@@ -92,11 +95,11 @@ function renderLeftRight(props: Record<string, any>, height: number | string, wi
         gap,
         height,
         width,
-        background: props.background || '#fff',
+        background: props.backgroundColor || props.background || '#fff',
       }}
     >
-      <div style={{ ...baseSlotStyle, flex: leftRatio, borderRight: props.splitLine ? '1px dashed #e5e6eb' : 'none' }}>左区域（拖拽组件至此）</div>
-      <div style={{ ...baseSlotStyle, flex: rightRatio }}>右区域（拖拽组件至此）</div>
+      <div style={{ ...slotStyle, flex: leftRatio, borderRight: props.splitLine ? `1px dashed ${props.borderColor || '#e5e6eb'}` : 'none' }}>左区域（拖拽组件至此）</div>
+      <div style={{ ...slotStyle, flex: rightRatio }}>右区域（拖拽组件至此）</div>
     </div>
   );
 }
@@ -106,6 +109,7 @@ function renderHeaderContentFooter(props: Record<string, any>, height: number | 
   const headerRatio = Number(props.headerRatio) || 1;
   const contentRatio = Number(props.contentRatio) || 1;
   const footerRatio = Number(props.footerRatio) || 1;
+  const slotStyle = getBaseSlotStyle(props);
   return (
     <div
       style={{
@@ -114,28 +118,28 @@ function renderHeaderContentFooter(props: Record<string, any>, height: number | 
         gap,
         height,
         width,
-        background: props.background || '#fff',
+        background: props.backgroundColor || props.background || '#fff',
       }}
     >
       <div
         style={{
-          ...baseSlotStyle,
+          ...slotStyle,
           flex: headerRatio,
           position: props.stickyHeader ? 'sticky' : 'relative',
           top: props.stickyHeader ? 0 : undefined,
-          borderBottom: props.stickyHeader || props.splitLine ? '1px dashed #e5e6eb' : 'none',
+          borderBottom: props.stickyHeader || props.splitLine ? `1px dashed ${props.borderColor || '#e5e6eb'}` : 'none',
         }}
       >
         头部（拖拽组件至此）
       </div>
-      <div style={{ ...baseSlotStyle, flex: contentRatio, minHeight: 80 }}>内容区（拖拽组件至此）</div>
+      <div style={{ ...slotStyle, flex: contentRatio, minHeight: 80 }}>内容区（拖拽组件至此）</div>
       <div
         style={{
-          ...baseSlotStyle,
+          ...slotStyle,
           flex: footerRatio,
           position: props.stickyFooter ? 'sticky' : 'relative',
           bottom: props.stickyFooter ? 0 : undefined,
-          borderTop: props.stickyFooter || props.splitLine ? '1px dashed #e5e6eb' : 'none',
+          borderTop: props.stickyFooter || props.splitLine ? `1px dashed ${props.borderColor || '#e5e6eb'}` : 'none',
         }}
       >
         底部（拖拽组件至此）
@@ -154,6 +158,7 @@ function renderGrid(props: Record<string, any>, height: number | string, width: 
   const colWidths: string[] = Array.isArray(props.colWidths) && props.colWidths.length > 0
     ? props.colWidths.map((w: any) => formatSize(w, '1fr'))
     : Array.from({ length: cols }).map(() => '1fr');
+  const slotStyle = getBaseSlotStyle(props);
 
   return (
     <div
@@ -164,11 +169,11 @@ function renderGrid(props: Record<string, any>, height: number | string, width: 
         gap: gutter,
         height,
         width,
-        background: props.background || '#fff',
+        background: props.backgroundColor || props.background || '#fff',
       }}
     >
       {Array.from({ length: rows * cols }).map((_, index) => (
-        <div key={`cell-${index}`} style={baseSlotStyle}>
+        <div key={`cell-${index}`} style={slotStyle}>
           单元格 {index + 1}（拖拽组件至此）
         </div>
       ))}

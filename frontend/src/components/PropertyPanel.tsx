@@ -50,6 +50,27 @@ export interface CanvasConfig {
   borderStyle?: 'solid' | 'dashed' | 'dotted';
   borderColor?: string;
   globalFont: string;
+  /**
+   * 主题配置
+   */
+  theme?: {
+    /** 主题ID */
+    themeId: 'light' | 'dark';
+    /** 主题名称 */
+    themeName: string;
+    /** 主题颜色配置 */
+    colors: {
+      background: string;
+      componentBackground: string;
+      componentText: string;
+      componentBorder: string;
+      chartPrimary: string;
+      chartSecondary: string;
+      chartAccent: string;
+      textPrimary: string;
+      textSecondary: string;
+    };
+  };
 }
 
 export interface ComponentProperty {

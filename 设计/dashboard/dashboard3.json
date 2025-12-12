@@ -1,0 +1,420 @@
+{
+    "version": "1.0.0",
+    "reportId": "dashboard-user-operation-001",
+    "reportName": "2024年度用户运营数据分析 Dashboard",
+    "reportType": "dashboard",
+    "metadata": {
+      "createTime": "2024-06-30T10:00:00Z",
+      "updateTime": "2024-06-30T19:15:40Z",
+      "creator": "admin",
+      "description": "企业用户运营数据可视化 Dashboard 大屏，面向运营决策层与用户增长团队"
+    },
+    "canvas": {
+      "width": 1920,
+      "height": 1080,
+      "backgroundColor": "#0A1629",
+      "grid": false,
+      "gridSize": 10
+    },
+    "components": [
+      {
+        "componentId": "comp-header-title",
+        "componentType": "text",
+        "componentName": "主标题",
+        "position": { "x": 40, "y": 20 },
+        "size": { "width": 600, "height": 40 },
+        "zIndex": 10,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "text": "2024年度用户运营数据分析 Dashboard",
+          "fontSize": 24,
+          "fontWeight": "bold",
+          "color": "#165DFF",
+          "textAlign": "left"
+        },
+        "style": { "backgroundColor": "transparent" }
+      },
+      {
+        "componentId": "comp-header-subtitle",
+        "componentType": "text",
+        "componentName": "副标题",
+        "position": { "x": 40, "y": 70 },
+        "size": { "width": 400, "height": 20 },
+        "zIndex": 10,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "text": "实时监控・全渠道覆盖・用户生命周期分析",
+          "fontSize": 14,
+          "fontWeight": "normal",
+          "color": "#666666",
+          "textAlign": "left"
+        },
+        "style": { "backgroundColor": "transparent" }
+      },
+      {
+        "componentId": "comp-filter-time",
+        "componentType": "select",
+        "componentName": "时间筛选器",
+        "position": { "x": 1200, "y": 30 },
+        "size": { "width": 150, "height": 32 },
+        "zIndex": 10,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "label": "时间",
+          "options": [
+            { "label": "本周", "value": "week" },
+            { "label": "本月", "value": "month" },
+            { "label": "本季度", "value": "quarter" },
+            { "label": "全年", "value": "year" }
+          ],
+          "defaultValue": "quarter",
+          "placeholder": "请选择时间"
+        },
+        "style": { "backgroundColor": "#F5F7FA" }
+      },
+      {
+        "componentId": "comp-filter-channel",
+        "componentType": "checkbox",
+        "componentName": "渠道筛选器",
+        "position": { "x": 1380, "y": 30 },
+        "size": { "width": 300, "height": 32 },
+        "zIndex": 10,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "label": "渠道",
+          "options": [
+            { "label": "APP", "value": "app" },
+            { "label": "小程序", "value": "miniProgram" },
+            { "label": "H5", "value": "h5" },
+            { "label": "PC端", "value": "pc" },
+            { "label": "线下门店", "value": "offline" },
+            { "label": "第三方平台", "value": "thirdParty" }
+          ],
+          "defaultValue": ["app", "miniProgram", "h5", "pc", "offline", "thirdParty"]
+        },
+        "style": { "backgroundColor": "#F5F7FA" }
+      },
+      {
+        "componentId": "comp-filter-userType",
+        "componentType": "select",
+        "componentName": "用户类型筛选器",
+        "position": { "x": 1700, "y": 30 },
+        "size": { "width": 150, "height": 32 },
+        "zIndex": 10,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "label": "用户类型",
+          "options": [
+            { "label": "全部用户", "value": "all" },
+            { "label": "新用户", "value": "new" },
+            { "label": "活跃用户", "value": "active" },
+            { "label": "留存用户", "value": "retain" },
+            { "label": "流失用户", "value": "lost" }
+          ],
+          "defaultValue": "all",
+          "placeholder": "请选择用户类型"
+        },
+        "style": { "backgroundColor": "#F5F7FA" }
+      },
+      {
+        "componentId": "comp-update-time",
+        "componentType": "text",
+        "componentName": "更新时间",
+        "position": { "x": 1700, "y": 80 },
+        "size": { "width": 200, "height": 20 },
+        "zIndex": 10,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "text": "最后更新：2024-06-30 19:15:40",
+          "fontSize": 12,
+          "fontWeight": "normal",
+          "color": "#999999",
+          "textAlign": "right"
+        },
+        "style": { "backgroundColor": "transparent" }
+      },
+      {
+        "componentId": "comp-border-top",
+        "componentType": "border",
+        "componentName": "顶部边框",
+        "position": { "x": 0, "y": 0 },
+        "size": { "width": 1920, "height": 120 },
+        "zIndex": 1,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "color": "#165DFF",
+          "width": 2,
+          "style": "solid",
+          "radius": 0
+        }
+      },
+      {
+        "componentId": "comp-line-1",
+        "componentType": "line",
+        "componentName": "分隔线1",
+        "position": { "x": 0, "y": 120 },
+        "size": { "width": 1920, "height": 1 },
+        "zIndex": 2,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "direction": "horizontal",
+          "color": "#165DFF",
+          "width": 1,
+          "style": "solid"
+        }
+      },
+      {
+        "componentId": "comp-left-border",
+        "componentType": "border",
+        "componentName": "左侧区域边框",
+        "position": { "x": 20, "y": 140 },
+        "size": { "width": 800, "height": 700 },
+        "zIndex": 3,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "color": "#165DFF",
+          "width": 2,
+          "style": "solid",
+          "radius": 8
+        }
+      },
+      {
+        "componentId": "comp-line-chart",
+        "componentType": "lineChart",
+        "componentName": "日活用户趋势折线图",
+        "position": { "x": 40, "y": 160 },
+        "size": { "width": 760, "height": 350 },
+        "zIndex": 4,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "title": "日活用户数（DAU）趋势",
+          "xAxisField": "date",
+          "yAxisField": "count",
+          "smooth": true,
+          "showArea": true,
+          "showLegend": true,
+          "showTooltip": true
+        },
+        "data": {
+          "bindingType": "static",
+          "staticConfig": {
+            "data": [
+              { "category": "2024-04-01", "value": 8520, "series": "DAU" },
+              { "category": "2024-04-08", "value": 9250, "series": "DAU" },
+              { "category": "2024-04-15", "value": 9860, "series": "DAU" },
+              { "category": "2024-04-22", "value": 10580, "series": "DAU" },
+              { "category": "2024-04-29", "value": 10250, "series": "DAU" },
+              { "category": "2024-05-06", "value": 11020, "series": "DAU" },
+              { "category": "2024-05-13", "value": 11850, "series": "DAU" },
+              { "category": "2024-05-20", "value": 11520, "series": "DAU" },
+              { "category": "2024-05-27", "value": 12360, "series": "DAU" },
+              { "category": "2024-06-03", "value": 12880, "series": "DAU" },
+              { "category": "2024-06-10", "value": 12650, "series": "DAU" },
+              { "category": "2024-06-17", "value": 13520, "series": "DAU" },
+              { "category": "2024-06-24", "value": 13890, "series": "DAU" }
+            ]
+          }
+        },
+        "staticData": [
+          { "category": "2024-04-01", "value": 8520, "series": "DAU" },
+          { "category": "2024-04-08", "value": 9250, "series": "DAU" },
+          { "category": "2024-04-15", "value": 9860, "series": "DAU" },
+          { "category": "2024-04-22", "value": 10580, "series": "DAU" },
+          { "category": "2024-04-29", "value": 10250, "series": "DAU" },
+          { "category": "2024-05-06", "value": 11020, "series": "DAU" },
+          { "category": "2024-05-13", "value": 11850, "series": "DAU" },
+          { "category": "2024-05-20", "value": 11520, "series": "DAU" },
+          { "category": "2024-05-27", "value": 12360, "series": "DAU" },
+          { "category": "2024-06-03", "value": 12880, "series": "DAU" },
+          { "category": "2024-06-10", "value": 12650, "series": "DAU" },
+          { "category": "2024-06-17", "value": 13520, "series": "DAU" },
+          { "category": "2024-06-24", "value": 13890, "series": "DAU" }
+        ],
+        "style": { "backgroundColor": "#1A2332" }
+      },
+      {
+        "componentId": "comp-line-2",
+        "componentType": "line",
+        "componentName": "分隔线2",
+        "position": { "x": 40, "y": 530 },
+        "size": { "width": 760, "height": 1 },
+        "zIndex": 4,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "direction": "horizontal",
+          "color": "#165DFF",
+          "width": 1,
+          "style": "dashed"
+        }
+      },
+      {
+        "componentId": "comp-bar-chart",
+        "componentType": "barChart",
+        "componentName": "月度新增用户柱状图",
+        "position": { "x": 40, "y": 550 },
+        "size": { "width": 760, "height": 350 },
+        "zIndex": 4,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "title": "月度新增用户数对比",
+          "xAxisField": "month",
+          "yAxisField": "count",
+          "showLegend": true,
+          "showTooltip": true,
+          "stack": "none"
+        },
+        "data": {
+          "bindingType": "static",
+          "staticConfig": {
+            "data": [
+              { "category": "1月", "value": 25800, "series": "2024年新增" },
+              { "category": "2月", "value": 28500, "series": "2024年新增" },
+              { "category": "3月", "value": 32600, "series": "2024年新增" },
+              { "category": "4月", "value": 36800, "series": "2024年新增" },
+              { "category": "5月", "value": 41200, "series": "2024年新增" },
+              { "category": "6月", "value": 45800, "series": "2024年新增" },
+              { "category": "1月", "value": 18500, "series": "2023年新增" },
+              { "category": "2月", "value": 21200, "series": "2023年新增" },
+              { "category": "3月", "value": 24800, "series": "2023年新增" },
+              { "category": "4月", "value": 27500, "series": "2023年新增" },
+              { "category": "5月", "value": 30200, "series": "2023年新增" },
+              { "category": "6月", "value": 33800, "series": "2023年新增" }
+            ]
+          }
+        },
+        "staticData": [
+          { "category": "1月", "value": 25800, "series": "2024年新增" },
+          { "category": "2月", "value": 28500, "series": "2024年新增" },
+          { "category": "3月", "value": 32600, "series": "2024年新增" },
+          { "category": "4月", "value": 36800, "series": "2024年新增" },
+          { "category": "5月", "value": 41200, "series": "2024年新增" },
+          { "category": "6月", "value": 45800, "series": "2024年新增" },
+          { "category": "1月", "value": 18500, "series": "2023年新增" },
+          { "category": "2月", "value": 21200, "series": "2023年新增" },
+          { "category": "3月", "value": 24800, "series": "2023年新增" },
+          { "category": "4月", "value": 27500, "series": "2023年新增" },
+          { "category": "5月", "value": 30200, "series": "2023年新增" },
+          { "category": "6月", "value": 33800, "series": "2023年新增" }
+        ],
+        "style": { "backgroundColor": "#1A2332" }
+      },
+      {
+        "componentId": "comp-pie-chart",
+        "componentType": "pieChart",
+        "componentName": "用户渠道分布饼图",
+        "position": { "x": 880, "y": 550 },
+        "size": { "width": 370, "height": 310 },
+        "zIndex": 4,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "title": "用户来源渠道占比",
+          "innerRadius": 40,
+          "showLegend": true,
+          "showTooltip": true
+        },
+        "data": {
+          "bindingType": "static",
+          "staticConfig": {
+            "data": [
+              { "name": "APP", "value": 40.0 },
+              { "name": "小程序", "value": 25.0 },
+              { "name": "H5", "value": 15.0 },
+              { "name": "PC端", "value": 10.0 },
+              { "name": "线下门店", "value": 6.0 },
+              { "name": "第三方平台", "value": 4.0 }
+            ]
+          }
+        },
+        "staticData": [
+          { "name": "APP", "value": 40.0 },
+          { "name": "小程序", "value": 25.0 },
+          { "name": "H5", "value": 15.0 },
+          { "name": "PC端", "value": 10.0 },
+          { "name": "线下门店", "value": 6.0 },
+          { "name": "第三方平台", "value": 4.0 }
+        ],
+        "style": { "backgroundColor": "#1A2332" }
+      },
+      {
+        "componentId": "comp-table",
+        "componentType": "table",
+        "componentName": "用户留存明细表格",
+        "position": { "x": 1280, "y": 550 },
+        "size": { "width": 680, "height": 310 },
+        "zIndex": 4,
+        "visible": true,
+        "locked": false,
+        "props": {
+          "title": "用户留存率TOP10渠道",
+          "columns": [
+            { "field": "date", "title": "统计日期", "width": 100 },
+            { "field": "channel", "title": "渠道", "width": 120 },
+            { "field": "newUser", "title": "新增用户", "width": 100, "format": "number" },
+            { "field": "weeklyRetainRate", "title": "7日留存率", "width": 120, "format": "percent" },
+            { "field": "monthlyRetainRate", "title": "30日留存率", "width": 120, "format": "percent" },
+            { "field": "quarterlyRetainRate", "title": "90日留存率", "width": 90, "format": "percent" }
+          ],
+          "pagination": { "pageSize": 10, "showSizeChanger": false }
+        },
+        "data": {
+          "bindingType": "static",
+          "staticConfig": {
+            "data": [
+              { "key": "1", "date": "2024-06-01", "channel": "APP", "newUser": 8560, "weeklyRetainRate": 68.5, "monthlyRetainRate": 45.2, "quarterlyRetainRate": 28.8 },
+              { "key": "2", "date": "2024-06-01", "channel": "小程序", "newUser": 5280, "weeklyRetainRate": 62.3, "monthlyRetainRate": 38.5, "quarterlyRetainRate": 22.6 },
+              { "key": "3", "date": "2024-06-01", "channel": "H5", "newUser": 3150, "weeklyRetainRate": 55.8, "monthlyRetainRate": 32.1, "quarterlyRetainRate": 18.5 },
+              { "key": "4", "date": "2024-06-01", "channel": "PC端", "newUser": 2080, "weeklyRetainRate": 58.2, "monthlyRetainRate": 34.8, "quarterlyRetainRate": 20.3 },
+              { "key": "5", "date": "2024-06-01", "channel": "线下门店", "newUser": 1250, "weeklyRetainRate": 72.5, "monthlyRetainRate": 48.6, "quarterlyRetainRate": 32.1 },
+              { "key": "6", "date": "2024-06-01", "channel": "第三方平台", "newUser": 850, "weeklyRetainRate": 48.8, "monthlyRetainRate": 25.4, "quarterlyRetainRate": 15.2 },
+              { "key": "7", "date": "2024-05-01", "channel": "APP", "newUser": 7850, "weeklyRetainRate": 66.8, "monthlyRetainRate": 43.5, "quarterlyRetainRate": 27.6 },
+              { "key": "8", "date": "2024-05-01", "channel": "小程序", "newUser": 4820, "weeklyRetainRate": 60.5, "monthlyRetainRate": 36.8, "quarterlyRetainRate": 21.8 },
+              { "key": "9", "date": "2024-05-01", "channel": "H5", "newUser": 2980, "weeklyRetainRate": 54.2, "monthlyRetainRate": 30.8, "quarterlyRetainRate": 17.9 },
+              { "key": "10", "date": "2024-05-01", "channel": "PC端", "newUser": 1950, "weeklyRetainRate": 56.5, "monthlyRetainRate": 33.2, "quarterlyRetainRate": 19.5 }
+            ]
+          }
+        },
+        "staticData": [
+          { "key": "1", "date": "2024-06-01", "channel": "APP", "newUser": 8560, "weeklyRetainRate": 68.5, "monthlyRetainRate": 45.2, "quarterlyRetainRate": 28.8 },
+          { "key": "2", "date": "2024-06-01", "channel": "小程序", "newUser": 5280, "weeklyRetainRate": 62.3, "monthlyRetainRate": 38.5, "quarterlyRetainRate": 22.6 },
+          { "key": "3", "date": "2024-06-01", "channel": "H5", "newUser": 3150, "weeklyRetainRate": 55.8, "monthlyRetainRate": 32.1, "quarterlyRetainRate": 18.5 },
+          { "key": "4", "date": "2024-06-01", "channel": "PC端", "newUser": 2080, "weeklyRetainRate": 58.2, "monthlyRetainRate": 34.8, "quarterlyRetainRate": 20.3 },
+          { "key": "5", "date": "2024-06-01", "channel": "线下门店", "newUser": 1250, "weeklyRetainRate": 72.5, "monthlyRetainRate": 48.6, "quarterlyRetainRate": 32.1 },
+          { "key": "6", "date": "2024-06-01", "channel": "第三方平台", "newUser": 850, "weeklyRetainRate": 48.8, "monthlyRetainRate": 25.4, "quarterlyRetainRate": 15.2 },
+          { "key": "7", "date": "2024-05-01", "channel": "APP", "newUser": 7850, "weeklyRetainRate": 66.8, "monthlyRetainRate": 43.5, "quarterlyRetainRate": 27.6 },
+          { "key": "8", "date": "2024-05-01", "channel": "小程序", "newUser": 4820, "weeklyRetainRate": 60.5, "monthlyRetainRate": 36.8, "quarterlyRetainRate": 21.8 },
+          { "key": "9", "date": "2024-05-01", "channel": "H5", "newUser": 2980, "weeklyRetainRate": 54.2, "monthlyRetainRate": 30.8, "quarterlyRetainRate": 17.9 },
+          { "key": "10", "date": "2024-05-01", "channel": "PC端", "newUser": 1950, "weeklyRetainRate": 56.5, "monthlyRetainRate": 33.2, "quarterlyRetainRate": 19.5 }
+        ],
+        "style": { "backgroundColor": "#1A2332" }
+      }
+    ],
+    "datasources": [],
+    "interactions": [],
+    "i18n": {
+      "zh-CN": {
+        "reportName": "2024年度用户运营数据分析 Dashboard",
+        "description": "企业用户运营数据可视化 Dashboard 大屏"
+      },
+      "en-US": {
+        "reportName": "2024 Annual User Operation Data Analysis Dashboard",
+        "description": "Enterprise User Operation Data Visualization Dashboard"
+      }
+    },
+    "style": {
+      "reportBackground": { "type": "color", "value": "#0A1629" },
+      "theme": { "themeId": "theme-dashboard-dark", "themeName": "大屏深色主题" }
+    }
+  }

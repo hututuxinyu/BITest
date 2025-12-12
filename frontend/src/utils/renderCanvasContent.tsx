@@ -30,7 +30,8 @@ export function renderCanvasContent(
   definition?: ComponentDefinition | null,
   propsValues?: Record<string, any>,
   childItems: RenderCanvasItem[] = [],
-  onPropChange?: (field: string, value: any) => void
+  onPropChange?: (field: string, value: any) => void,
+  themeId: 'light' | 'dark' = 'light'
 ) {
   if (item.component.componentId === 'media-border') {
     const borderProps = propsValues || item.propsValues || {};
@@ -92,6 +93,7 @@ export function renderCanvasContent(
           definition={definition}
           height="100%"
           width="100%"
+          themeId={themeId}
         />
       );
     }
@@ -141,7 +143,7 @@ export function renderCanvasContent(
                     pointerEvents: 'auto',
                   }}
                 >
-                  {renderCanvasContent(child, childEffectiveDefinition, child.propsValues, [], onPropChange)}
+                  {renderCanvasContent(child, childEffectiveDefinition, child.propsValues, [], onPropChange, themeId)}
                 </div>
               );
             })}
