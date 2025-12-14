@@ -8,6 +8,8 @@ export interface ThemeColors {
   componentBackground: string;
   /** 组件默认文本颜色 */
   componentText: string;
+  /** 组件/全局标题文本颜色 */
+  titleText: string;
   /** 组件默认边框颜色 */
   componentBorder: string;
   /** 图表主色 */

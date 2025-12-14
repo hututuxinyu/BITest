@@ -2,6 +2,7 @@ import React from 'react';
 import { Form, Input, InputNumber, Select, Switch, Collapse } from 'antd';
 import { CaretRightOutlined } from '@ant-design/icons';
 import type { CanvasItem, ComponentProperty } from '../../PropertyPanel';
+import ColorPicker from '../common/ColorPicker';
 import '../styles/ComponentPropertyTab.css';
 
 interface ComponentPropertyTabProps {
@@ -117,6 +118,22 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
             );
           }
 
+          // 颜色类型字段 - 使用色块选择器
+          if (prop.type === 'string' && (prop.field.toLowerCase().includes('color') || prop.label.includes('颜色'))) {
+            return (
+              <Form.Item key={prop.field} label={prop.label} className="config-item">
+                <ColorPicker
+                  value={value !== undefined ? value : prop.default || '#FFFFFF'}
+                  onChange={(color) => onChange(prop.field, color)}
+                  placeholder={prop.default || '#FFFFFF'}
+                />
+                {prop.description && (
+                  <div className="config-item-description">{prop.description}</div>
+                )}
+              </Form.Item>
+            );
+          }
+
           // 默认字符串类型
           return (
             <Form.Item key={prop.field} label={prop.label} className="config-item">
@@ -220,18 +237,11 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
         {/* 样式设置 */}
         <Collapse.Panel header="样式设置" key="style">
           <Form.Item label="背景色" className="config-item">
-            <div className="color-picker-wrapper">
-              <div
-                className="color-picker-preview"
-                style={{ backgroundColor: property.backgroundColor }}
-              />
-              <Input
-                className="color-picker-input"
-                value={property.backgroundColor}
-                onChange={(e) => onChange('backgroundColor', e.target.value)}
-                placeholder="#FFFFFF"
-              />
-            </div>
+            <ColorPicker
+              value={property.backgroundColor}
+              onChange={(color) => onChange('backgroundColor', color)}
+              placeholder="#FFFFFF"
+            />
           </Form.Item>
 
           <Form.Item label="边框设置" className="config-item">
@@ -263,18 +273,11 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
                 </Select>
               </Form.Item>
               <Form.Item label="边框颜色" className="config-item">
-                <div className="color-picker-wrapper">
-                  <div
-                    className="color-picker-preview"
-                    style={{ backgroundColor: property.border.color }}
-                  />
-                  <Input
-                    className="color-picker-input"
-                    value={property.border.color}
-                    onChange={(e) => onChange('border.color', e.target.value)}
-                    placeholder="#E5E7EB"
-                  />
-                </div>
+                <ColorPicker
+                  value={property.border.color}
+                  onChange={(color) => onChange('border.color', color)}
+                  placeholder="#E5E7EB"
+                />
               </Form.Item>
               <Form.Item label="圆角" className="config-item">
                 <InputNumber
@@ -326,18 +329,11 @@ const ComponentPropertyTab: React.FC<ComponentPropertyTabProps> = ({ item, prope
                 />
               </Form.Item>
               <Form.Item label="阴影颜色" className="config-item">
-                <div className="color-picker-wrapper">
-                  <div
-                    className="color-picker-preview"
-                    style={{ backgroundColor: property.shadow.color }}
-                  />
-                  <Input
-                    className="color-picker-input"
-                    value={property.shadow.color}
-                    onChange={(e) => onChange('shadow.color', e.target.value)}
-                    placeholder="#000000"
-                  />
-                </div>
+                <ColorPicker
+                  value={property.shadow.color}
+                  onChange={(color) => onChange('shadow.color', color)}
+                  placeholder="#000000"
+                />
               </Form.Item>
               <Form.Item label="透明度" className="config-item">
                 <InputNumber

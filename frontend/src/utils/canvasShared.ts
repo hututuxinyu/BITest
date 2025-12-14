@@ -31,9 +31,16 @@ export const mapComponentTypeToId = (componentType: string): string => {
   const normalizedType = (componentType || '').toLowerCase();
   const typeMap: Record<string, string> = {
     barchart: 'chart-bar',
+    barcharthorizontal: 'chart-bar',
+    areachart: 'custom-area-chart',
     linechart: 'chart-line',
     piechart: 'chart-pie',
+    donutchart: 'custom-donut-chart',
     radarchart: 'chart-radar',
+    dashboard: 'custom-dashboard',
+    pictorialbarchart: 'custom-pictorial-chart',
+    scatterchart: 'custom-scatter-chart',
+    barlinechart: 'custom-bar-line-chart',
     table: 'chart-table',
     treetable: 'chart-tree-table',
     gauge: 'chart-gauge',

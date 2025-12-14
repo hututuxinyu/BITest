@@ -8,6 +8,7 @@ export const darkTheme: Theme = {
     background: '#05070D',
     componentBackground: '#0D1424',
     componentText: '#E6F0FF',
+    titleText: '#FFFFFF',
     componentBorder: '#1E2B45',
     chartPrimary: '#1E88FF',
     chartSecondary: '#274B8A',

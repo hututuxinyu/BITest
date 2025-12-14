@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
 import { Layout, Avatar, Dropdown, Space, message, Menu, Button, Tag, Select, Tooltip, Modal } from 'antd';
 import type { MenuProps } from 'antd';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -112,23 +112,33 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
   }, [isEditorPage, params.projectId, params.reportId, editorContext]);
 
   // 页面加载时获取数据集列表（只获取一次，全局共享）
+  const datasetsLoadingRef = useRef(false);
+  const datasetsLoadedRef = useRef(false);
   useEffect(() => {
-    if (editorContext && editorContext.datasets.length === 0) {
+    if (editorContext && editorContext.datasets.length === 0 && !datasetsLoadingRef.current && !datasetsLoadedRef.current) {
+      datasetsLoadingRef.current = true;
       const loadDatasets = async () => {
         try {
           const response = await datasourceApi.getDatasetList();
           if (response.success && response.data) {
             editorContext.setDatasets(response.data);
+            datasetsLoadedRef.current = true;
           } else {
             console.error('加载数据集列表失败:', response.message);
           }
         } catch (error) {
           console.error('加载数据集列表失败:', error);
+        } finally {
+          datasetsLoadingRef.current = false;
         }
       };
       loadDatasets();
     }
-  }, [editorContext]);
+    // 如果 datasets 已经有数据了，标记为已加载
+    if (editorContext && editorContext.datasets.length > 0) {
+      datasetsLoadedRef.current = true;
+    }
+  }, [editorContext?.datasets.length]);
 
   // 导出Schema处理函数
   const handleExportSchema = useCallback(() => {
@@ -699,6 +709,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children, user }) => {
               canvasHeight={editorContext.canvasHeight}
               backgroundColor={editorContext.canvasBackgroundColor}
               themeId={editorContext.canvasThemeId}
+              title={editorContext.reportContext?.reportName || editorContext.reportTitle || '未命名报表'}
             />
           </div>
         </Modal>

@@ -264,28 +264,8 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           return;
         }
         
-        // 如果 item 中没有配置，判断是否是组件库场景
-        // 组件库中的 item.id 通常包含时间戳，格式为 componentId-timestamp
-        // 编辑报表界面中的 item.id 通常是 UUID 格式
-        const isComponentLibrary = /^[^-]+-\d+$/.test(item.id);
-        
-        if (isComponentLibrary) {
-          // 组件库场景：如果没有配置，保持为 null，不尝试从后端加载
-          setDatasourceConfigState(null);
-        } else {
-          // 编辑报表界面：尝试从后端加载
-          try {
-            const { datasourceApi } = await import('../services/datasourceApi');
-            const response = await datasourceApi.getComponentDatasourceConfig(item.id);
-            if (response.success && response.data) {
-              setDatasourceConfigState(response.data);
-            } else {
-              setDatasourceConfigState(null);
-            }
-          } catch (error) {
-            setDatasourceConfigState(null);
-          }
-        }
+        // 如果 item 中没有配置，设置为 null
+        setDatasourceConfigState(null);
       };
       loadDatasourceConfig();
       
@@ -425,14 +405,8 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
             // 如果 item 中有配置，使用 item 中的配置
             setDatasourceConfigState(item.datasourceConfig);
           } else {
-            // 否则从后端重新加载
-            const { datasourceApi } = await import('../services/datasourceApi');
-            const response = await datasourceApi.getComponentDatasourceConfig(item.id);
-            if (response.success && response.data) {
-              setDatasourceConfigState(response.data);
-            } else {
-              setDatasourceConfigState(null);
-            }
+            // 否则设置为 null
+            setDatasourceConfigState(null);
           }
 
           message.success('所有配置已重置');

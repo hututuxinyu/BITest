@@ -8,6 +8,7 @@ export const lightTheme: Theme = {
     background: '#F6F9FF',
     componentBackground: '#FFFFFF',
     componentText: '#1F2A44',
+    titleText: '#1F2A44',
     componentBorder: '#E5ECF6',
     chartPrimary: '#3B82F6',
     chartSecondary: '#67C3C0',

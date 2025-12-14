@@ -55,11 +55,10 @@ const FormRenderer: React.FC<FormRendererProps> = ({
             style={{
               width: '100%',
               height: '100%',
-              border: props.borderColor ? `1px dashed ${props.borderColor}` : '1px dashed #d9d9d9',
+              border: '1px dashed #d9d9d9',
               borderRadius: 4,
               padding: 16,
-              background: props.backgroundColor || '#fafafa',
-              color: props.color,
+              background: '#fafafa',
               position: 'relative',
               overflow: 'auto',
             }}
@@ -72,7 +71,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
               e.stopPropagation();
             }}
           >
-            <div style={{ marginBottom: 8, fontWeight: 500, fontSize: 14, color: props.color }}>
+            <div style={{ marginBottom: 8, fontWeight: 500, fontSize: 14 }}>
               {props.title || '表单'}
             </div>
             {children ? (
@@ -80,7 +79,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
                 {children}
               </div>
             ) : (
-              <div style={{ color: props.color ? `${props.color}80` : '#999', fontSize: 12 }}>
+              <div style={{ color: '#999', fontSize: 12 }}>
                 表单容器 - 可拖拽其他表单控件到此
               </div>
             )}
@@ -154,18 +153,24 @@ const FormRenderer: React.FC<FormRendererProps> = ({
           />
         );
       case 'media-text':
+        // 根据对齐方式设置 justifyContent
+        const textAlign = props.textAlign || 'left';
+        const justifyContentMap: Record<string, string> = {
+          left: 'flex-start',
+          center: 'center',
+          right: 'flex-end',
+        };
         return (
           <div
             style={{
               fontSize: props.fontSize || 14,
               color: props.color || '#333',
               fontWeight: props.fontWeight || 'normal',
-              textAlign: props.textAlign || 'left',
               width: '100%',
               height: '100%',
               display: 'flex',
               alignItems: 'center',
-              backgroundColor: props.backgroundColor,
+              justifyContent: justifyContentMap[textAlign] || 'flex-start',
             }}
           >
             {props.text || ''}
@@ -177,7 +182,7 @@ const FormRenderer: React.FC<FormRendererProps> = ({
             style={{
               width: '100%',
               height: '100%',
-              border: `${props.width || 1}px ${props.style || 'solid'} ${props.borderColor || props.color || '#d9d9d9'}`,
+              border: `${props.width || 1}px ${props.style || 'solid'} ${props.color || '#d9d9d9'}`,
               borderRadius: props.radius ? `${props.radius}px` : '0',
               backgroundColor: props.backgroundColor || 'transparent',
             }}
@@ -192,6 +197,23 @@ const FormRenderer: React.FC<FormRendererProps> = ({
               height: isHorizontal ? `${props.width || 1}px` : '100%',
               backgroundColor: props.color || '#d9d9d9',
               borderStyle: props.style || 'solid',
+            }}
+          />
+        );
+      case 'media-image':
+        return (
+          <img
+            src={props.src || ''}
+            alt={props.alt || '图片'}
+            style={{
+              width: props.width || '100%',
+              height: props.height || 'auto',
+              objectFit: props.objectFit || 'cover',
+              display: 'block',
+            }}
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
             }}
           />
         );

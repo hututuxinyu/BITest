@@ -680,9 +680,10 @@ const CanvasWorkspace: React.FC<CanvasWorkspaceProps> = ({}) => {
                         </div>
                       );
                     }}
-                    canvasWidth={1920}
-                    canvasHeight={1080}
-                    gridSize={10}
+                    canvasWidth={canvasConfig.width}
+                    canvasHeight={canvasConfig.height}
+                    canvasBackgroundColor={canvasConfig.backgroundColor}
+                    gridSize={canvasConfig.gridSize}
                     showGrid={showGrid}
                     showAlignmentLines={true}
                     zoom={zoom}

@@ -1013,7 +1013,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
             <Card
               bodyStyle={{
               height: '100%',
-                background: '#fff',
+                background: canvasConfig.backgroundColor,
                 border: '1px dashed #d0d0d0',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1161,9 +1161,10 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                   onSelectionChange={handleSelectionChange}
                   onItemSelect={handleItemSelect}
                   renderItem={renderItem}
-                  canvasWidth={1920}
-                  canvasHeight={1080}
-                  gridSize={10}
+                  canvasWidth={canvasConfig.width}
+                  canvasHeight={canvasConfig.height}
+                  canvasBackgroundColor={canvasConfig.backgroundColor}
+                  gridSize={canvasConfig.gridSize}
                   showGrid={showGrid}
                   showAlignmentLines={true}
                   zoom={zoom}

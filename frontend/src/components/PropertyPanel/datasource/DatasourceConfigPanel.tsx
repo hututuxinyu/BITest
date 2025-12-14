@@ -117,51 +117,7 @@ const DatasourceConfigPanel: React.FC<DatasourceConfigPanelProps> = ({
     setSelectedDatasetId('');
     setStaticDataJson('[]');
     hasLoadedStaticConfigRef.current = false;
-    
-    const loadConfig = async () => {
-      // 判断是否是图表类组件，非图表类组件不需要调用接口
-      // 由于 DatasourceConfigPanel 只在图表组件的数据源配置标签页中显示，
-      // 理论上这里应该已经是图表组件了，但为了安全起见，仍然添加判断
-      // 如果 componentDefinition 不存在，跳过接口调用
-      if (!componentDefinition) {
-        setLoading(false);
-        return;
-      }
-      
-      setLoading(true);
-      try {
-        const response = await datasourceApi.getComponentDatasourceConfig(componentId);
-        if (response.success && response.data) {
-          const config = response.data;
-          setSourceType(config.sourceType || 'dataset');
-          setBindingType(config.bindingType || 'dataset');
-          if (config.datasetConfig) {
-            const datasetId = config.datasetConfig.datasetId || '';
-            // 设置数据集ID
-            setSelectedDatasetId(datasetId);
-          } else {
-            // 如果没有 datasetConfig，确保重置相关状态
-            setSelectedDatasetId('');
-          }
-          if (config.staticConfig) {
-            setStaticDataJson(JSON.stringify(config.staticConfig.data, null, 2));
-            hasLoadedStaticConfigRef.current = true;
-          } else {
-            hasLoadedStaticConfigRef.current = false;
-            setStaticDataJson('[]');
-          }
-        } else {
-          // 如果后端返回失败或没有数据，保持重置后的状态
-          // 状态已经在上面重置了，这里不需要额外操作
-        }
-      } catch (error) {
-        message.error('加载数据源配置失败');
-        // 错误时保持重置后的状态
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadConfig();
+    setLoading(false);
   }, [componentId, initialConfig]);
 
   const defaultStaticJson = useMemo(() => {

@@ -5,6 +5,7 @@ import type { CanvasConfig } from '../../PropertyPanel';
 import { getAllThemes, getThemeById, getDefaultTheme, type Theme } from '../../../themes';
 import { getPalette } from '../../../themes/echartsTheme';
 import { applyThemeToCanvas } from '../../../utils/themeUtils';
+import ColorPicker from '../common/ColorPicker';
 import '../styles/CanvasConfigTab.css';
 
 interface CanvasConfigTabProps {
@@ -228,30 +229,20 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
             onChange={(val) => handleChange('backgroundType', val)}
           >
             <Select.Option value="solid">纯色</Select.Option>
-            <Select.Option value="gradient">渐变</Select.Option>
-            <Select.Option value="image">图片</Select.Option>
-            <Select.Option value="transparent">透明</Select.Option>
+            {/*<Select.Option value="gradient">渐变</Select.Option>*/}
+            {/*<Select.Option value="image">图片</Select.Option>*/}
+            {/*<Select.Option value="transparent">透明</Select.Option>*/}
           </Select>
           <div className="config-item-description">选择画布背景的显示方式</div>
         </Form.Item>
 
         {config.backgroundType === 'solid' && (
           <Form.Item label="背景色" className="config-item">
-            <div className="color-picker-wrapper">
-              <div
-                className="color-picker-preview"
-                style={{ backgroundColor: config.backgroundColor }}
-                onClick={() => {
-                  // 这里可以打开颜色选择器
-                }}
-              />
-              <Input
-                className="color-picker-input"
-                value={config.backgroundColor}
-                onChange={(e) => handleChange('backgroundColor', e.target.value)}
-                placeholder="#F5F5F5"
-              />
-            </div>
+            <ColorPicker
+              value={config.backgroundColor}
+              onChange={(color) => handleChange('backgroundColor', color)}
+              placeholder="#F5F5F5"
+            />
           </Form.Item>
         )}
 
@@ -270,32 +261,18 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
               <div className="config-item-description">选择渐变色的方向</div>
             </Form.Item>
             <Form.Item label="渐变起始色" className="config-item">
-              <div className="color-picker-wrapper">
-                <div
-                  className="color-picker-preview"
-                  style={{ backgroundColor: config.gradientStartColor || '#FFFFFF' }}
-                />
-                <Input
-                  className="color-picker-input"
-                  value={config.gradientStartColor || '#FFFFFF'}
-                  onChange={(e) => handleChange('gradientStartColor', e.target.value)}
-                  placeholder="#FFFFFF"
-                />
-              </div>
+              <ColorPicker
+                value={config.gradientStartColor || '#FFFFFF'}
+                onChange={(color) => handleChange('gradientStartColor', color)}
+                placeholder="#FFFFFF"
+              />
             </Form.Item>
             <Form.Item label="渐变结束色" className="config-item">
-              <div className="color-picker-wrapper">
-                <div
-                  className="color-picker-preview"
-                  style={{ backgroundColor: config.gradientEndColor || '#F5F5F5' }}
-                />
-                <Input
-                  className="color-picker-input"
-                  value={config.gradientEndColor || '#F5F5F5'}
-                  onChange={(e) => handleChange('gradientEndColor', e.target.value)}
-                  placeholder="#F5F5F5"
-                />
-              </div>
+              <ColorPicker
+                value={config.gradientEndColor || '#F5F5F5'}
+                onChange={(color) => handleChange('gradientEndColor', color)}
+                placeholder="#F5F5F5"
+              />
             </Form.Item>
           </>
         )}
@@ -361,18 +338,11 @@ const CanvasConfigTab: React.FC<CanvasConfigTabProps> = ({ config, onChange }) =
               <div className="config-item-description">选择边框的线条样式</div>
             </Form.Item>
             <Form.Item label="边框颜色" className="config-item">
-              <div className="color-picker-wrapper">
-                <div
-                  className="color-picker-preview"
-                  style={{ backgroundColor: config.borderColor || '#E5E7EB' }}
-                />
-                <Input
-                  className="color-picker-input"
-                  value={config.borderColor || '#E5E7EB'}
-                  onChange={(e) => handleChange('borderColor', e.target.value)}
-                  placeholder="#E5E7EB"
-                />
-              </div>
+              <ColorPicker
+                value={config.borderColor || '#E5E7EB'}
+                onChange={(color) => handleChange('borderColor', color)}
+                placeholder="#E5E7EB"
+              />
             </Form.Item>
           </>
         )}

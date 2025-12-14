@@ -98,7 +98,12 @@ export function renderCanvasContent(
       );
     }
 
-    if (item.component.type === 'media' || item.component.componentId === 'media-text' || item.component.componentId === 'media-line') {
+    if (
+      item.component.type === 'media' ||
+      item.component.componentId === 'media-text' ||
+      item.component.componentId === 'media-line' ||
+      item.component.componentId === 'media-image'
+    ) {
       return (
         <FormRenderer
           componentId={item.component.componentId}

@@ -1,0 +1,116 @@
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.color-picker-preview {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.color-picker-preview:hover {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.color-picker-input {
+  flex: 1;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.color-picker-popover .ant-popover-inner-content {
+  padding: 12px;
+}
+
+.color-picker-palette {
+  width: 280px;
+}
+
+.color-picker-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.color-picker-row {
+  display: flex;
+  gap: 4px;
+}
+
+.color-picker-swatch {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.color-picker-swatch:hover {
+  transform: scale(1.1);
+  z-index: 1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-picker-swatch.active {
+  border: 2px solid #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.color-picker-swatch.active::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* 对于浅色背景，显示深色对勾 */
+.color-picker-swatch.active.light::after {
+  color: #333;
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+.color-picker-custom {
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.color-picker-custom-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.color-picker-custom-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-picker-custom-preview {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.color-picker-custom-input {
+  flex: 1;
+}

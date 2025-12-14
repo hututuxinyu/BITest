@@ -6,6 +6,42 @@ import TableRenderer from '../common/TableRenderer';
 import type { ComponentDefinition } from '../../types';
 import { datasourceApi } from '../../services/datasourceApi';
 import { Spin } from 'antd';
+import { getThemeById, getDefaultTheme } from '../../themes';
+
+/**
+ * 转换数据集数据为图表数据格式
+ * 如果数据已经是正确的格式，直接返回；否则进行转换
+ */
+function transformDatasetData(
+  data: any[],
+  datasetConfig: { xAxisField?: string; yAxisField?: string }
+): any[] {
+  if (!Array.isArray(data) || data.length === 0) {
+    return [];
+  }
+
+  // 检查数据是否已经是图表格式（有 category 和 value 字段）
+  const firstItem = data[0];
+  if (firstItem && ('category' in firstItem || 'name' in firstItem) && 'value' in firstItem) {
+    // 已经是正确的格式，直接返回
+    return data;
+  }
+
+  // 需要转换：从原始数据格式转换为图表格式
+  const xAxisField = datasetConfig.xAxisField;
+  const yAxisField = datasetConfig.yAxisField;
+
+  if (!xAxisField || !yAxisField) {
+    console.warn('缺少 xAxisField 或 yAxisField，无法转换数据');
+    return [];
+  }
+
+  return data.map((row: any) => ({
+    category: row[xAxisField] ?? row.category ?? '未命名分类',
+    value: typeof row[yAxisField] === 'number' ? row[yAxisField] : Number(row[yAxisField]) || 0,
+    series: row.series ?? '默认系列',
+  }));
+}
 
 interface ReportPreviewProps {
   items: EnhancedCanvasItem[];
@@ -13,6 +49,7 @@ interface ReportPreviewProps {
   canvasHeight?: number;
   backgroundColor?: string;
   themeId?: 'light' | 'dark';
+  title?: string;
 }
 
 /**
@@ -60,15 +97,26 @@ const PreviewItem: React.FC<PreviewItemProps> = ({ item, renderItem }) => {
         })
         .then((response) => {
           if (response.success) {
-            setData(response.data || []);
+            const responseData = response.data || [];
+            // 如果返回的数据是空数组，设置为 undefined 以使用默认数据
+            if (Array.isArray(responseData) && responseData.length === 0) {
+              console.warn('数据查询结果为空，使用默认数据');
+              setData(undefined);
+            } else {
+              // 转换数据格式：如果数据格式不符合图表要求，进行转换
+              const transformedData = transformDatasetData(responseData, datasetConfig);
+              setData(transformedData);
+            }
           } else {
-            setError(response.message || '数据加载失败');
-            setData([]);
+            console.warn('数据加载失败:', response.message || '未知错误', '，使用默认数据');
+            // 查询失败时设置为 undefined，使用默认数据，不显示错误
+            setData(undefined);
           }
         })
         .catch((err) => {
-          setError(err.message || '数据加载失败');
-          setData([]);
+          console.warn('数据加载异常:', err.message || '未知错误', '，使用默认数据');
+          // 查询失败时设置为 undefined，使用默认数据，不显示错误
+          setData(undefined);
         })
         .finally(() => {
           setLoading(false);
@@ -88,7 +136,9 @@ const PreviewItem: React.FC<PreviewItemProps> = ({ item, renderItem }) => {
     );
   }
 
-  if (error) {
+  // 只有当有错误且没有数据时才显示错误
+  // 如果有默认数据可以回退，则不显示错误
+  if (error && data === undefined && (!item.definition?.defaultData || (Array.isArray(item.definition.defaultData) && item.definition.defaultData.length === 0))) {
     return (
       <div style={{ padding: 16, color: '#ff4d4f' }}>
         数据加载失败: {error}
@@ -109,7 +159,12 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
   canvasHeight = 1080,
   backgroundColor = '#fafafa',
   themeId = 'light',
+  title,
 }) => {
+  const theme = useMemo(() => getThemeById(themeId || 'light') || getDefaultTheme(), [themeId]);
+  const titleColor = theme?.colors.titleText || theme?.colors.textPrimary || '#1f1f1f';
+  const titleBg = themeId === 'dark' ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.65)';
+
   // 渲染组件内容
   const renderItem = (item: EnhancedCanvasItem, previewData?: any[]): React.ReactNode => {
     if (item.loading) {
@@ -150,7 +205,8 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       }
       
       // 优先使用预览数据（从数据集查询得到），其次使用静态数据，最后使用默认数据
-      if (previewData !== undefined) {
+      // 只有当 previewData 是有效数组（非空）时才使用，空数组时回退到默认数据
+      if (previewData !== undefined && Array.isArray(previewData) && previewData.length > 0) {
         mergedDefinition = {
           ...mergedDefinition,
           defaultData: previewData,
@@ -161,6 +217,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
           defaultData: item.datasourceConfig.staticConfig.data,
         };
       }
+      // 如果没有预览数据和静态数据，使用 definition 中的默认数据（保持不变）
       return mergedDefinition;
     })();
 
@@ -198,7 +255,8 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
       item.component.categories?.includes('form') ||
       item.component.componentId === 'media-text' ||
       item.component.componentId === 'media-border' ||
-      item.component.componentId === 'media-line'
+      item.component.componentId === 'media-line' ||
+      item.component.componentId === 'media-image'
     ) {
       return (
         <FormRenderer
@@ -229,6 +287,29 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
         position: 'relative',
       }}
     >
+      {title ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            pointerEvents: 'none',
+            fontSize: 28,
+            fontWeight: 700,
+            color: titleColor,
+            textShadow: themeId === 'dark' ? '0 1px 3px rgba(0,0,0,0.45)' : '0 1px 2px rgba(0,0,0,0.18)',
+            padding: '8px 16px',
+            background: titleBg,
+            borderRadius: 12,
+            width: '50%',
+            margin: '0 auto',
+          }}
+        >
+          {title}
+        </div>
+      ) : null}
       <div
         style={{
           position: 'relative',

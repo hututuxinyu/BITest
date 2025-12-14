@@ -1,24 +1,122 @@
 {
   "version": "1.0.0",
-  "reportId": "report-dark-001",
-  "reportName": "销售数据分析报表-深色主题",
-  "reportType": "report",
+  "reportId": "dashboard-visual-monitor-001",
+  "reportName": "可视化监控大屏",
+  "reportType": "dashboard",
   "metadata": {
-    "createTime": "2024-01-15T10:30:00Z",
-    "updateTime": "2024-01-20T14:20:00Z",
-    "creator": "user-001",
-    "description": "展示销售数据的综合分析报表-深色主题"
+    "createTime": "2025-12-12T10:00:00Z",
+    "updateTime": "2025-12-12T10:30:00Z",
+    "creator": "bi-designer",
+    "description": "包含8种图表（柱状图、折线图、饼图、条形图、环形图、象形图、散点图、柱线图）的可视化监控大屏，采用两行四列布局"
   },
   "canvas": {
     "width": 1920,
     "height": 1080,
-    "backgroundColor": "#121826",
+    "backgroundColor": "#f5f5f5",
     "grid": true,
-    "gridSize": 10
+    "gridSize": 15
   },
   "components": [
     {
-      "componentId": "comp-dark-001",
+      "componentId": "comp-header-bg",
+      "componentType": "image",
+      "componentName": "表头背景",
+      "position": {
+        "x": 0,
+        "y": 0
+      },
+      "size": {
+        "width": 1920,
+        "height": 120
+      },
+      "zIndex": 8,
+      "visible": true,
+      "locked": true,
+      "props": {
+        "src": "/assets/head_bg.png",
+        "alt": "表头背景",
+        "width": "100%",
+        "height": "100%",
+        "objectFit": "stretch"
+      }
+    },
+    {
+      "componentId": "comp-title",
+      "componentType": "text",
+      "componentName": "大屏标题",
+      "position": {
+        "x": 660,
+        "y": 30
+      },
+      "size": {
+        "width": 600,
+        "height": 60
+      },
+      "zIndex": 10,
+      "visible": true,
+      "locked": true,
+      "props": {
+        "text": "i18n:title",
+        "fontSize": 36,
+        "fontWeight": "bold",
+        "color": "#1f1f1f",
+        "textAlign": "center",
+        "fontFamily": "Microsoft YaHei",
+        "background": "transparent"
+      },
+      "i18n": {
+        "zh-CN": {
+          "title": "可视化监控大屏"
+        },
+        "en-US": {
+          "title": "Visual Monitoring Dashboard"
+        }
+      }
+    },
+    {
+      "componentId": "comp-title-left-decoration",
+      "componentType": "headerDecorationLeft",
+      "componentName": "标题左侧装饰",
+      "position": {
+        "x": 500,
+        "y": 30
+      },
+      "size": {
+        "width": 160,
+        "height": 60
+      },
+      "zIndex": 9,
+      "visible": true,
+      "locked": true,
+      "props": {
+        "lineColor": "#1890ff",
+        "lineWidth": 2,
+        "shapeStyle": "step"
+      }
+    },
+    {
+      "componentId": "comp-title-right-decoration",
+      "componentType": "headerDecorationRight",
+      "componentName": "标题右侧装饰",
+      "position": {
+        "x": 1260,
+        "y": 30
+      },
+      "size": {
+        "width": 160,
+        "height": 60
+      },
+      "zIndex": 9,
+      "visible": true,
+      "locked": true,
+      "props": {
+        "lineColor": "#1890ff",
+        "lineWidth": 2,
+        "shapeStyle": "step"
+      }
+    },
+    {
+      "componentId": "comp-001",
       "componentType": "barChart",
       "componentName": "柱状图",
       "position": {
@@ -26,50 +124,45 @@
         "y": 120
       },
       "size": {
-        "width": 500,
-        "height": 350
+        "width": 400,
+        "height": 380
       },
       "zIndex": 1,
+      "visible": true,
+      "locked": false,
       "props": {
         "title": "i18n:title",
-        "xAxisField": "month",
-        "yAxisField": "amount",
-        "color": "#818CF8",
+        "xAxisField": "category",
+        "yAxisField": "value",
+        "color": ["#36cbcb", "#409eff", "#722ed1", "#fa8c16", "#f5222d"],
         "showLegend": true,
         "showTooltip": true,
-        "xAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF",
-          "axisTitleColor": "#9CA3AF"
-        },
-        "yAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF",
-          "axisTitleColor": "#9CA3AF"
-        },
-        "gridLineColor": "#2D374880"
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "axisLabelColor": "#e0e0e0",
+        "gridColor": "rgba(255,255,255,0.1)"
       },
       "datasourceId": "ds-001",
       "i18n": {
         "zh-CN": {
-          "title": "月度销售额柱状图"
+          "title": "分类数据统计"
         },
         "en-US": {
-          "title": "Monthly Sales Bar Chart"
+          "title": "Category Data Statistics"
         }
       }
     },
     {
-      "componentId": "comp-dark-002",
+      "componentId": "comp-002",
       "componentType": "lineChart",
       "componentName": "折线图",
       "position": {
-        "x": 600,
+        "x": 500,
         "y": 120
       },
       "size": {
-        "width": 500,
-        "height": 350
+        "width": 400,
+        "height": 380
       },
       "zIndex": 1,
       "visible": true,
@@ -77,410 +170,257 @@
       "props": {
         "title": "i18n:title",
         "xAxisField": "date",
-        "yAxisField": "amount",
+        "yAxisField": "trendValue",
         "smooth": true,
         "showArea": true,
-        "color": "#818CF8",
-        "areaColor": "#818CF81A",
+        "areaOpacity": 0.3,
+        "color": "#409eff",
         "showLegend": true,
         "showTooltip": true,
-        "xAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        },
-        "yAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        }
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "axisLabelColor": "#e0e0e0",
+        "gridColor": "rgba(255,255,255,0.1)"
       },
       "datasourceId": "ds-001",
       "i18n": {
         "zh-CN": {
-          "title": "销售趋势折线图"
+          "title": "指标趋势变化"
         },
         "en-US": {
-          "title": "Sales Trend Line Chart"
+          "title": "Indicator Trend Change"
         }
       }
     },
     {
-      "componentId": "comp-dark-003",
+      "componentId": "comp-003",
       "componentType": "pieChart",
       "componentName": "饼图",
       "position": {
-        "x": 1150,
+        "x": 950,
         "y": 120
       },
       "size": {
-        "width": 500,
-        "height": 350
+        "width": 400,
+        "height": 380
       },
       "zIndex": 1,
+      "visible": true,
+      "locked": false,
       "props": {
         "title": "i18n:title",
-        "nameField": "product",
-        "valueField": "sales",
-        "color": ["#818CF8", "#10B981", "#A5B4FC", "#C4B5FD", "#F472B6"],
+        "dimensionField": "type",
+        "measureField": "proportion",
+        "color": ["#36cbcb", "#409eff", "#722ed1", "#fa8c16", "#f5222d", "#13c2c2"],
         "showLegend": true,
         "showTooltip": true,
-        "legendTextColor": "#9CA3AF"
+        "labelShow": true,
+        "labelFormat": "{name}: {value} ({percent}%)",
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "legendTextColor": "#e0e0e0"
       },
       "datasourceId": "ds-001",
       "i18n": {
         "zh-CN": {
-          "title": "产品销售额占比饼图"
+          "title": "类型占比分布"
         },
         "en-US": {
-          "title": "Product Sales Share Pie Chart"
+          "title": "Type Proportion Distribution"
         }
       }
     },
     {
-      "componentId": "comp-dark-004",
-      "componentType": "ringChart",
+      "componentId": "comp-004",
+      "componentType": "barChartHorizontal",
+      "componentName": "条形图",
+      "position": {
+        "x": 1400,
+        "y": 120
+      },
+      "size": {
+        "width": 400,
+        "height": 380
+      },
+      "zIndex": 1,
+      "visible": true,
+      "locked": false,
+      "props": {
+        "title": "i18n:title",
+        "xAxisField": "horizontalValue",
+        "yAxisField": "horizontalCategory",
+        "color": ["#722ed1", "#409eff"],
+        "showLegend": true,
+        "showTooltip": true,
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "axisLabelColor": "#e0e0e0",
+        "gridColor": "rgba(255,255,255,0.1)"
+      },
+      "datasourceId": "ds-001",
+      "i18n": {
+        "zh-CN": {
+          "title": "横向对比分析"
+        },
+        "en-US": {
+          "title": "Horizontal Comparison Analysis"
+        }
+      }
+    },
+    {
+      "componentId": "comp-005",
+      "componentType": "donutChart",
       "componentName": "环形图",
       "position": {
         "x": 50,
-        "y": 520
+        "y": 530
       },
       "size": {
-        "width": 500,
-        "height": 350
+        "width": 400,
+        "height": 380
       },
       "zIndex": 1,
+      "visible": true,
+      "locked": false,
       "props": {
         "title": "i18n:title",
-        "nameField": "channel",
-        "valueField": "revenue",
-        "color": ["#818CF8", "#10B981", "#A5B4FC", "#C4B5FD"],
+        "dimensionField": "ringType",
+        "measureField": "ringValue",
+        "color": ["#fa8c16", "#36cbcb", "#409eff", "#f5222d", "#722ed1"],
         "showLegend": true,
         "showTooltip": true,
-        "legendTextColor": "#9CA3AF",
-        "centerBgColor": "#121826"
+        "labelShow": true,
+        "labelFormat": "{name}: {value}",
+        "radius": [40, 70],
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "legendTextColor": "#e0e0e0"
       },
       "datasourceId": "ds-001",
       "i18n": {
         "zh-CN": {
-          "title": "渠道营收占比环形图"
+          "title": "环形数据展示"
         },
         "en-US": {
-          "title": "Channel Revenue Share Ring Chart"
+          "title": "Donut Data Display"
         }
       }
     },
     {
-      "componentId": "comp-dark-005",
-      "componentType": "gaugeChart",
-      "componentName": "仪表盘",
-      "position": {
-        "x": 600,
-        "y": 520
-      },
-      "size": {
-        "width": 500,
-        "height": 350
-      },
-      "zIndex": 1,
-      "props": {
-        "title": "i18n:title",
-        "valueField": "completionRate",
-        "max": 100,
-        "min": 0,
-        "gaugeBgColor": "#2D3748",
-        "gaugeColor": "#818CF8",
-        "pointerColor": "#F9FAFB",
-        "titleColor": "#F9FAFB",
-        "labelColor": "#9CA3AF"
-      },
-      "datasourceId": "ds-001",
-      "i18n": {
-        "zh-CN": {
-          "title": "销售目标完成率仪表盘"
-        },
-        "en-US": {
-          "title": "Sales Target Completion Gauge"
-        }
-      }
-    },
-    {
-      "componentId": "comp-dark-006",
-      "componentType": "scatterChart",
-      "componentName": "散点图",
-      "position": {
-        "x": 1150,
-        "y": 520
-      },
-      "size": {
-        "width": 500,
-        "height": 350
-      },
-      "zIndex": 1,
-      "props": {
-        "title": "i18n:title",
-        "xAxisField": "cost",
-        "yAxisField": "profit",
-        "color": "#818CF8CC",
-        "showLegend": true,
-        "showTooltip": true,
-        "xAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        },
-        "yAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        }
-      },
-      "datasourceId": "ds-001",
-      "i18n": {
-        "zh-CN": {
-          "title": "成本利润散点图"
-        },
-        "en-US": {
-          "title": "Cost Profit Scatter Chart"
-        }
-      }
-    },
-    {
-      "componentId": "comp-dark-007",
-      "componentType": "areaChart",
-      "componentName": "面积图",
-      "position": {
-        "x": 50,
-        "y": 920
-      },
-      "size": {
-        "width": 500,
-        "height": 120
-      },
-      "zIndex": 1,
-      "props": {
-        "title": "i18n:title",
-        "xAxisField": "week",
-        "yAxisField": "flow",
-        "color": "#818CF8",
-        "areaColor": "#818CF820",
-        "showLegend": false,
-        "showTooltip": true,
-        "xAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        },
-        "yAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        }
-      },
-      "datasourceId": "ds-001",
-      "i18n": {
-        "zh-CN": {
-          "title": "周流量趋势面积图"
-        },
-        "en-US": {
-          "title": "Weekly Traffic Area Chart"
-        }
-      }
-    },
-    {
-      "componentId": "comp-dark-008",
+      "componentId": "comp-006",
       "componentType": "pictorialBarChart",
       "componentName": "象形图",
       "position": {
-        "x": 600,
-        "y": 920
+        "x": 500,
+        "y": 530
       },
       "size": {
-        "width": 500,
-        "height": 120
+        "width": 400,
+        "height": 380
       },
       "zIndex": 1,
+      "visible": true,
+      "locked": false,
       "props": {
         "title": "i18n:title",
-        "xAxisField": "region",
-        "yAxisField": "userCount",
-        "color": "#10B981",
-        "showLegend": false,
-        "showTooltip": true,
-        "xAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        },
-        "yAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        }
-      },
-      "datasourceId": "ds-001",
-      "i18n": {
-        "zh-CN": {
-          "title": "区域用户数象形图"
-        },
-        "en-US": {
-          "title": "Regional User Count Pictorial Chart"
-        }
-      }
-    },
-    {
-      "componentId": "comp-dark-009",
-      "componentType": "mixChart",
-      "componentName": "柱线图",
-      "position": {
-        "x": 1150,
-        "y": 920
-      },
-      "size": {
-        "width": 500,
-        "height": 120
-      },
-      "zIndex": 1,
-      "props": {
-        "title": "i18n:title",
-        "xAxisField": "day",
-        "yAxisField1": "sales",
-        "yAxisField2": "growthRate",
-        "barColor": "#818CF8",
-        "lineColor": "#10B981",
+        "xAxisField": "iconCategory",
+        "yAxisField": "iconValue",
+        "symbol": "rect",
+        "symbolSize": [30, 30],
+        "color": "#13c2c2",
         "showLegend": true,
         "showTooltip": true,
-        "xAxis": {
-          "axisLineColor": "#374151",
-          "axisLabelColor": "#9CA3AF"
-        },
-        "yAxis": [
-          {
-            "axisLineColor": "#374151",
-            "axisLabelColor": "#9CA3AF"
-          },
-          {
-            "axisLineColor": "#374151",
-            "axisLabelColor": "#9CA3AF"
-          }
-        ]
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "axisLabelColor": "#e0e0e0",
+        "gridColor": "rgba(255,255,255,0.1)"
       },
       "datasourceId": "ds-001",
       "i18n": {
         "zh-CN": {
-          "title": "日销售额增长率柱线图"
+          "title": "象形量化指标"
         },
         "en-US": {
-          "title": "Daily Sales Growth Mix Chart"
+          "title": "Pictorial Quantitative Indicators"
         }
       }
     },
     {
-      "componentId": "comp-dark-010",
-      "componentType": "table",
-      "componentName": "表格",
+      "componentId": "comp-007",
+      "componentType": "scatterChart",
+      "componentName": "散点图",
       "position": {
-        "x": 50,
-        "y": 70
+        "x": 950,
+        "y": 530
       },
       "size": {
-        "width": 1600,
-        "height": 80
+        "width": 400,
+        "height": 380
       },
-      "zIndex": 2,
+      "zIndex": 1,
       "visible": true,
       "locked": false,
       "props": {
         "title": "i18n:title",
-        "columns": [
-          {
-            "field": "totalSales",
-            "title": "总销售额",
-            "width": 200,
-            "format": "number",
-            "color": "#818CF8"
-          },
-          {
-            "field": "totalOrders",
-            "title": "总订单数",
-            "width": 200,
-            "format": "number",
-            "color": "#F9FAFB"
-          },
-          {
-            "field": "growthRate",
-            "title": "同比增长率",
-            "width": 200,
-            "format": "percent",
-            "color": "#10B981"
-          },
-          {
-            "field": "completionRate",
-            "title": "目标完成率",
-            "width": 200,
-            "format": "percent",
-            "color": "#F9FAFB"
-          },
-          {
-            "field": "riskProduct",
-            "title": "风险产品数",
-            "width": 200,
-            "format": "number",
-            "color": "#F59E0B"
-          },
-          {
-            "field": "hotProduct",
-            "title": "热销产品数",
-            "width": 200,
-            "format": "number",
-            "color": "#10B981"
-          },
-          {
-            "field": "date",
-            "title": "数据日期",
-            "width": 200,
-            "format": "date",
-            "color": "#9CA3AF"
-          }
-        ],
-        "headerBgColor": "#1E293B",
-        "headerTextColor": "#F9FAFB",
-        "bodyBgColor": "#121826",
-        "bodyTextColor": "#9CA3AF",
-        "borderColor": "#374151"
+        "xAxisField": "xCoordinate",
+        "yAxisField": "yCoordinate",
+        "seriesField": "scatterGroup",
+        "symbolSize": 15,
+        "color": ["#409eff", "#722ed1", "#fa8c16", "#36cbcb"],
+        "showLegend": true,
+        "showTooltip": true,
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "axisLabelColor": "#e0e0e0",
+        "gridColor": "rgba(255,255,255,0.1)"
       },
       "datasourceId": "ds-001",
       "i18n": {
         "zh-CN": {
-          "title": "核心指标概览表"
+          "title": "双维度分布分析"
         },
         "en-US": {
-          "title": "Core Metrics Overview Table"
+          "title": "Two-Dimensional Distribution Analysis"
         }
       }
     },
     {
-      "componentId": "comp-dark-011",
-      "componentType": "dataRange",
-      "componentName": "日期筛选器",
+      "componentId": "comp-008",
+      "componentType": "barLineChart",
+      "componentName": "柱线图",
       "position": {
-        "x": 1700,
-        "y": 80
+        "x": 1400,
+        "y": 530
       },
       "size": {
-        "width": 300,
-        "height": 50
+        "width": 400,
+        "height": 380
       },
-      "zIndex": 2,
+      "zIndex": 1,
       "visible": true,
       "locked": false,
       "props": {
-        "type": "dateRange",
-        "label": "i18n:label",
-        "format": "YYYY-MM-DD",
-        "defaultValue": null,
-        "bgColor": "#1E293B",
-        "borderColor": "#374151",
-        "textColor": "#9CA3AF"
+        "title": "i18n:title",
+        "xAxisField": "mixedDate",
+        "barField": "barValue",
+        "lineField": "lineValue",
+        "barColor": "#fa8c16",
+        "lineColor": "#409eff",
+        "lineSmooth": true,
+        "showLegend": true,
+        "showTooltip": true,
+        "titleFontSize": 16,
+        "titleColor": "#ffffff",
+        "axisLabelColor": "#e0e0e0",
+        "gridColor": "rgba(255,255,255,0.1)"
       },
+      "datasourceId": "ds-001",
       "i18n": {
         "zh-CN": {
-          "label": "选择日期范围"
+          "title": "混合指标对比"
         },
         "en-US": {
-          "label": "Select Date Range"
+          "title": "Mixed Indicator Comparison"
         }
       }
     }
@@ -488,16 +428,22 @@
   "datasources": [
     {
       "datasourceId": "ds-001",
-      "datasourceName": "销售数据集",
+      "datasourceName": "综合监控数据集",
       "datasourceType": "mysql",
-      "datasetName": "销售数据集",
+      "datasetName": "综合监控数据集",
       "queryConfig": {
         "selectedFields": [
           {
-            "fieldName": "month",
-            "fieldLabel": "月份",
+            "fieldName": "category",
+            "fieldLabel": "分类",
             "fieldType": "string",
             "tag": "dimension"
+          },
+          {
+            "fieldName": "value",
+            "fieldLabel": "数值",
+            "fieldType": "number",
+            "tag": "measure"
           },
           {
             "fieldName": "date",
@@ -506,110 +452,92 @@
             "tag": "dimension"
           },
           {
-            "fieldName": "week",
-            "fieldLabel": "周",
+            "fieldName": "trendValue",
+            "fieldLabel": "趋势值",
+            "fieldType": "number",
+            "tag": "measure"
+          },
+          {
+            "fieldName": "type",
+            "fieldLabel": "类型",
             "fieldType": "string",
             "tag": "dimension"
           },
           {
-            "fieldName": "day",
-            "fieldLabel": "日",
+            "fieldName": "proportion",
+            "fieldLabel": "占比",
+            "fieldType": "number",
+            "tag": "measure"
+          },
+          {
+            "fieldName": "horizontalCategory",
+            "fieldLabel": "横向分类",
             "fieldType": "string",
             "tag": "dimension"
           },
           {
-            "fieldName": "product",
-            "fieldLabel": "产品",
+            "fieldName": "horizontalValue",
+            "fieldLabel": "横向数值",
+            "fieldType": "number",
+            "tag": "measure"
+          },
+          {
+            "fieldName": "ringType",
+            "fieldLabel": "环形类型",
             "fieldType": "string",
             "tag": "dimension"
           },
           {
-            "fieldName": "channel",
-            "fieldLabel": "渠道",
+            "fieldName": "ringValue",
+            "fieldLabel": "环形数值",
+            "fieldType": "number",
+            "tag": "measure"
+          },
+          {
+            "fieldName": "iconCategory",
+            "fieldLabel": "象形分类",
             "fieldType": "string",
             "tag": "dimension"
           },
           {
-            "fieldName": "region",
-            "fieldLabel": "区域",
+            "fieldName": "iconValue",
+            "fieldLabel": "象形数值",
+            "fieldType": "number",
+            "tag": "measure"
+          },
+          {
+            "fieldName": "xCoordinate",
+            "fieldLabel": "X坐标",
+            "fieldType": "number",
+            "tag": "measure"
+          },
+          {
+            "fieldName": "yCoordinate",
+            "fieldLabel": "Y坐标",
+            "fieldType": "number",
+            "tag": "measure"
+          },
+          {
+            "fieldName": "scatterGroup",
+            "fieldLabel": "散点分组",
             "fieldType": "string",
             "tag": "dimension"
           },
           {
-            "fieldName": "amount",
-            "fieldLabel": "销售额",
+            "fieldName": "mixedDate",
+            "fieldLabel": "混合日期",
+            "fieldType": "date",
+            "tag": "dimension"
+          },
+          {
+            "fieldName": "barValue",
+            "fieldLabel": "柱形值",
             "fieldType": "number",
             "tag": "measure"
           },
           {
-            "fieldName": "sales",
-            "fieldLabel": "销量",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "revenue",
-            "fieldLabel": "营收",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "completionRate",
-            "fieldLabel": "完成率",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "cost",
-            "fieldLabel": "成本",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "profit",
-            "fieldLabel": "利润",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "flow",
-            "fieldLabel": "流量",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "userCount",
-            "fieldLabel": "用户数",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "growthRate",
-            "fieldLabel": "增长率",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "totalSales",
-            "fieldLabel": "总销售额",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "totalOrders",
-            "fieldLabel": "总订单数",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "riskProduct",
-            "fieldLabel": "风险产品数",
-            "fieldType": "number",
-            "tag": "measure"
-          },
-          {
-            "fieldName": "hotProduct",
-            "fieldLabel": "热销产品数",
+            "fieldName": "lineValue",
+            "fieldLabel": "线形值",
             "fieldType": "number",
             "tag": "measure"
           }
@@ -617,9 +545,15 @@
       },
       "filters": [
         {
-          "field": "queryConfig:fieldName",
+          "field": "date",
           "operator": "between",
-          "sourceId": "comp-dark-011",
+          "sourceId": "comp-date-filter",
+          "valuePath": "value"
+        },
+        {
+          "field": "mixedDate",
+          "operator": "between",
+          "sourceId": "comp-date-filter",
           "valuePath": "value"
         }
       ],
@@ -631,7 +565,7 @@
   ],
   "interactions": [
     {
-      "componentId": "comp-dark-011",
+      "componentId": "comp-date-filter",
       "events": [
         {
           "eventType": "change",
@@ -639,7 +573,7 @@
           "actions": [
             {
               "actionType": "filter",
-              "target": "comp-dark-001",
+              "target": "comp-001",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -647,7 +581,7 @@
             },
             {
               "actionType": "filter",
-              "target": "comp-dark-002",
+              "target": "comp-002",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -655,7 +589,7 @@
             },
             {
               "actionType": "filter",
-              "target": "comp-dark-003",
+              "target": "comp-003",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -663,7 +597,7 @@
             },
             {
               "actionType": "filter",
-              "target": "comp-dark-004",
+              "target": "comp-004",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -671,7 +605,7 @@
             },
             {
               "actionType": "filter",
-              "target": "comp-dark-005",
+              "target": "comp-005",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -679,7 +613,7 @@
             },
             {
               "actionType": "filter",
-              "target": "comp-dark-006",
+              "target": "comp-006",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -687,7 +621,7 @@
             },
             {
               "actionType": "filter",
-              "target": "comp-dark-007",
+              "target": "comp-007",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -695,23 +629,7 @@
             },
             {
               "actionType": "filter",
-              "target": "comp-dark-008",
-              "params": {
-                "startDate": "${value[0]}",
-                "endDate": "${value[1]}"
-              }
-            },
-            {
-              "actionType": "filter",
-              "target": "comp-dark-009",
-              "params": {
-                "startDate": "${value[0]}",
-                "endDate": "${value[1]}"
-              }
-            },
-            {
-              "actionType": "filter",
-              "target": "comp-dark-010",
+              "target": "comp-008",
               "params": {
                 "startDate": "${value[0]}",
                 "endDate": "${value[1]}"
@@ -724,22 +642,31 @@
   ],
   "i18n": {
     "zh-CN": {
-      "reportName": "销售数据分析报表-深色主题",
-      "description": "展示销售数据的综合分析报表-深色主题"
+      "reportName": "可视化监控大屏",
+      "description": "包含8种图表（柱状图、折线图、饼图、条形图、环形图、象形图、散点图、柱线图）的可视化监控大屏，采用两行四列布局"
     },
     "en-US": {
-      "reportName": "Sales Data Analysis Report - Dark Theme",
-      "description": "Comprehensive analysis report of sales data - Dark Theme"
+      "reportName": "Visual Monitoring Dashboard",
+      "description": "A visual monitoring dashboard containing 8 types of charts (bar chart, line chart, pie chart, horizontal bar chart, donut chart, pictorial chart, scatter chart, bar-line chart) arranged in 2 rows and 4 columns"
     }
   },
   "style": {
     "reportBackground": {
       "type": "color",
-      "value": "#121826"
+      "value": "#F6F9FF"
     },
     "theme": {
-      "themeId": "theme-dark-001",
-      "themeName": "深色主题"
+      "themeId": "theme-light",
+      "themeName": "浅色主题"
+    },
+    "typography": {
+      "titleColorLight": "#1f1f1f",
+      "titleColorDark": "#ffffff"
+    },
+    "componentStyle": {
+      "borderRadius": 8,
+      "border": "1px solid rgba(0,0,0,0.08)",
+      "background": "rgba(255,255,255,0.9)"
     }
   }
 }
