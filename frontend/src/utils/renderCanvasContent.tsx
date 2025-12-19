@@ -62,7 +62,7 @@ export function renderCanvasContent(
     );
   }
   if (definition) {
-    if (item.component.componentId === 'chart-table' || item.component.componentId === 'chart-tree-table') {
+    if (item.component.componentId === 'chart-table') {
       return (
         <TableRenderer
           componentId={item.component.componentId}
@@ -87,6 +87,19 @@ export function renderCanvasContent(
     }
 
     if (item.component.type === 'chart') {
+      // 树选择组件使用 FormRenderer 渲染
+      if (item.component.componentId === 'chart-tree') {
+        return (
+          <FormRenderer
+            componentId={item.component.componentId}
+            definition={definition}
+            height={item.size?.height || '100%'}
+            width={item.size?.width || '100%'}
+            propsValues={propsValues || item.propsValues}
+            componentName={item.component.componentName}
+          />
+        );
+      }
       return (
         <ChartRenderer
           componentId={item.component.componentId}

@@ -133,7 +133,7 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
     if (editorContext && editorContext.datasets.length > 0) {
       setDatasets(editorContext.datasets);
     }
-  }, [editorContext?.datasets]);
+  }, [editorContext?.datasets.length]);
 
   // 转换为EnhancedCanvasItem
   const convertToEnhancedItems = useCallback((items: CanvasItem[]): EnhancedCanvasItem[] => {
@@ -345,14 +345,22 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       }
       
       // 更新画布尺寸到 EditorContext
-      if (editorContext && schema.canvas) {
-        editorContext.setCanvasWidth(schema.canvas.width || 1920);
-        editorContext.setCanvasHeight(schema.canvas.height || 1080);
-        editorContext.setCanvasBackgroundColor(schema.canvas.backgroundColor || '#fafafa');
-        if (schema.canvas.theme?.themeId === 'dark' || schema.canvas.theme?.themeId === 'light') {
-          editorContext.setCanvasThemeId(schema.canvas.theme.themeId);
-        } else {
-          editorContext.setCanvasThemeId('light');
+      if (schema.canvas) {
+        if (setCanvasWidthRef.current) {
+          setCanvasWidthRef.current(schema.canvas.width || 1920);
+        }
+        if (setCanvasHeightRef.current) {
+          setCanvasHeightRef.current(schema.canvas.height || 1080);
+        }
+        if (setCanvasBackgroundColorRef.current) {
+          setCanvasBackgroundColorRef.current(schema.canvas.backgroundColor || '#fafafa');
+        }
+        if (setCanvasThemeIdRef.current) {
+          if (schema.canvas.theme?.themeId === 'dark' || schema.canvas.theme?.themeId === 'light') {
+            setCanvasThemeIdRef.current(schema.canvas.theme.themeId);
+          } else {
+            setCanvasThemeIdRef.current('light');
+          }
         }
       }
       
@@ -361,8 +369,8 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
         const enhancedItems = convertToEnhancedItems(parsedItems);
         historyManagerRef.current.push(enhancedItems);
         // 同步到 EditorContext
-        if (editorContext) {
-          editorContext.setCanvasItems(enhancedItems);
+        if (setCanvasItemsRef.current) {
+          setCanvasItemsRef.current(enhancedItems);
         }
       }
 
@@ -423,15 +431,38 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
   }, [projectId, reportId, reportContext, loadSchemaToCanvas]);
 
   const [enhancedItems, setEnhancedItems] = useState<EnhancedCanvasItem[]>([]);
+  
+  // 使用 ref 存储 editorContext 的 setter 函数，避免在依赖数组中包含 editorContext
+  const setCanvasItemsRef = useRef<((items: EnhancedCanvasItem[]) => void) | null>(null);
+  const setCanvasWidthRef = useRef<((width: number) => void) | null>(null);
+  const setCanvasHeightRef = useRef<((height: number) => void) | null>(null);
+  const setCanvasBackgroundColorRef = useRef<((color: string) => void) | null>(null);
+  const setCanvasThemeIdRef = useRef<((themeId: 'light' | 'dark') => void) | null>(null);
+  
+  useEffect(() => {
+    if (editorContext) {
+      setCanvasItemsRef.current = editorContext.setCanvasItems;
+      setCanvasWidthRef.current = editorContext.setCanvasWidth;
+      setCanvasHeightRef.current = editorContext.setCanvasHeight;
+      setCanvasBackgroundColorRef.current = editorContext.setCanvasBackgroundColor;
+      setCanvasThemeIdRef.current = editorContext.setCanvasThemeId;
+    }
+  }, [
+    editorContext?.setCanvasItems,
+    editorContext?.setCanvasWidth,
+    editorContext?.setCanvasHeight,
+    editorContext?.setCanvasBackgroundColor,
+    editorContext?.setCanvasThemeId,
+  ]);
 
   useEffect(() => {
     const enhanced = convertToEnhancedItems(canvasItems);
     setEnhancedItems(enhanced);
     // 同步到 EditorContext 用于预览
-    if (editorContext) {
-      editorContext.setCanvasItems(enhanced);
+    if (setCanvasItemsRef.current) {
+      setCanvasItemsRef.current(enhanced);
     }
-  }, [canvasItems, convertToEnhancedItems, editorContext]);
+  }, [canvasItems, convertToEnhancedItems]);
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -665,19 +696,19 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
       setEnhancedItems(items);
       setCanvasItems(convertFromEnhancedItems(items));
       // 同步到 EditorContext 用于预览
-      if (editorContext) {
-        editorContext.setCanvasItems(items);
+      if (setCanvasItemsRef.current) {
+        setCanvasItemsRef.current(items);
       }
     },
-    [convertFromEnhancedItems, editorContext]
+    [convertFromEnhancedItems]
   );
   
   // 当 enhancedItems 变化时，同步到 EditorContext
   useEffect(() => {
-    if (editorContext && enhancedItems.length >= 0) {
-      editorContext.setCanvasItems(enhancedItems);
+    if (setCanvasItemsRef.current) {
+      setCanvasItemsRef.current(enhancedItems);
     }
-  }, [enhancedItems, editorContext]);
+  }, [enhancedItems]);
 
   const handleSelectionChange = useCallback((ids: string[]) => {
     setSelectedItemIds(ids);
@@ -1218,11 +1249,17 @@ const CanvasEditor: React.FC<CanvasEditorProps> = ({ user }) => {
                               setCanvasConfig(config);
                               setShowGrid(config.gridVisible);
                               // 更新画布尺寸等配置
-                              if (editorContext) {
-                                editorContext.setCanvasWidth(config.width);
-                                editorContext.setCanvasHeight(config.height);
-                                editorContext.setCanvasBackgroundColor(config.backgroundColor);
-                                editorContext.setCanvasThemeId(config.theme?.themeId || 'light');
+                              if (setCanvasWidthRef.current) {
+                                setCanvasWidthRef.current(config.width);
+                              }
+                              if (setCanvasHeightRef.current) {
+                                setCanvasHeightRef.current(config.height);
+                              }
+                              if (setCanvasBackgroundColorRef.current) {
+                                setCanvasBackgroundColorRef.current(config.backgroundColor);
+                              }
+                              if (setCanvasThemeIdRef.current) {
+                                setCanvasThemeIdRef.current(config.theme?.themeId || 'light');
                               }
                             }}
                             onPropChange={handlePropChange}

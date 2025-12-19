@@ -243,6 +243,20 @@ export const mockComponents: ComponentSummary[] = [
     releaseTime: '2024-01-01 00:00:00',
   },
   {
+    componentId: 'chart-tree',
+    componentName: '树选择',
+    alias: 'TreeSelect',
+    version: '1.0.0',
+    type: 'chart',
+    icon: '',
+    previewUrl: '',
+    description: '用于展示层级关系的数据结构，支持选择，树结构整体呈现不隐藏',
+    categories: ['chart'],
+    tags: ['hierarchy', 'select'],
+    author: 'BI-Chart-Team',
+    releaseTime: '2024-01-01 00:00:00',
+  },
+  {
     componentId: 'chart-table',
     componentName: '表格',
     alias: 'Table',
@@ -251,20 +265,6 @@ export const mockComponents: ComponentSummary[] = [
     icon: '',
     previewUrl: '',
     description: '用于展示结构化数据，支持排序、筛选、分页等功能',
-    categories: ['chart'],
-    tags: ['compare'],
-    author: 'BI-Chart-Team',
-    releaseTime: '2024-01-01 00:00:00',
-  },
-  {
-    componentId: 'chart-tree-table',
-    componentName: '树形表格',
-    alias: 'TreeTable',
-    version: '1.0.0',
-    type: 'chart',
-    icon: '',
-    previewUrl: '',
-    description: '用于展示具有层级关系的数据，支持展开和折叠',
     categories: ['chart'],
     tags: ['compare'],
     author: 'BI-Chart-Team',
@@ -1152,6 +1152,121 @@ export const mockComponentDefinitions: Record<string, ComponentDefinition> = {
       dataBinding: true,
     },
   },
+  'chart-tree': {
+    componentId: 'chart-tree',
+    version: '1.0.0',
+    propsSchema: [
+      { field: 'multiple', label: '多选', type: 'boolean', default: false, description: '是否支持多选' },
+      { field: 'checkable', label: '显示复选框', type: 'boolean', default: false, description: '是否显示复选框' },
+      { field: 'showLine', label: '显示连接线', type: 'boolean', default: true, description: '是否显示连接线' },
+    ],
+    defaultProps: {
+      multiple: false,
+      checkable: false,
+      showLine: true,
+    },
+    dataSchema: [
+      { field: 'name', label: '节点名称', type: 'string', required: true },
+      { field: 'key', label: '节点键', type: 'string', required: false },
+      { field: 'value', label: '节点值', type: 'any', required: false },
+      { field: 'children', label: '子节点', type: 'array', required: false },
+    ],
+    defaultData: [
+      {
+        name: '根节点',
+        key: 'root',
+        value: 'root',
+        children: [
+          {
+            name: '部门A',
+            key: 'dept-a',
+            value: 'dept-a',
+            children: [
+              { name: '员工A1', key: 'emp-a1', value: 'emp-a1' },
+              { name: '员工A2', key: 'emp-a2', value: 'emp-a2' },
+              { name: '员工A3', key: 'emp-a3', value: 'emp-a3' },
+              { name: '员工A4', key: 'emp-a4', value: 'emp-a4' },
+              { name: '员工A5', key: 'emp-a5', value: 'emp-a5' },
+            ],
+          },
+          {
+            name: '部门B',
+            key: 'dept-b',
+            value: 'dept-b',
+            children: [
+              { name: '员工B1', key: 'emp-b1', value: 'emp-b1' },
+              { name: '员工B2', key: 'emp-b2', value: 'emp-b2' },
+              { name: '员工B3', key: 'emp-b3', value: 'emp-b3' },
+              { name: '员工B4', key: 'emp-b4', value: 'emp-b4' },
+              { name: '员工B5', key: 'emp-b5', value: 'emp-b5' },
+            ],
+          },
+          {
+            name: '部门C',
+            key: 'dept-c',
+            value: 'dept-c',
+            children: [
+              { name: '员工C1', key: 'emp-c1', value: 'emp-c1' },
+              { name: '员工C2', key: 'emp-c2', value: 'emp-c2' },
+              { name: '员工C3', key: 'emp-c3', value: 'emp-c3' },
+              { name: '员工C4', key: 'emp-c4', value: 'emp-c4' },
+              { name: '员工C5', key: 'emp-c5', value: 'emp-c5' },
+            ],
+          },
+          {
+            name: '部门D',
+            key: 'dept-d',
+            value: 'dept-d',
+            children: [
+              { name: '员工D1', key: 'emp-d1', value: 'emp-d1' },
+              { name: '员工D2', key: 'emp-d2', value: 'emp-d2' },
+              { name: '员工D3', key: 'emp-d3', value: 'emp-d3' },
+              { name: '员工D4', key: 'emp-d4', value: 'emp-d4' },
+              { name: '员工D5', key: 'emp-d5', value: 'emp-d5' },
+            ],
+          },
+          {
+            name: '部门E',
+            key: 'dept-e',
+            value: 'dept-e',
+            children: [
+              { name: '员工E1', key: 'emp-e1', value: 'emp-e1' },
+              { name: '员工E2', key: 'emp-e2', value: 'emp-e2' },
+              { name: '员工E3', key: 'emp-e3', value: 'emp-e3' },
+              { name: '员工E4', key: 'emp-e4', value: 'emp-e4' },
+              { name: '员工E5', key: 'emp-e5', value: 'emp-e5' },
+            ],
+          },
+        ],
+      },
+    ],
+    eventSchema: [
+      {
+        event: 'select',
+        label: '选择',
+        params: [
+          { name: 'selectedKeys', type: 'array', description: '选中的节点键' },
+          { name: 'info', type: 'object', description: '选择信息' },
+        ],
+      },
+      {
+        event: 'check',
+        label: '勾选',
+        params: [
+          { name: 'checkedKeys', type: 'array', description: '勾选的节点键' },
+          { name: 'info', type: 'object', description: '勾选信息' },
+        ],
+      },
+    ],
+    defaultEvents: {
+      select: null,
+      check: null,
+    },
+    supportFeatures: {
+      interaction: true,
+      dataBinding: true,
+    },
+  },
   'chart-table': {
     componentId: 'chart-table',
     version: '1.0.0',
@@ -1174,41 +1289,6 @@ export const mockComponentDefinitions: Record<string, ComponentDefinition> = {
       { key: '1', name: '行1', value: 100 },
       { key: '2', name: '行2', value: 200 },
       { key: '3', name: '行3', value: 150 },
-    ],
-    eventSchema: [
-      {
-        event: 'rowClick',
-        label: '行点击',
-        params: [{ name: 'row', type: 'object', description: '行数据' }],
-      },
-    ],
-    defaultEvents: {
-      rowClick: null,
-    },
-    supportFeatures: {
-      interaction: true,
-      dataBinding: true,
-    },
-  },
-  'chart-tree-table': {
-    componentId: 'chart-tree-table',
-    version: '1.0.0',
-    propsSchema: [
-      { field: 'title', label: '标题', type: 'string', default: '树形表格', description: '显示在表格顶部的标题' },
-      { field: 'defaultExpandAll', label: '默认展开全部', type: 'boolean', default: false },
-    ],
-    defaultProps: {
-      title: '树形表格',
-      defaultExpandAll: false,
-    },
-    dataSchema: [
-      { field: 'key', label: '键', type: 'string', required: true },
-      { field: 'name', label: '名称', type: 'string', required: true },
-      { field: 'children', label: '子节点', type: 'array', required: false },
-    ],
-    defaultData: [
-      { key: '1', name: '节点1', children: [{ key: '1-1', name: '子节点1-1' }] },
-      { key: '2', name: '节点2' },
     ],
     eventSchema: [
       {

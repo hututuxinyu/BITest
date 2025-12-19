@@ -68,7 +68,7 @@ const report: ReportSchema = {
 
 支持的组件类型包括：
 - **基础图表组件**: barChart（柱状图）、lineChart（折线图）、pieChart（饼图）、scatterChart（散点图）、radarChart（雷达图）、gaugeChart（仪表盘）等
-- **表格组件**: table（表格）、treeTable（树形表格）等
+- **表格组件**: table（表格）等
 - **多媒体组件**: image（图片）、video（视频）、text（文本）、richText（富文本）等
 - **容器组件**: group（分组）、tabs（选项卡）等
 - **控制类组件**: button（按钮）、filter（筛选器）、input（输入框）、switch（开关）、radio（单选框）、checkbox（多选框）等

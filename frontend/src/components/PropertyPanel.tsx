@@ -249,7 +249,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
           || ['chart-bar', 'chart-line', 'chart-pie', 'chart-radar',
               'custom-bar-chart', 'custom-area-chart', 'custom-donut-chart',
               'custom-pictorial-chart', 'custom-scatter-chart', 'custom-bar-line-chart',
-              'custom-dashboard', 'chart-table', 'chart-tree-table'].includes(item.component.componentId);
+              'custom-dashboard', 'chart-table'].includes(item.component.componentId);
         
         if (!isChart) {
           // 非图表类组件不需要数据源配置
@@ -396,7 +396,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
             || ['chart-bar', 'chart-line', 'chart-pie', 'chart-radar',
                 'custom-bar-chart', 'custom-area-chart', 'custom-donut-chart',
                 'custom-pictorial-chart', 'custom-scatter-chart', 'custom-bar-line-chart',
-                'custom-dashboard', 'chart-table', 'chart-tree-table'].includes(item.component.componentId);
+                'custom-dashboard', 'chart-table'].includes(item.component.componentId);
           
           if (!isChart) {
             // 非图表类组件不需要数据源配置
@@ -451,7 +451,7 @@ const PropertyPanel: React.FC<PropertyPanelProps> = ({
       'chart-bar', 'chart-line', 'chart-pie', 'chart-radar',
       'custom-bar-chart', 'custom-area-chart', 'custom-donut-chart',
       'custom-pictorial-chart', 'custom-scatter-chart', 'custom-bar-line-chart',
-      'custom-dashboard', 'chart-table', 'chart-tree-table'
+      'custom-dashboard', 'chart-table'
     ];
     if (chartComponentIds.includes(item.component.componentId)) {
       return true;

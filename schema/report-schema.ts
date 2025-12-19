@@ -20,7 +20,6 @@ export type ComponentType =
   | 'gaugeChart'
   | 'gauge'
   | 'table'
-  | 'treeTable'
   | 'image'
   | 'video'
   | 'text'

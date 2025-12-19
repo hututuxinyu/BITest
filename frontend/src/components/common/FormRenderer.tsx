@@ -7,9 +7,11 @@ import {
   Radio,
   Checkbox,
   Switch,
+  Tree,
 } from 'antd';
 import { Empty } from 'antd';
 import type { ComponentDefinition } from '../../types';
+import type { DataNode } from 'antd/es/tree';
 
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
@@ -152,6 +154,57 @@ const FormRenderer: React.FC<FormRendererProps> = ({
             // 确保是单行输入框，不使用 TextArea
           />
         );
+      case 'control-tree-select':
+      case 'chart-tree': {
+        // 将树形数据转换为 Ant Design Tree 需要的格式
+        const convertToTreeData = (data: any): DataNode[] => {
+          if (!data) return [];
+          
+          // 如果数据是数组，取第一个元素
+          const rootData = Array.isArray(data) && data.length > 0 ? data[0] : data;
+          
+          const convertNode = (node: any): DataNode => {
+            return {
+              title: node.name || node.title || '节点',
+              key: node.key || node.id || `${Math.random()}`,
+              children: node.children && Array.isArray(node.children) && node.children.length > 0
+                ? node.children.map(convertNode)
+                : undefined,
+            };
+          };
+          
+          return [convertNode(rootData)];
+        };
+        
+        const treeData = convertToTreeData(definition.defaultData || props.treeData);
+        const selectedKeys = props.selectedKeys || props.value || [];
+        const multiple = props.multiple !== false;
+        const checkable = props.checkable === true;
+        
+        return (
+          <Tree
+            treeData={treeData}
+            selectedKeys={Array.isArray(selectedKeys) ? selectedKeys : [selectedKeys]}
+            checkedKeys={checkable ? (Array.isArray(selectedKeys) ? selectedKeys : [selectedKeys]) : undefined}
+            checkable={checkable}
+            multiple={multiple}
+            defaultExpandAll={true}
+            showLine={props.showLine !== false}
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              overflow: 'auto',
+            }}
+            blockNode={true}
+            onSelect={() => {
+              // 选择事件处理
+            }}
+            onCheck={() => {
+              // 勾选事件处理
+            }}
+          />
+        );
+      }
       case 'media-text':
         // 根据对齐方式设置 justifyContent
         const textAlign = props.textAlign || 'left';
@@ -241,8 +294,8 @@ const FormRenderer: React.FC<FormRendererProps> = ({
   // 表单组件不需要 padding，直接使用定义的大小
   const isFormComponent = componentId === 'form-form';
   
-  // 判断是否是表单类型的组件（除了表单容器）
-  const isFormTypeComponent = (componentId.startsWith('form-') || componentId.startsWith('control-')) && componentId !== 'form-form';
+  // 判断是否是表单类型的组件（除了表单容器和树选择组件）
+  const isFormTypeComponent = (componentId.startsWith('form-') || componentId.startsWith('control-')) && componentId !== 'form-form' && componentId !== 'chart-tree';
   
   // 获取组件标签文本的默认值
   const getDefaultLabelText = () => {
@@ -260,6 +313,8 @@ const FormRenderer: React.FC<FormRendererProps> = ({
       'control-filter': '过滤器',
       'control-button': '按钮',
       'control-input': '输入框',
+      'control-tree-select': '树选择',
+      'chart-tree': '树选择',
     };
     return labelMap[componentId] || '表单组件';
   };
@@ -270,11 +325,21 @@ const FormRenderer: React.FC<FormRendererProps> = ({
     return propsValues?.formLabel !== undefined ? propsValues.formLabel : getDefaultLabelText();
   };
 
+  // 树选择组件使用全尺寸容器，不显示标签
+  const isTreeComponent = componentId === 'chart-tree';
+  
   const containerStyle: React.CSSProperties = isFormComponent
     ? {
         height,
         width,
         position: 'relative',
+      }
+    : isTreeComponent
+    ? {
+        height,
+        width,
+        position: 'relative',
+        overflow: 'auto',
       }
     : {
         height,
@@ -302,9 +367,13 @@ const FormRenderer: React.FC<FormRendererProps> = ({
           {getLabelText()}：
         </div>
       )}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minWidth: 0 }}>
-        {renderComponent()}
-      </div>
+      {isTreeComponent ? (
+        renderComponent()
+      ) : (
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'flex-start', minWidth: 0 }}>
+          {renderComponent()}
+        </div>
+      )}
     </div>
   );
 };

@@ -222,7 +222,7 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
     })();
 
     // 表格组件
-    if (item.component.componentId === 'chart-table' || item.component.componentId === 'chart-tree-table') {
+    if (item.component.componentId === 'chart-table') {
       return (
         <TableRenderer
           componentId={item.component.componentId}
@@ -236,6 +236,19 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({
 
     // 图表组件
     if (item.component.type === 'chart') {
+      // 树选择组件使用 FormRenderer 渲染
+      if (item.component.componentId === 'chart-tree') {
+        return (
+          <FormRenderer
+            componentId={item.component.componentId}
+            definition={effectiveDefinition}
+            height={item.size.height}
+            width={item.size.width}
+            propsValues={item.propsValues}
+            componentName={item.component.componentName}
+          />
+        );
+      }
       return (
         <ChartRenderer
           componentId={item.component.componentId}

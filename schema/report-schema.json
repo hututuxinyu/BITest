@@ -114,7 +114,6 @@
               "gaugeChart",
               "gauge",
               "table",
-              "treeTable",
               "image",
               "video",
               "text",
@@ -135,7 +134,7 @@
               "timeperiod",
               "daterange"
             ],
-            "description": "组件类型：barChart-柱状图，lineChart-折线图，pieChart-饼图，scatterChart-散点图，radarChart-雷达图，gaugeChart/gauge-仪表盘，table-表格，treeTable-树形表格，image-图片，video-视频，text-文本，richText-富文本，line-线条，border-边框，group-分组，tabs-选项卡，button-按钮，filter-筛选器，input-输入框，switch-开关，radio-单选框，checkbox-多选框，select-下拉框，textarea-文本域，form-表单，timeperiod-周期时间，daterange-日期范围"
+            "description": "组件类型：barChart-柱状图，lineChart-折线图，pieChart-饼图，scatterChart-散点图，radarChart-雷达图，gaugeChart/gauge-仪表盘，table-表格，image-图片，video-视频，text-文本，richText-富文本，line-线条，border-边框，group-分组，tabs-选项卡，button-按钮，filter-筛选器，input-输入框，switch-开关，radio-单选框，checkbox-多选框，select-下拉框，textarea-文本域，form-表单，timeperiod-周期时间，daterange-日期范围"
           },
           "componentName": {
             "type": "string",

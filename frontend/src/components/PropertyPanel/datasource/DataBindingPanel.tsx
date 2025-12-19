@@ -26,7 +26,7 @@ const DataBindingPanel: React.FC<DataBindingPanelProps> = ({
   onConfigChange,
 }) => {
   // 判断是否是表格组件
-  const isTableComponent = componentId === 'chart-table' || componentId === 'chart-tree-table';
+  const isTableComponent = componentId === 'chart-table';
 
   // 从 initialConfig 或 prop 中获取 selectedDatasetId（优先使用 initialConfig，因为它总是最新的）
   const selectedDatasetId = initialConfig?.datasetConfig?.datasetId || selectedDatasetIdProp || '';

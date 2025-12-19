@@ -268,12 +268,8 @@ function renderThumbnailContent(component: ComponentSummary) {
     return <FundOutlined style={thumbnailIconStyle} />;
   }
   // 表格
-  if (lowerName.includes('表格') && !lowerName.includes('树形')) {
+  if (lowerName.includes('表格')) {
     return <TableOutlined style={thumbnailIconStyle} />;
-  }
-  // 树形表格
-  if (lowerName.includes('树形表格') || lowerName.includes('treetable')) {
-    return <ApartmentOutlined style={thumbnailIconStyle} />;
   }
   // 表单组件
   if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
@@ -385,12 +381,8 @@ function getPlaceholderIcon(component: ComponentSummary) {
     return <FundOutlined style={thumbnailIconStyle} />;
   }
   // 表格
-  if (lowerName.includes('表格') && !lowerName.includes('树形')) {
+  if (lowerName.includes('表格')) {
     return <TableOutlined style={thumbnailIconStyle} />;
-  }
-  // 树形表格
-  if (lowerName.includes('树形表格') || lowerName.includes('treetable')) {
-    return <ApartmentOutlined style={thumbnailIconStyle} />;
   }
   // 表单组件图标
   if (lowerName.includes('表单组件') || (lowerName.includes('表单') && !lowerName.includes('文本框') && !lowerName.includes('下拉框') && !lowerName.includes('多选框') && !lowerName.includes('单选框'))) {
@@ -522,8 +514,8 @@ function categorizeComponent(component: ComponentSummary): 'basicChart' | 'form'
     return 'multimedia';
   }
   
-  // 基础图表：普通图表类型，包括雷达图、表格、树形表格
-  const chartKeywords = ['图', 'chart', '仪表', 'dashboard', '指标', 'heatmap', '柱', '折线', '饼', '条形', '面积', '散点', '环形', '象形', '柱线', '雷达', 'radar', '表格', 'table', '树形表格', 'treetable'];
+  // 基础图表：普通图表类型，包括雷达图、表格
+  const chartKeywords = ['图', 'chart', '仪表', 'dashboard', '指标', 'heatmap', '柱', '折线', '饼', '条形', '面积', '散点', '环形', '象形', '柱线', '雷达', 'radar', '表格', 'table'];
   if (component.type === 'chart' || chartKeywords.some((kw) => component.componentName.includes(kw) || name.includes(kw))) {
     return 'basicChart';
   }
